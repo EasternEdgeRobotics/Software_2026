@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="waterwitch_frontend" exec="waterwitch_frontend"/>
+	<node pkg="common_backend" exec="config_manager"/>
+</launch>
