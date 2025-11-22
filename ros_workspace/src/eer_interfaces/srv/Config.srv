@@ -1,0 +1,6 @@
+uint8 state
+#0 = load config into database
+#1 = get config from database
+string data
+---
+string result

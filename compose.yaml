@@ -1,0 +1,34 @@
+# This docker compose file is intended to be run onboard the ROV's Raspberry Pi.
+services:
+  eer_ros_packages:
+    build:
+      context: ./ros_workspace
+      dockerfile: Dockerfile
+      args:
+        - ROV_NAME=${ROV_NAME:-waterwitch} # Specify the name of the ROV
+        - DEV_MODE=${DEV_MODE:-false} # Set DEV_MODE to false (real ROV)
+    tty: true
+    container_name: eer_ros_packages
+    restart: always
+    ipc: host # Required for ros2 communication with host network
+    privileged: true # Required for access to the i2c bus
+    volumes:
+      - /dev:/dev # Allow access to the i2c bus
+      - ./ros_workspace/src/common_backend/common_backend/config:/app/src/common_backend/common_backend/config # Mount the config directory so that it persists between container restarts
+      - ./configs:/app/configs
+      - ~/.ssh/:/root/.ssh
+    networks:
+      macvlan_net:
+        ipv4_address: 192.168.137.250
+  # Frontend no longer used with waterwitch 
+  # web_frontend: 
+  #   build: ./web_frontend
+  #   container_name: web_frontend
+  #   restart: always
+  #   tty: true
+  #   ports:
+  #    - "80:80"
+
+networks:
+  macvlan_net:
+    external: true

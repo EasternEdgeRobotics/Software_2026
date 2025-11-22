@@ -1,0 +1,12 @@
+build/
+install/
+log/
+config/
+.vscode/
+imgui.ini
+.DS_Store
+configs/
+venv/
+table_image_cells/
+video_frames/
+output.mp4

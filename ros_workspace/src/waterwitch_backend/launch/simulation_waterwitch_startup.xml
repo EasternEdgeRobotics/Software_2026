@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="waterwitch_backend" exec="pilot_listener"/>
+	<node pkg="waterwitch_backend" exec="simulation_bot_control"/>
+	<node pkg="common_backend" exec="config_manager"/>
+	<node pkg="web_video_server" exec="web_video_server"/>
+</launch>

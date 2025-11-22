@@ -1,0 +1,9 @@
+#0 = load config into database
+#1 = get config from database
+uint8 state
+string camera_urls_json
+string[] camera_urls
+---
+bool success
+string camera_urls_json
+string[] camera_urls

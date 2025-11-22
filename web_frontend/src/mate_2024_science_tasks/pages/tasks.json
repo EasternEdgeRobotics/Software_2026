@@ -1,0 +1,296 @@
+{
+    "task1": { 
+        "name": "OOI: Coastal Pioneer Array",
+        "tasks": [
+        {
+            "name": "Release the multi-function node",
+            "subTasks": [
+                {
+                    "name": "Trigger the release of the multi-function node’s recovery float",
+                    "points": 10
+                },
+                {
+                    "name": "Visually determine the failed recovery float",
+                    "points": 5
+                },
+                {
+                    "name": "Pull a pin to release the failed recovery float to the surface",
+                    "points": 10
+                },
+                {
+                    "name": "Return the failed recovery float to the surface, side of the pool",
+                    "points": 5
+                },
+                {
+                    "name": "Connect a recovery line to the bale on the multi-function node for manual recovery",
+                    "points": 20
+                }
+               
+            ]
+        }
+    ]
+}, 
+    "task2":{
+        "name": "SMART cables for ocean observing",
+        "tasks":[
+          
+                    {
+                        "name": "Deploy SMART cable through three waypoints",
+                        "points": 20,
+                        "subTasks": [
+                            {
+                                "name": "Deploy SMART cable through two waypoints located on the bottom of the seafloor",
+                                "points": 10
+                            },
+                            {
+                                "name": "Deploy SMART cable through a waypoint located on top of a seamount",
+                                "points": 10
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Place the SMART repeater in the designated area",
+                        "points": 10
+                    },
+                    {
+                        "name": "Return the end of the cable to surface, side of the pool",
+                        "points": 5
+                    },
+                    {
+                        "name": "Measure the temperature to check the SMART cable sensor readings",
+                        "single": true,
+                        "subTasks": [
+                            {
+                                "name": "Within 1°C",
+                                "points": 15
+                            },
+                            {
+                                "name": "Within 2°C",
+                                "points": 5
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Connect the AUV docking station to the SMART cable repeater",
+                        "subTasks": [
+                            {
+                                "name": "Retrieve the power connector from the AUV docking station",
+                                "points": 5
+                            },
+                            {
+                                "name": "Install the power connector",
+                                "points": 15
+                            }
+                        ]
+                    }
+             
+        ]
+    },
+
+    "task3": {
+        "name": "From the Red Sea to Tennessee: Understanding ecosystems and saving species",
+        "tasks": [
+            {
+                "name": "Smart Reefs",
+                "subTasks": [
+                    {
+                        "name": "Probiotics 2",
+                        "subTasks": [
+                            {
+                                "name": "Place a probiotic irrigation system in the designated location",
+                                "points": 10
+                            },
+                            {
+                                "name": "Deploy the probiotic sprinkler on coral head",
+                                "points": 10
+                            },
+                            {
+                                "name": "Activate the irrigation system",
+                                "points": 10
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Coral Restoration",
+                        "subTasks": [
+                            {
+                                "name": "Transplant branching coral",
+                                "points": 10
+                            },
+                            {
+                                "name": "Transplant brain coral",
+                                "single": true,
+                                "subTasks": [
+                                    {
+                                        "name": "Autonomously",
+                                        "points": 30
+                                    },
+                                    {
+                                        "name": "Manually",
+                                        "points": 10
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "3D Coral Modelling",
+                        "single": true,
+                        "subTasks": [
+                            {
+                                "name": "Via photogrammetry, autonomously create a scaled 3D model of the coral restoration area",
+                                "points": 40,
+                                "subTasks": [
+                                    {
+                                        "name": "Create a 3D model of the coral restoration area",
+                                        "points": 20
+                                    },
+                                    {
+                                        "name": "Measure the length of the coral restoration area (within 5 cm)",
+                                        "points": 10
+                                    },
+                                    {
+                                        "name": "Scale the 3D model using the length of the coral restoration area",
+                                        "points": 5
+                                    },
+                                    {
+                                        "name": "Use the properly scaled 3D model to estimate the height of the coral restoration area (within 5 cm)",
+                                        "points": 5
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Manually (CAD) create a scaled 3D model of the coral restoration area",
+                                "points": 30,
+                                "subTasks": [
+                                    {
+                                        "name": "Measure the length of the coral restoration area (within 5 cm)",
+                                        "points": 10
+                                    },
+                                    {
+                                        "name": "Measure the height of the coral restoration area (within 5 cm)",
+                                        "points": 10
+                                    },
+                                    {
+                                        "name": "Create a scaled 3D model of the coral restoration area displaying the length and height measurements",
+                                        "points": 10
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Tennessee Lakes and Rivers - Determine the location of sturgeon spawning grounds",
+              "subTasks": [
+                            {
+                                "name": "Recover an acoustic receiver",
+                                "points": 10
+                            },
+                            {
+                                "name": "Determine the location of a potential spawning site",
+                                "subTasks": [
+                                    {
+                                        "name": "Create a graph of sturgeon locations from the acoustic receiver data",
+                                        "points": 15
+                                    },
+                                    {
+                                        "name": "Determine the potential spawning site",
+                                        "points": 5
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Characterize the habitat at potential spawning site",
+                                "subTasks": [
+                                    {
+                                        "name": "Place an ADCP",
+                                        "points": 10
+                                    },
+                                    {
+                                        "name": "Recover a sediment sample",
+                                        "points": 10
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+           
+    },
+
+    "task4": {
+        "name": "MATE Floats",
+        "single" :true,
+        "tasks": [
+            {
+                "name": "Design and construct an operational vertical profiling float",
+                "subTasks": [
+                    {
+                        "name": "Prior to the competition, design and construct a vertical profiling float",
+                        "points": 5
+                    },
+                    {
+                        "name": "Deploy the float into a designated area",
+                        "points": 5
+                    },
+                    {
+                        "name": "Float communicates with the mission station prior to descending",
+                        "points": 10
+                    },
+                    {
+                        "name": "Float completes up to two vertical profiles",
+                        "subTasks": [
+                            {
+                                "name": "Vertical profile 1",
+                                "subTasks": [
+                                    {
+                                        "name": "Float completes first vertical profile using a buoyancy engine",
+                                        "points": 10
+                                    },
+                                    {
+                                        "name": "Float communicates data to the mission station",
+                                        "points": 5
+                                    },
+                                    {
+                                        "name": "Data is graphed as depth over time",
+                                        "points": 10
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Vertical profile 2",
+                                "subTasks": [
+                                    {
+                                        "name": "Float completes a second vertical profile using a buoyancy engine",
+                                        "points": 10
+                                    },
+                                    {
+                                        "name": "Float communicates data to mission station",
+                                        "points": 5
+                                    },
+                                    {
+                                        "name": "Data is graphed as depth over time",
+                                        "points": 10
+                                    }
+                                ]
+                            }
+                        ]
+                    }               
+                ]
+            },
+            {
+                "name": "Company does not design and construct a vertical profiling float or float does not communicate data to the mission station",
+                "subTasks": [
+                    {
+                        "name": "MATE-provided data is used to graph depth over time",
+                        "points": 10
+                    }
+                ]
+            }
+        ]
+    }
+
+
+}

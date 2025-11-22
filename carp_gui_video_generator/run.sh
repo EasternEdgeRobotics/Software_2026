@@ -1,0 +1,2 @@
+source venv/bin/activate
+python invasive_carp_video_generator.py

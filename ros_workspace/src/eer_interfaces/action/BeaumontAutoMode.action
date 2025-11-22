@@ -1,0 +1,13 @@
+bool is_for_sim
+uint8[3] lower_hsv_bound
+uint8[3] upper_hsv_bound
+uint8 starting_power
+uint8 starting_surge
+uint8 starting_sway
+uint8 starting_heave
+uint8 starting_pitch
+uint8 starting_yaw
+---
+bool success
+---
+string status

@@ -1,0 +1,9 @@
+bool load_to_database
+# state = 0 means load config into database
+# state = 1 means get config from database
+uint8[3] lower_hsv
+uint8[3] upper_hsv
+---
+bool success
+uint8[3] lower_hsv
+uint8[3] upper_hsv
