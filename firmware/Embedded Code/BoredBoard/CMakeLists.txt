@@ -53,7 +53,15 @@ project(BoredBoard C CXX ASM)
 
 pico_sdk_init()
 
-add_executable(BoredBoard BoredBoard.c )
+# LED Pins have different positions on the Pico v.s. LapisLuzuli (tooling board) 
+if(NOT DEFINED ENV{lapisLuzuli})
+    set(ENV{lapisLuzuli} "1") # Set the default value only if not set externally
+endif()
+add_compile_definitions(LAPIS_LUZULI=$ENV{lapisLuzuli})
+
+add_executable(BoredBoard 
+            minihdlc/minihdlc.c
+            BoredBoard.c )
 
 pico_set_program_name(BoredBoard "BoredBoard")
 pico_set_program_version(BoredBoard "0.1")
@@ -72,6 +80,7 @@ target_link_libraries(BoredBoard
 target_include_directories(BoredBoard PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/..
+  ${CMAKE_CURRENT_LIST_DIR}/minihdlc
 )
 
 target_link_libraries(BoredBoard 

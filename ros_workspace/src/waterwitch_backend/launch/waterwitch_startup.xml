@@ -1,6 +1,6 @@
 <launch>
 	<node pkg="waterwitch_backend" exec="pilot_listener"/>
-	<node pkg="waterwitch_backend" exec="i2c_master"/>
+	<node pkg="waterwitch_backend" exec="uart"/>
 	<node pkg="common_backend" exec="config_manager"/>
 	<include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml"/>
 </launch>

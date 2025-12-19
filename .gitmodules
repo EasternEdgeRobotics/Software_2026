@@ -13,3 +13,6 @@
 [submodule "ros_workspace/src/waterwitch_backend/include/json"]
 	path = ros_workspace/src/waterwitch_backend/include/json
 	url = https://github.com/nlohmann/json
+[submodule "/home/zaid/Documents/Software_2026/firmware/Embedded Code/BoredBoard/minihdlc"]
+	path = /home/zaid/Documents/Software_2026/firmware/Embedded Code/BoredBoard/minihdlc
+	url = https://github.com/marcinbor85/minihdlc.git

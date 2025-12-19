@@ -25,20 +25,20 @@ add_library(waterwitch_constants STATIC ${CMAKE_CURRENT_SOURCE_DIR}/src/waterwit
 
 add_executable(pilot_listener ${CMAKE_CURRENT_SOURCE_DIR}/src/pilot_listener.cpp)
 add_executable(simulation_bot_control ${CMAKE_CURRENT_SOURCE_DIR}/src/simulation_bot_control.cpp)
-add_executable(i2c_master ${CMAKE_CURRENT_SOURCE_DIR}/src/i2c_master.cpp)
+add_executable(uart ${CMAKE_CURRENT_SOURCE_DIR}/src/uart.cpp)
 
 ament_target_dependencies(simulation_bot_control rclcpp std_msgs eer_interfaces)
 ament_target_dependencies(pilot_listener rclcpp std_msgs eer_interfaces)
-ament_target_dependencies(i2c_master rclcpp std_msgs eer_interfaces)
+ament_target_dependencies(uart rclcpp std_msgs eer_interfaces)
 
 target_link_libraries(pilot_listener "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
 target_link_libraries(simulation_bot_control "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
-target_link_libraries(i2c_master "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
+target_link_libraries(uart "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
 
 install(TARGETS
   pilot_listener
   simulation_bot_control
-  i2c_master
+  uart
   waterwitch_constants
   DESTINATION lib/${PROJECT_NAME}
 )
