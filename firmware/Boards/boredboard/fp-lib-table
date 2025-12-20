@@ -1,5 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "boredprint")(type "KiCad")(uri "${KIPRJMOD}/footprints/boardprint.pretty")(options "")(descr ""))
-  (lib (name "old")(type "KiCad")(uri "${KIPRJMOD}/old.pretty")(options "")(descr ""))
-)
