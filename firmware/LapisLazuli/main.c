@@ -75,7 +75,7 @@ void send_char(uint8_t data) {
 //          0x10 to 0x13: maps to motor number 0 to 3 in reverse direction 
 //      Byte 1: Motor speed (maps to 0% to 100% duty cycle)
 //  ConfigureCameraControl (not implemented):
-//      Byte 0: 0x14 to 0x17: maps to motor number 0 to 3 in default direction (direction pin low)
+//      Byte 0: 0x14 to 0x17: Choose which one of the motors (0 - 3) to repurpose the "camera control" motor
 //      Byte 1: 0x00 to 0x02: the camera to map to this motor (0x00 = camera 0, 0x01 = camera 1, 0x02 = none)
 //      Byte 2: Control loop period (0-255 ms)
 //      Byte 3-6: Control loop P gain (floating point)
