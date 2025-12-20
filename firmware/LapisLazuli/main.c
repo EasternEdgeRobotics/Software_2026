@@ -5,6 +5,7 @@
 #include <hardware/irq.h>
 #include <hardware/pwm.h>
 #include <hardware/clocks.h>
+#include "minihdlc/minihdlc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -95,42 +96,48 @@ void frame_received(const uint8_t *frame_buffer, uint16_t frame_length)
 
     switch (frame_buffer[0]) {
 
-        case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05:
+        case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: {
             mutex_enter_blocking(&thrusterMutex);
             thrusterLastInputTime = to_ms_since_boot(get_absolute_time());
             targetThrust[thrusterPins[frame_buffer[0]]] = frame_buffer[1]; // Will map 0-255 to 1100us-1900us in main loop
             mutex_exit(&thrusterMutex);
             break;
+        }
 
-        case 0x06: case 0x07:
+        case 0x06: case 0x07: {
             uint8_t ledPin = ledPins[frame_buffer[0]-LED_BIT_OFFSET];
             pwm_set_gpio_level(ledPin, UINT8_DUTY_CYCLE_TO_PWM_COUNT(frame_buffer[1]));
             break;
+        }
 
-        case 0x08: case 0x09: case 0x0A: case 0x0B:
+        case 0x08: case 0x09: case 0x0A: case 0x0B: {
             uint8_t servoPin = servoPins[frame_buffer[0]-SERVO_BIT_OFFSET];
             pwm_set_gpio_level(servoPin, 500+((frame_buffer[1]*2000)/255));
             break;
+        }
 
-        case 0x0C: case 0x0D: case 0x0E: case 0x0F:
+        case 0x0C: case 0x0D: case 0x0E: case 0x0F: {
             uint8_t motorPin = motorPins[frame_buffer[0]-MOTOR_BIT_OFFSET];
             pwm_set_gpio_level(motorPin, UINT8_DUTY_CYCLE_TO_PWM_COUNT(frame_buffer[1]));
             gpio_put(motorPin, 0);
             break;
+        }
 
-        case 0x10: case 0x11: case 0x12: case 0x13:
+        case 0x10: case 0x11: case 0x12: case 0x13: {
             uint8_t motorPin = motorPins[frame_buffer[0]-4-MOTOR_BIT_OFFSET];
             pwm_set_gpio_level(motorPin, UINT8_DUTY_CYCLE_TO_PWM_COUNT(frame_buffer[1]));
             gpio_put(motorPin, 1);
             break;
+        }
 
-        case 0x1A:
+        case 0x1A: {
             if (frame_length != 4) return;
             mutex_enter_blocking(&thrusterMutex);
             thrusterAcceleration = frame_buffer[1];
             thrusterTimeoutMS = (frame_buffer[3] << 8) | frame_buffer[2];
             mutex_exit(&thrusterMutex);
             break;
+        }
 
         default:
             break;
@@ -153,7 +160,7 @@ void initializeUART() {
     uart_set_irq_enables(UART_ID, true, false);
 }
 
-void initializePWMPins(uint8_t *pinArray, int arraySize, int init_value) {
+void initializePWMPins(const uint8_t *pinArray, int arraySize, int init_value) {
     for (int i = 0; i < arraySize; i++) {
         gpio_set_function(pinArray[i], GPIO_FUNC_PWM);
         pwm_set_gpio_level(pinArray[i], init_value);
