@@ -394,10 +394,12 @@ private:
         target_servo_angle[servo_index] = set_servo_angle_command[1];
         minihdlc_send_frame(set_servo_angle_command, 2);
       } else if (pilot_input->turn_servo_ccw[servo_index]) {
+        RCLCPP_INFO(this->get_logger(), "Turning Servo %d CCW", servo_index);
         set_servo_angle_command[1] = std::min<int>(target_servo_angle[servo_index] + SERVO_ANGLE_INCREMENT, 255); 
         target_servo_angle[servo_index] = set_servo_angle_command[1];
         minihdlc_send_frame(set_servo_angle_command, 2);
       } else if (pilot_input->turn_servo_cw[servo_index]) {
+        RCLCPP_INFO(this->get_logger(), "Turning Servo %d CW", servo_index);
         set_servo_angle_command[1] = std::max<int>(target_servo_angle[servo_index] - SERVO_ANGLE_INCREMENT, 0); 
         target_servo_angle[servo_index] = set_servo_angle_command[1];
         minihdlc_send_frame(set_servo_angle_command, 2);
@@ -453,10 +455,12 @@ private:
         target_precision_control_dc_motor_angle[pcdcm_index] = set_pcdm_angle_command[1];
         minihdlc_send_frame(set_pcdm_angle_command, 2);
       } else if (pilot_input->turn_servo_ccw[pcdcm_index]) {
+        RCLCPP_INFO(this->get_logger(), "Turning precision control DC motor %d CCW", pcdcm_index);
         set_pcdm_angle_command[1] = std::min<int>(target_precision_control_dc_motor_angle[pcdcm_index] + PRECISION_CONTROL_DC_MOTOR_ANGLE_INCREMENT, 255); 
         target_precision_control_dc_motor_angle[pcdcm_index] = set_pcdm_angle_command[1];
         minihdlc_send_frame(set_pcdm_angle_command, 2);
       } else if (pilot_input->turn_servo_cw[pcdcm_index]) {
+        RCLCPP_INFO(this->get_logger(), "Turning precision control DC motor %d CW", pcdcm_index);
         set_pcdm_angle_command[1] = std::max<int>(target_precision_control_dc_motor_angle[pcdcm_index] - PRECISION_CONTROL_DC_MOTOR_ANGLE_INCREMENT, 0); 
         target_precision_control_dc_motor_angle[pcdcm_index] = set_pcdm_angle_command[1];
         minihdlc_send_frame(set_pcdm_angle_command, 2);
