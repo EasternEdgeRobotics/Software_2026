@@ -102,14 +102,14 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.dim_led = dimLED;
 
             msg.set_precision_control_dc_motor_parameters = setPrecisionControlDcMotorParameters;
-            msg.precision_control_associated_dc_motor_numbers = precisionControlAssociatedDCMotorNumbers;
-            msg.precision_control_loop_period = precisionControlLoopPeriod;
-            msg.precision_control_proportional_gain = precisionControlProportionalGain;
-            msg.precision_control_integral_gain = precisionControlIntegralGain;
-            msg.precision_control_derivative_gain = precisionControlDerivativeGain;
+            msg.associated_dc_motor_number = precisionControlAssociatedDCMotorNumbers;
+            msg.control_loop_period = precisionControlLoopPeriod;
+            msg.proportional_gain = precisionControlProportionalGain;
+            msg.integral_gain = precisionControlIntegralGain;
+            msg.derivative_gain = precisionControlDerivativeGain;
 
-            msg.set_precision_control_dc_motor_angles = setPcdcmAngle;
-            msg.precision_control_dc_motor_angles = pcdcmAngles;
+            msg.set_precision_control_dc_motor_angle = setPcdcmAngle;
+            msg.precision_control_dc_motor_angle = pcdcmAngles;
             msg.turn_precision_control_dc_motor_ccw = turnPcdcmCcw;
             msg.turn_precision_control_dc_motor_cw = turnPcdcmCw;
 
