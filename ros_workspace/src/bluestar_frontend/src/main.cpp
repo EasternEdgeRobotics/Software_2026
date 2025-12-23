@@ -52,7 +52,6 @@ bool turn_servo_ccw_latch[4] = {false, false, false, false};
 bool turn_servo_cw_latch[4] = {false, false, false, false};
 bool turn_pcdcm_ccw_latch[2] = {false, false};
 bool turn_pcdcm_cw_latch[2] = {false, false};
-bool turn_dcm_reverse_latch[4] = {false, false, false, false};
 
 bool fast_mode_latch = false;
 bool invert_controls_latch = false;
@@ -502,12 +501,6 @@ int main(int argc, char **argv) {
                     else turn_servo_cw_latch[i] = true; 
                 } else {
                     turn_servo_cw_latch[i] = false;
-                }
-                if (turn_dcm_reverse[i]) {
-                    if (turn_dcm_reverse_latch[i]) turn_dcm_reverse[i] = false;
-                    else turn_dcm_reverse_latch[i] = true; 
-                } else {
-                    turn_dcm_reverse_latch[i] = false;
                 }
             }
 
