@@ -682,7 +682,9 @@ int main(int argc, char **argv) {
 
                             ImGui::Text("Thruster Acceleration");
                             ImGui::SameLine();
-                            ImGui::SliderFloat("##thruster_acceleration", &bluestar_config.thruster_acceleration, 0.1f, 1.0f, "%.05f", ImGuiSliderFlags_AlwaysClamp);
+                            int thruster_acceleration_temp = static_cast<int>(bluestar_config.thruster_acceleration);
+                            ImGui::SliderInt("##thruster_acceleration", &thruster_acceleration_temp, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+                            bluestar_config.thruster_acceleration = static_cast<uint8_t>(thruster_acceleration_temp);
                             if (ImGui::Button("Set Thruster Acceleration")) {
                                 set_thruster_acceleration = true;
                                 thruster_acceleration = static_cast<uint8_t>(bluestar_config.thruster_acceleration);
@@ -690,7 +692,9 @@ int main(int argc, char **argv) {
 
                             ImGui::Text("Set Thruster Timeout (ms)");
                             ImGui::SameLine();
-                            ImGui::SliderInt("##thruster_timeout", &bluestar_config.thruster_timeout, 0, 65535, "%d", ImGuiSliderFlags_AlwaysClamp);
+                            int thruster_timeout_temp = static_cast<int>(bluestar_config.thruster_timeout);
+                            ImGui::SliderInt("##thruster_timeout", &thruster_timeout_temp, 0, 65535, "%d", ImGuiSliderFlags_AlwaysClamp);
+                            bluestar_config.thruster_timeout = static_cast<uint16_t>(thruster_timeout_temp);
                             if (ImGui::Button("Set Thruster Timeout")) {
                                 set_thruster_timeout = true;
                                 thruster_timeout = static_cast<uint16_t>(bluestar_config.thruster_timeout);
