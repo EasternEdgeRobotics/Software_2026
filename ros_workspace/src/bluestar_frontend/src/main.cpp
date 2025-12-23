@@ -193,8 +193,8 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dim_led = {true, true};
                 if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turn_servo_cw = {true, true, true, true};
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turn_servo_ccw = {true, true, true, true};
-                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turn_pcdcm_cw = {true, true};
-                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turn_pcdcm_ccw = {true, true};
+                if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) turn_pcdcm_cw = {true, true};
+                if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) turn_pcdcm_ccw = {true, true};
                 if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) invert_controls_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) {
@@ -838,8 +838,8 @@ int main(int argc, char **argv) {
                         ImGui::Text("X - Dim All LEDs");
                         ImGui::Text("Right Arrow - Turn All Servos Clockwise");
                         ImGui::Text("Left Arrow - Turn All Servos Counter-Clockwise");
-                        ImGui::Text("Page Up - Turn All PCDCMs Clockwise");
-                        ImGui::Text("Page Down - Turn All PCDCMs Counter-Clockwise");
+                        ImGui::Text("N - Turn All PCDCMs Clockwise");
+                        ImGui::Text("M - Turn All PCDCMs Counter-Clockwise");
                         ImGui::Text("V - Toggle Fast Mode");
                         ImGui::Text("SPACE - Toggle Invert Controls");
                         ImGui::Text("O - Spin DC Motors Forward At the Preset Speeds");
