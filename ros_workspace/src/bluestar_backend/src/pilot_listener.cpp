@@ -113,6 +113,7 @@ public:
   static void initializeUART() {
 
     // Open the UART device file descriptor in read/write mode + some other flags
+    // NOTE: Ensure that the user running this program has read/write permissions to the device file (e.g., via `sudo usermod -a -G dialout $USER` and then logging out and back in)
     if ((uart_fd = open(UART_DEVICE, O_RDWR | O_NOCTTY | O_NDELAY)) < 0) {
       RCLCPP_ERROR(rclcpp::get_logger("pilot_listener"), "Failed to open the uart device");
     } else {

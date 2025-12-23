@@ -198,35 +198,35 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turn_pcdcm_ccw = {true, true};
                 if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) invert_controls_toggle = true;
-                if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) {
                     commanded_dc_motor_speeds = preset_dc_motor_speeds;
                     turn_dcm_reverse = {false, false, false, false};
                 }
-                if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
                     commanded_dc_motor_speeds = preset_dc_motor_speeds;
                     turn_dcm_reverse = {true, true, true, true};
                 }
-                if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
                     set_servo_angle = {true, true, true, true};
                     servo_angle = {bluestar_config.preset_servo_angles[0][0], bluestar_config.preset_servo_angles[1][0], bluestar_config.preset_servo_angles[2][0], bluestar_config.preset_servo_angles[3][0]}; 
                 }
-                if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
                     set_servo_angle = {true, true, true, true};
                     servo_angle = {bluestar_config.preset_servo_angles[0][1], bluestar_config.preset_servo_angles[1][1], bluestar_config.preset_servo_angles[2][1], bluestar_config.preset_servo_angles[3][1]}; 
                 }
-                if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
                     set_servo_angle = {true, true, true, true};
                     servo_angle = {bluestar_config.preset_servo_angles[0][2], bluestar_config.preset_servo_angles[1][2], bluestar_config.preset_servo_angles[2][2], bluestar_config.preset_servo_angles[3][2]}; 
                 }
-                if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) {
                     set_pcdcm_angle = {true, true};
                     pcdcm_angle = {bluestar_config.preset_precision_control_dc_motor_angles[0][0], bluestar_config.preset_precision_control_dc_motor_angles[1][0]}; 
                 }
-                if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
                     set_pcdcm_angle = {true, true};
                     pcdcm_angle = {bluestar_config.preset_precision_control_dc_motor_angles[0][1], bluestar_config.preset_precision_control_dc_motor_angles[1][1]}; 
                 }
-                if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
+                if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
                     set_pcdcm_angle = {true, true};
                     pcdcm_angle = {bluestar_config.preset_precision_control_dc_motor_angles[0][2], bluestar_config.preset_precision_control_dc_motor_angles[1][2]}; 
                 }
@@ -849,14 +849,14 @@ int main(int argc, char **argv) {
                         ImGui::Text("Page Down - Turn All PCDCMs Counter-Clockwise");
                         ImGui::Text("V - Toggle Fast Mode");
                         ImGui::Text("SPACE - Toggle Invert Controls");
-                        ImGui::Text("1 - Spin DC Motors Forward At the Preset Speeds");
-                        ImGui::Text("2 - Spin DC Motors Reverse At the Preset Speeds");
-                        ImGui::Text("4 - Use Servo Preset Angle 1 For All Servos");
-                        ImGui::Text("5 - Use Servo Preset Angle 2 For All Servos");
-                        ImGui::Text("6 - Use Servo Preset Angle 3 For All Servos");
-                        ImGui::Text("7 - Use PCDCM Preset Angle 1 For All PCDCMs");
-                        ImGui::Text("8 - Use PCDCM Preset Angle 2 For All PCDCMs");
-                        ImGui::Text("9 - Use PCDCM Preset Angle 3 For All PCDCMs");
+                        ImGui::Text("O - Spin DC Motors Forward At the Preset Speeds");
+                        ImGui::Text("P - Spin DC Motors Reverse At the Preset Speeds");
+                        ImGui::Text("5 - Use Servo Preset Angle 1 For All Servos");
+                        ImGui::Text("6 - Use Servo Preset Angle 2 For All Servos");
+                        ImGui::Text("7 - Use Servo Preset Angle 3 For All Servos");
+                        ImGui::Text("8 - Use PCDCM Preset Angle 1 For All PCDCMs");
+                        ImGui::Text("9 - Use PCDCM Preset Angle 2 For All PCDCMs");
+                        ImGui::Text("0 - Use PCDCM Preset Angle 3 For All PCDCMs");
                         
                     }
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
