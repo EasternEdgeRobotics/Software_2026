@@ -20,14 +20,6 @@ services:
     networks:
       macvlan_net:
         ipv4_address: 192.168.137.250
-  # Frontend no longer used with waterwitch 
-  # web_frontend: 
-  #   build: ./web_frontend
-  #   container_name: web_frontend
-  #   restart: always
-  #   tty: true
-  #   ports:
-  #    - "80:80"
 
 networks:
   macvlan_net:

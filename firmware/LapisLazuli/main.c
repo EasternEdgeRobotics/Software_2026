@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#define PWM_FREQ_HZ 50
-#define PWM_WRAP 20000
-#define UINT8_DUTY_CYCLE_TO_PWM_COUNT(x) (((x)*20000)/255)
+#define PWM_FREQ_HZ 80
+#define PWM_WRAP 32000
+#define UINT8_DUTY_CYCLE_TO_PWM_COUNT(x) (((x)*32000)/255)
 
-// Divide clock frequency by 1 MHz (50 * 200000)
+// Divide clock frequency by 1 MHz (80 * 32000)
 // Now, every `CLOCK_DIV` clock cycles, 1 us passes 
 #define CLOCK_DIV (clock_get_hz(clk_sys) / (PWM_FREQ_HZ * PWM_WRAP)) 
 
@@ -61,38 +61,39 @@ void send_char(uint8_t data) {
 }
 
 // FRAMING:
-//  Thrusters:
+//  SetThrust:
 //      Byte 0: 0x00 to 0x05 (maps to thruster number 0 to 5)
 //      Byte 1: Thruster speed (maps to 1100us to 1900us)
-//  Leds:
+//  SetLedBrightness:
 //      Byte 0: 0x06 or 0x07 (maps to LED 0 and 1)
 //      Byte 1: LED brightness (maps to 0% to 100% duty cycle)
-//  Servos:
+//  SetServoPosition:
 //      Byte 0: 0x08 to 0x0B (maps to servo number 0 to 3)
 //      Byte 1: Servo position (map to 500us to 2500us)
-//  Motors:
+//  SetMotorSpeed:
 //      Byte 0: 
 //          0x0C to 0x0F: maps to motor number 0 to 3 in default direction (direction pin low)
 //          0x10 to 0x13: maps to motor number 0 to 3 in reverse direction 
 //      Byte 1: Motor speed (maps to 0% to 100% duty cycle)
-//  ConfigureCameraControl (not implemented):
+//  SetPrecisionControlDCMotorParameters (not implemented):
 //      Byte 0: 0x14 to 0x17: Choose which one of the motors (0 - 3) to repurpose the "camera control" motor
-//      Byte 1: 0x00 to 0x02: the camera to map to this motor (0x00 = camera 0, 0x01 = camera 1, 0x02 = none)
-//      Byte 2: Control loop period (0-255 ms)
-//      Byte 3-6: Control loop P gain (floating point)
-//      Byte 7-10: Control loop I gain (floating point)
-//      Byte 11-14: Control loop D gain (floating point)
-//  CameraAngle (not implemented):
+//      Byte 1: Control loop period (0-255 ms)
+//      Byte 2-5: Control loop P gain (floating point)
+//      Byte 6-9: Control loop I gain (floating point)
+//      Byte 10-13: Control loop D gain (floating point)
+//  SetPrecisionControlDCMotorAngle (not implemented):
 //      Byte 0: 0x18 to 0x19: maps to camera number 0 to 1
-//      Byte 1-2: Camera angle (will map to 0 to 360 degrees)
-//  ConfigureThrusterControl:
-//      Byte 0: 0x1A   
+//      Byte 1-2: Precicion control dc motor angle (will map to 0 to 360 degrees)
+//  SetThrusterAcceleration:
+//      Byte 0: 0x1A 
 //      Byte 1: Thruster Acceleration (0-255)
-//      Byte 2 and 3: Thruster Timeout (0-65535 ms)
+//  SetThrusterTimeout:
+//      Byte 0: 0x1B
+//      Byte 1 and 2: Thruster Timeout (0-65535 ms)
 void frame_received(const uint8_t *frame_buffer, uint16_t frame_length)
 {
     // We expect all mesages to come in two bytes at the moment
-    if (frame_length != 2 && frame_length != 4) return;
+    if (frame_length != 2 && frame_length != 3) return;
 
     switch (frame_buffer[0]) {
 
@@ -118,23 +119,31 @@ void frame_received(const uint8_t *frame_buffer, uint16_t frame_length)
 
         case 0x0C: case 0x0D: case 0x0E: case 0x0F: {
             uint8_t motorPin = motorPins[frame_buffer[0]-MOTOR_BIT_OFFSET];
+            uint8_t motorDirectionPin = motorDirectionPins[frame_buffer[0]-MOTOR_BIT_OFFSET];
             pwm_set_gpio_level(motorPin, UINT8_DUTY_CYCLE_TO_PWM_COUNT(frame_buffer[1]));
-            gpio_put(motorPin, 0);
+            gpio_put(motorDirectionPin, 0);
             break;
         }
 
         case 0x10: case 0x11: case 0x12: case 0x13: {
             uint8_t motorPin = motorPins[frame_buffer[0]-4-MOTOR_BIT_OFFSET];
+            uint8_t motorDirectionPin = motorDirectionPins[frame_buffer[0]-4-MOTOR_BIT_OFFSET];
             pwm_set_gpio_level(motorPin, UINT8_DUTY_CYCLE_TO_PWM_COUNT(frame_buffer[1]));
-            gpio_put(motorPin, 1);
+            gpio_put(motorDirectionPin, 1);
             break;
         }
 
         case 0x1A: {
-            if (frame_length != 4) return;
             mutex_enter_blocking(&thrusterMutex);
             thrusterAcceleration = frame_buffer[1];
-            thrusterTimeoutMS = (frame_buffer[3] << 8) | frame_buffer[2];
+            mutex_exit(&thrusterMutex);
+            break;
+        }
+
+        case 0x1B: {
+            if (frame_length != 3) return;
+            mutex_enter_blocking(&thrusterMutex);
+            thrusterTimeoutMS = (frame_buffer[2] << 8) | frame_buffer[1];
             mutex_exit(&thrusterMutex);
             break;
         }
@@ -200,7 +209,7 @@ int main() {
         pwm_set_enabled(i, true);
     } 
 
-    // Initialize minihdlc with our send and recieve handlers
+    // Initialize minihdlc with our byte send and frame receive handlers
     minihdlc_init(send_char, frame_received);
 
     // Thruster mutex for thread safety

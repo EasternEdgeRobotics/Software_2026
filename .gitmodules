@@ -1,16 +1,24 @@
-[submodule "ros_workspace/src/waterwitch_frontend/include/json"]
-	path = ros_workspace/src/waterwitch_frontend/include/json
+[submodule "firmware/LapisLazuli/minihdlc"]
+	path = firmware/LapisLazuli/minihdlc
+	url = https://github.com/mengguang/minihdlc.git
+[submodule "firmware/LapisLazuli/pico-sdk"]
+	path = firmware/LapisLazuli/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "ros_workspace/src/bluestar_backend/include/json"]
+	path = ros_workspace/src/bluestar_backend/include/json
 	url = https://github.com/nlohmann/json
-[submodule "ros_workspace/src/waterwitch_frontend/include/imgui"]
-	path = ros_workspace/src/waterwitch_frontend/include/imgui
+[submodule "ros_workspace/src/bluestar_frontend/include/json"]
+	path = ros_workspace/src/bluestar_frontend/include/json
+	url = https://github.com/nlohmann/json
+[submodule "ros_workspace/src/bluestar_frontend/include/imgui"]
+	path = ros_workspace/src/bluestar_frontend/include/imgui
 	url = https://github.com/ocornut/imgui
-[submodule "ros_workspace/src/waterwitch_frontend/include/glfw"]
-	path = ros_workspace/src/waterwitch_frontend/include/glfw
+[submodule "ros_workspace/src/bluestar_frontend/include/glfw"]
+	path = ros_workspace/src/bluestar_frontend/include/glfw
 	url = https://github.com/glfw/glfw
-[submodule "ros_workspace/src/waterwitch_frontend/include/stb"]
-	path = ros_workspace/src/waterwitch_frontend/include/stb
+[submodule "ros_workspace/src/bluestar_frontend/include/stb"]
+	path = ros_workspace/src/bluestar_frontend/include/stb
 	url = https://github.com/nothings/stb
-[submodule "ros_workspace/src/waterwitch_backend/include/json"]
-	path = ros_workspace/src/waterwitch_backend/include/json
-	url = https://github.com/nlohmann/json
-
+[submodule "ros_workspace/src/bluestar_backend/include/minihdlc"]
+	path = ros_workspace/src/bluestar_backend/include/minihdlc
+	url = https://github.com/mengguang/minihdlc.git

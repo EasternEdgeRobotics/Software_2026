@@ -1,17 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>config_manager</name>
+ <name>bluestar_frontend</name>
   <version>0.0.0</version>
-  <description>Profiles Config manager</description>
+  <description>An ROV piloting frontend built using C++ designed to control Eastern Edge's 2026 ROV Bluestar.</description>
   <maintainer email="easternedgerobotics@gmail.com">Eastern Edge Robotics</maintainer>
   <license>MIT License</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>rclcpp</depend>
-  <depend>std_msgs</depend>
-  <depend>eer_interfaces</depend>
+  <depend>eer_interfaces</depend> 
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
