@@ -1,4 +1,4 @@
-# Thrsuter inputs and power multipliers
+# Thruster inputs and power multipliers
 int8 surge
 int8 sway
 int8 heave

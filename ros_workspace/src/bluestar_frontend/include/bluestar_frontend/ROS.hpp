@@ -31,23 +31,44 @@ class PilotInputPublisher : public rclcpp::Node {
             publisher_ = this->create_publisher<eer_interfaces::msg::PilotInput>("/pilot_input", 10);
         }
 
-        void sendInput(const Power& power,
+        void sendInput(
+        const Power& power,
         const int& surge,
         const int& sway,
         const int& heave,
         const int& yaw,
         const int& roll,
-        const bool& brightenLED,
-        const bool& dimLED,
-        const bool& turnFrontServoCw,
-        const bool& turnFrontServoCcw,
-        const bool& turnBackServoCw,
-        const bool& turnBackServoCcw,
+
         const bool& configurationMode,
-        const int& frontServoAngle,
-        const int& backServoAngle,
-        const int& configurationModeThrusterNumber,
-        const uint8_t bilge_pump_speed) {
+        const uint8_t& configurationModeThrusterNumber,
+        
+        const bool& setThrusterAcceleration,
+        const uint8_t& thrusterAcceleration,
+        const bool& setThrusterTimeout,
+        const uint16_t& thrusterTimeout,
+
+        const std::array<uint8_t, 4>& dcMotorSpeeds,
+        const std::array<bool, 4>& turnDcmReverse,
+
+        const std::array<bool, 2>& brightenLED,
+        const std::array<bool, 2>& dimLED,
+
+        const std::array<bool, 4>& setServoAngle,
+        const std::array<uint8_t, 4>& servoAngles,
+        const std::array<bool, 4>& turnServoCcw,
+        const std::array<bool, 4>& turnServoCw,
+
+        const std::array<bool, 2>& setPrecisionControlDcMotorParameters,
+        const std::array<uint8_t, 2>& precisionControlAssociatedDCMotorNumbers,
+        const std::array<uint8_t, 2>& precisionControlLoopPeriod,
+        const std::array<float, 2>& precisionControlProportionalGain,
+        const std::array<float, 2>& precisionControlIntegralGain,
+        const std::array<float, 2>& precisionControlDerivativeGain,
+
+        const std::array<bool, 2>& setPcdcmAngle,
+        const std::array<uint8_t, 2>& pcdcmAngles,
+        const std::array<bool, 2>& turnPcdcmCcw,
+        const std::array<bool, 2>& turnPcdcmCw) {
             auto msg = eer_interfaces::msg::PilotInput();
             msg.surge = surge;
             msg.sway = sway;
@@ -60,18 +81,39 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.heave_multiplier = power.heave;
             msg.roll_multiplier = power.roll;
             msg.yaw_multiplier = power.yaw;
-            //may need to remove these? not sure if leds are on the bot this year
+
+            msg.configuration_mode = configurationMode;
+            msg.configuration_mode_thruster_number = configurationModeThrusterNumber;
+
+            msg.set_thruster_acceleration = setThrusterAcceleration;
+            msg.thruster_acceleration = thrusterAcceleration;
+            msg.set_thruster_timeout = setThrusterTimeout;
+            msg.thruster_timeout = thrusterTimeout;
+
+            msg.motor_speed = dcMotorSpeeds;
+            msg.motor_direction = turnDcmReverse;
+
+            msg.set_servo_angle = setServoAngle;
+            msg.servo_angle = servoAngles;
+            msg.turn_servo_ccw = turnServoCcw;
+            msg.turn_servo_cw = turnServoCw;
+            
             msg.brighten_led = brightenLED;
             msg.dim_led = dimLED;
-            msg.turn_front_servo_cw = turnFrontServoCw;
-            msg.turn_front_servo_ccw = turnFrontServoCcw;
-            msg.turn_back_servo_cw = turnBackServoCw;
-            msg.turn_back_servo_ccw = turnBackServoCcw;
-            msg.configuration_mode = configurationMode;
-            msg.front_servo_angle = frontServoAngle;
-            msg.back_servo_angle = backServoAngle;
-            msg.configuration_mode_thruster_number = configurationModeThrusterNumber;
-            msg.bilge_pump_speed = bilge_pump_speed;
+
+            msg.set_precision_control_dc_motor_parameters = setPrecisionControlDcMotorParameters;
+            msg.precision_control_associated_dc_motor_numbers = precisionControlAssociatedDCMotorNumbers;
+            msg.precision_control_loop_period = precisionControlLoopPeriod;
+            msg.precision_control_proportional_gain = precisionControlProportionalGain;
+            msg.precision_control_integral_gain = precisionControlIntegralGain;
+            msg.precision_control_derivative_gain = precisionControlDerivativeGain;
+
+            msg.set_precision_control_dc_motor_angles = setPcdcmAngle;
+            msg.precision_control_dc_motor_angles = pcdcmAngles;
+            msg.turn_precision_control_dc_motor_ccw = turnPcdcmCcw;
+            msg.turn_precision_control_dc_motor_cw = turnPcdcmCw;
+
+
             publisher_->publish(msg);
             // ########################
             // Add more inputs to this function
