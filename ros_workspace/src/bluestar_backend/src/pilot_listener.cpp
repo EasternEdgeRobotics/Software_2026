@@ -38,7 +38,9 @@ extern "C" {
 #define SET_THRUSTER_TIMEOUT_COMMAND_ID 0x1B
 
 #define DC_MOTOR_FORWARD_DIRECTION false
-#define DC MOTOR_REVERSE_DIRECTION true
+#define DC_MOTOR_REVERSE_DIRECTION true
+
+#define LOG_TRANSMITTED_BYTES false
 
 const int8_t THRUSTER_CONFIG_MATRIX[6][6] = {
     {-1,-1, 0, 0, 0, -1}, // for star
@@ -183,6 +185,18 @@ public:
     }
   }
 
+
+
+  // Just a wrapper for logging each byte being sent via minihdlc
+  static void minihdlc_send_frame_logging_wrapper(const uint8_t *frame_buffer, uint8_t frame_length) {
+    if (LOG_TRANSMITTED_BYTES) {
+      for (uint8_t i = 0; i < frame_length; ++i) {
+        RCLCPP_INFO(rclcpp::get_logger("minihdlc"), "Sending byte: 0x%02X", frame_buffer[i]);
+      }
+    }
+    minihdlc_send_frame(frame_buffer, frame_length);
+  }
+
   // We never call this directly, minihdlc calls this when we call minihdlc_char_reciever enough times to form a frame in our receive logic
   static void frame_received(const uint8_t *frame_buffer, uint16_t frame_length)
   {
@@ -269,7 +283,7 @@ private:
         SET_THRUSTER_ACCELERATION_COMMAND_ID, 
         pilot_input->thruster_acceleration
       }; 
-      minihdlc_send_frame(set_thruster_acceleration_command, 2);
+      minihdlc_send_frame_logging_wrapper(set_thruster_acceleration_command, 2);
     }
 
     if (pilot_input->set_thruster_timeout) {
@@ -279,7 +293,7 @@ private:
         static_cast<uint8_t>(pilot_input->thruster_timeout & 0xFF), 
         static_cast<uint8_t>((pilot_input->thruster_timeout >> 8) & 0xFF)
       }; 
-      minihdlc_send_frame(set_thruster_timeout_command, 3);
+      minihdlc_send_frame_logging_wrapper(set_thruster_timeout_command, 3);
     }
 
   }
@@ -345,7 +359,7 @@ private:
           uint8_t set_thrust_command[2] = {
             static_cast<uint8_t>(SET_THRUST_COMMAND_ID + thruster_map[thruster_index]), 
             static_cast<uint8_t>(std::round((target_thrust_values[thruster_index] + 1.0f) * 127.5f))}; 
-          minihdlc_send_frame(set_thrust_command, 2);
+          minihdlc_send_frame_logging_wrapper(set_thrust_command, 2);
         }
       }
     }; 
@@ -373,11 +387,11 @@ private:
 
       if (pilot_input->brighten_led[led_index]) {
         set_led_brightness_command[1] = std::min<int>(led_brightness[led_index] + LED_BRIGHTNESS_INCREMENT, 255); // Prevent wraparound
-        minihdlc_send_frame(set_led_brightness_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_led_brightness_command, 2);
         led_brightness[led_index] = set_led_brightness_command[1];
       } else if (pilot_input->dim_led[led_index]) {
         set_led_brightness_command[1] = std::max<int>(led_brightness[led_index] - LED_BRIGHTNESS_INCREMENT, 0);
-        minihdlc_send_frame(set_led_brightness_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_led_brightness_command, 2);
         led_brightness[led_index] = set_led_brightness_command[1];
       } 
     } 
@@ -392,17 +406,15 @@ private:
       if (pilot_input->set_servo_angle[servo_index]) {
         set_servo_angle_command[1] = pilot_input->servo_angle[servo_index];
         target_servo_angle[servo_index] = set_servo_angle_command[1];
-        minihdlc_send_frame(set_servo_angle_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_servo_angle_command, 2);
       } else if (pilot_input->turn_servo_ccw[servo_index]) {
-        RCLCPP_INFO(this->get_logger(), "Turning Servo %d CCW", servo_index);
         set_servo_angle_command[1] = std::min<int>(target_servo_angle[servo_index] + SERVO_ANGLE_INCREMENT, 255); 
         target_servo_angle[servo_index] = set_servo_angle_command[1];
-        minihdlc_send_frame(set_servo_angle_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_servo_angle_command, 2);
       } else if (pilot_input->turn_servo_cw[servo_index]) {
-        RCLCPP_INFO(this->get_logger(), "Turning Servo %d CW", servo_index);
         set_servo_angle_command[1] = std::max<int>(target_servo_angle[servo_index] - SERVO_ANGLE_INCREMENT, 0); 
         target_servo_angle[servo_index] = set_servo_angle_command[1];
-        minihdlc_send_frame(set_servo_angle_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_servo_angle_command, 2);
       }
     } 
   }
@@ -414,13 +426,13 @@ private:
           static_cast<uint8_t>(SET_MOTOR_SPEED_COMMAND_ID + dc_motor_index), 
           pilot_input->motor_speed[dc_motor_index] 
         }; 
-        minihdlc_send_frame(set_dc_motor_speed_and_direction_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_dc_motor_speed_and_direction_command, 2);
       } else {        
         uint8_t set_dc_motor_speed_and_direction_command[2] = {
           static_cast<uint8_t>(SET_MOTOR_SPEED_REVERSE_COMMAND_ID + dc_motor_index), 
           pilot_input->motor_speed[dc_motor_index] 
         }; 
-        minihdlc_send_frame(set_dc_motor_speed_and_direction_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_dc_motor_speed_and_direction_command, 2);
       }
     }  
   }
@@ -439,7 +451,7 @@ private:
         std::memcpy(&configure_precision_control_dc_motor_command[2], pilot_input->proportional_gain.data(), 4);
         std::memcpy(&configure_precision_control_dc_motor_command[6], pilot_input->integral_gain.data(), 4);
         std::memcpy(&configure_precision_control_dc_motor_command[10], pilot_input->derivative_gain.data(), 4);
-        minihdlc_send_frame(configure_precision_control_dc_motor_command, 14);
+        minihdlc_send_frame_logging_wrapper(configure_precision_control_dc_motor_command, 14);
       }
     }
   }
@@ -453,17 +465,15 @@ private:
       if (pilot_input->set_precision_control_dc_motor_parameters[pcdcm_index]) {
         set_pcdm_angle_command[1] = pilot_input->precision_control_dc_motor_angle[pcdcm_index];
         target_precision_control_dc_motor_angle[pcdcm_index] = set_pcdm_angle_command[1];
-        minihdlc_send_frame(set_pcdm_angle_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_pcdm_angle_command, 2);
       } else if (pilot_input->turn_servo_ccw[pcdcm_index]) {
-        RCLCPP_INFO(this->get_logger(), "Turning precision control DC motor %d CCW", pcdcm_index);
         set_pcdm_angle_command[1] = std::min<int>(target_precision_control_dc_motor_angle[pcdcm_index] + PRECISION_CONTROL_DC_MOTOR_ANGLE_INCREMENT, 255); 
         target_precision_control_dc_motor_angle[pcdcm_index] = set_pcdm_angle_command[1];
-        minihdlc_send_frame(set_pcdm_angle_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_pcdm_angle_command, 2);
       } else if (pilot_input->turn_servo_cw[pcdcm_index]) {
-        RCLCPP_INFO(this->get_logger(), "Turning precision control DC motor %d CW", pcdcm_index);
         set_pcdm_angle_command[1] = std::max<int>(target_precision_control_dc_motor_angle[pcdcm_index] - PRECISION_CONTROL_DC_MOTOR_ANGLE_INCREMENT, 0); 
         target_precision_control_dc_motor_angle[pcdcm_index] = set_pcdm_angle_command[1];
-        minihdlc_send_frame(set_pcdm_angle_command, 2);
+        minihdlc_send_frame_logging_wrapper(set_pcdm_angle_command, 2);
       }
     } 
   }
