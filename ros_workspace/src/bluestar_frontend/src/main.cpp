@@ -719,22 +719,28 @@ int main(int argc, char **argv) {
                                     for (size_t j = 0; j < std::size(bluestar_config.preset_servo_angles[i]); ++j) {
                                         ImGui::Text("Servo %ld Preset Angle %ld", i + 1, j + 1);
                                         ImGui::SameLine();
-                                        ImGui::SliderInt(
+                                        int temp_angle = static_cast<int>(bluestar_config.preset_servo_angles[i][j]);
+                                        if (ImGui::SliderInt(
                                             (std::string("##servo_") + std::to_string(i + 1) + std::string("_preset_angle_") + std::to_string(j + 1)).c_str(),
-                                            &bluestar_config.preset_servo_angles[i][j],
+                                            &temp_angle,
                                             0, 255, "%d", ImGuiSliderFlags_AlwaysClamp
-                                        );
+                                        )) {
+                                            bluestar_config.preset_servo_angles[i][j] = static_cast<uint8_t>(temp_angle);
+                                        }
                                     }
                                 }
                                 for (size_t i = 0; i < std::size(bluestar_config.preset_precision_control_dc_motor_angles); ++i) {
                                     for (size_t j = 0; j < std::size(bluestar_config.preset_precision_control_dc_motor_angles[i]); ++j) {
                                         ImGui::Text("PCDCM %ld Preset Angle %ld", i + 1, j + 1);
                                         ImGui::SameLine();
-                                        ImGui::SliderInt(
+                                        int temp_pcdcm_angle = static_cast<int>(bluestar_config.preset_precision_control_dc_motor_angles[i][j]);
+                                        if (ImGui::SliderInt(
                                             (std::string("##pcdcm_") + std::to_string(i + 1) + std::string("_preset_angle_") + std::to_string(j + 1)).c_str(),
-                                            &bluestar_config.preset_precision_control_dc_motor_angles[i][j],
+                                            &temp_pcdcm_angle,
                                             0, 255, "%d", ImGuiSliderFlags_AlwaysClamp
-                                        );
+                                        )) {
+                                            bluestar_config.preset_precision_control_dc_motor_angles[i][j] = static_cast<uint8_t>(temp_pcdcm_angle);
+                                        }
                                     }
                                 }
                                 ImGui::TreePop();
@@ -745,11 +751,14 @@ int main(int argc, char **argv) {
                             for (size_t i = 0; i < preset_dc_motor_speeds.size(); ++i) {
                                 ImGui::Text("DC Motor %ld Preset Speed", i + 1);
                                 ImGui::SameLine();
-                                ImGui::SliderInt(
+                                int temp_speed = static_cast<int>(preset_dc_motor_speeds[i]);
+                                if (ImGui::SliderInt(
                                     (std::string("##dcm_") + std::to_string(i + 1) + std::string("_preset_speed")).c_str(),
-                                    &preset_dc_motor_speeds[i],
+                                    &temp_speed,
                                     0, 255, "%d", ImGuiSliderFlags_AlwaysClamp
-                                );
+                                )) {
+                                    preset_dc_motor_speeds[i] = static_cast<uint8_t>(temp_speed);
+                                }
                             }
                             ImGui::TreePop();
                         }
@@ -759,25 +768,52 @@ int main(int argc, char **argv) {
                             for (size_t i = 0; i < precision_control_associated_dc_motor_numbers.size(); ++i) {
                                 ImGui::Text("Motor %ld", i + 1);
                                 ImGui::SameLine();
-                                ImGui::SliderInt(
+                                int temp_motor_number = static_cast<int>(precision_control_associated_dc_motor_numbers[i]);
+                                if (ImGui::SliderInt(
                                     (std::string("##pcdcm_") + std::to_string(i + 1) + std::string("_associated_dc_motor_number")).c_str(), 
-                                    &precision_control_associated_dc_motor_numbers[i],
+                                    &temp_motor_number,
                                     0, 3, "%d", ImGuiSliderFlags_AlwaysClamp
-                                );
+                                )) {
+                                    precision_control_associated_dc_motor_numbers[i] = static_cast<uint8_t>(temp_motor_number);
+                                }
                             }
                             // TODO: Handle setting two motors to the same PCDCM number
                             ImGui::Text("Precision Control Loop Period (ms)");
-                            ImGui::SameLine();
-                            ImGui::SliderInt("##precision_control_loop_period", &precision_control_loop_period, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+                            for (size_t i = 0; i < precision_control_loop_period.size(); ++i) {
+                                ImGui::SameLine();
+                                int temp_period = static_cast<int>(precision_control_loop_period[i]);
+                                if (ImGui::SliderInt(
+                                    (std::string("##precision_control_loop_period_") + std::to_string(i+1)).c_str(),
+                                    &temp_period,
+                                    0, 255, "%d", ImGuiSliderFlags_AlwaysClamp
+                                )) {
+                                    precision_control_loop_period[i] = static_cast<uint8_t>(temp_period);
+                                }
+                            }
                             ImGui::Text("Precision Control Proportional Gain");
-                            ImGui::SameLine();
-                            ImGui::SliderFloat("##precision_control_proportional_gain", &precision_control_proportional_gain, 0.0f, 10.0f, "%.03f", ImGuiSliderFlags_AlwaysClamp);
+                            for (size_t i = 0; i < precision_control_proportional_gain.size(); ++i) {
+                                ImGui::SameLine();
+                                ImGui::SliderFloat(
+                                    (std::string("##precision_control_proportional_gain_") + std::to_string(i+1)).c_str(),
+                                    &precision_control_proportional_gain[i], 0.0f, 10.0f, "%.03f", ImGuiSliderFlags_AlwaysClamp
+                                );
+                            }
                             ImGui::Text("Precision Control Integral Gain");
-                            ImGui::SameLine();
-                            ImGui::SliderFloat("##precision_control_integral_gain", &precision_control_integral_gain, 0.0f, 10.0f, "%.03f", ImGuiSliderFlags_AlwaysClamp);
+                            for (size_t i = 0; i < precision_control_integral_gain.size(); ++i) {
+                                ImGui::SameLine();
+                                ImGui::SliderFloat(
+                                    (std::string("##precision_control_integral_gain_") + std::to_string(i+1)).c_str(),
+                                    &precision_control_integral_gain[i], 0.0f, 10.0f, "%.03f", ImGuiSliderFlags_AlwaysClamp
+                                );
+                            }
                             ImGui::Text("Precision Control Derivative Gain");
-                            ImGui::SameLine();
-                            ImGui::SliderFloat("##precision_control_derivative_gain", &precision_control_derivative_gain, 0.0f, 10.0f, "%.03f", ImGuiSliderFlags_AlwaysClamp);
+                            for (size_t i = 0; i < precision_control_derivative_gain.size(); ++i) {
+                                ImGui::SameLine();
+                                ImGui::SliderFloat(
+                                    (std::string("##precision_control_derivative_gain_") + std::to_string(i+1)).c_str(),
+                                    &precision_control_derivative_gain[i], 0.0f, 10.0f, "%.03f", ImGuiSliderFlags_AlwaysClamp
+                                );
+                            }
                             ImGui::TreePop();
                         }
 
