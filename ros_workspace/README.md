@@ -8,22 +8,20 @@ This README.md details how to setup the ROS Worksapce.
 
 2. Install [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Releases/Release-Jazzy-Jalisco.html)
 
-3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2025/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies.
+3. Install necessary dependencies for our ROS2 workspace. You can look through the [Dockerfile](./Dockerfile) for the list of dependancies.
 
-4. Run `colcon build` in `Software_2025/ros_workspace`
+4. Run `colcon build` in `ros_workspace`
 
-5. Source the workspace by running `source setup.bash` in `Software_2025/ros_workspace/install`
+5. Source the workspace by running `source /opt/ros/jazzy/setup.bash` and `ros_workspace/install/setup.bash`
 
 
 You can choose the backend launch file to run based on the ROV (ex. Waterwitch or Beaumont) and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
 ```
-ros2 launch <backend package (ex. beaumont_backend)> <launch file <ex. simulation_beaumont_startup>>
+ros2 launch <package name> <launch file>
 ```
-If the launch file run starts an instance of ROSBridge Server, you can control the ROV using the [Web Frontend](../web_frontend/)
-
-If you are using Waterwitch, you can also run our Waterwitch Frontend 
+or
 ```
-ros2 run waterwitch_frontend waterwitch_frontend
+ros2 run <package name> <ros2 node>
 ```
 
 If you make changes and would like to recompile, restart from step 4.
@@ -32,18 +30,19 @@ If you make changes and would like to recompile, restart from step 4.
 
 1. Install [Docker](https://www.docker.com/) and ensure you can use `docker compose`
  
-2. Run the following within a terminal in `Software_2025/`.
+2. Run the following in the root of the repository
 ```
-sudo docker compose -f dev_compose.yaml up 
+docker compose up 
 ```
-
-Note that `compose.yaml` is intended to run on the real ROVs' onboard Raspberry Pi computers and gives them access to the i2c bus for board communication. `dev_compose.yaml` runs the same code, but for interfacing with our [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim). 
-
-You should now have two docker containers, `web_frontend` and `eer_ros_packages`. 
-
-You can type "localhost" in your browser to view the web frontend or type `sudo docker exec -it eer_ros_packages bash` in a terminal to interact with our ROS2 nodes.
 
 If you make changes and would like to recompile:
 ```
-sudo docker compose -f dev_compose.yaml up ---build <web_frontend and/or eer_ros_packages>
+docker compose up ---build 
 ```
+## Simulation Environment
+
+EER has a [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim) that was integrated with the [2025 Software](https://github.com/EasternEdgeRobotics/Software_2025). 
+
+Porting this simulation environment requires:
+- Creating plugins and an associated ROV model in the [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim) to mimic Bluestar.
+- Writing a replacement for [pilot_listener.cpp](./src/bluestar_backend/src/pilot_listener.cpp) that does the same thing but publishes to Gazebo simulation topics instead of UART.

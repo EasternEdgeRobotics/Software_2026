@@ -4,18 +4,15 @@ services:
     build:
       context: ./ros_workspace
       dockerfile: Dockerfile
-      args:
-        - ROV_NAME=${ROV_NAME:-waterwitch} # Specify the name of the ROV
-        - DEV_MODE=${DEV_MODE:-false} # Set DEV_MODE to false (real ROV)
     tty: true
     container_name: eer_ros_packages
     restart: always
     ipc: host # Required for ros2 communication with host network
-    privileged: true # Required for access to the i2c bus
+    privileged: true # Required for access to the USB-to-Serial adapter for UART
     volumes:
-      - /dev:/dev # Allow access to the i2c bus
+      - /dev:/dev # Required for access to the USB-to-Serial adapter for UART (ttyUSB0)
       - ./ros_workspace/src/common_backend/common_backend/config:/app/src/common_backend/common_backend/config # Mount the config directory so that it persists between container restarts
-      - ./configs:/app/configs
+      - ./configs:/app/configs 
       - ~/.ssh/:/root/.ssh
     networks:
       macvlan_net:
