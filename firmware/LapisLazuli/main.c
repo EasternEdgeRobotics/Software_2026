@@ -44,7 +44,7 @@ const uint8_t servoPins[4] = {6, 7, 8, 9};
 
 const uint8_t motorPins[4] = {10, 11, 12, 13};
 const uint8_t motorDirectionPins[4] = {26, 27, 28, 29};
-#define MOTOR_BIT_OFFSET 0x0D
+#define MOTOR_BIT_OFFSET 0x0C
 
 uint64_t thrusterLastInputTime = 0;
 

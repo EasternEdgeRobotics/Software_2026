@@ -338,15 +338,15 @@ private:
 
         // Clamp the thrust value between -1.0 and 1.0 
         target_thrust_values[thruster_index] = std::max(-1.0f, std::min(thrust_value, 1.0f));
+      }
 
-        // Send thrust value to ROV 
-        {
-          std::lock_guard<std::mutex> lock(this->uart_write_mutex);
-          uint8_t set_thrust_command[2] = {
-            static_cast<uint8_t>(SET_THRUST_COMMAND_ID + thruster_map[thruster_index]), 
-            static_cast<uint8_t>(std::round((target_thrust_values[thruster_index] + 1.0f) * 127.5f))}; 
-          minihdlc_send_frame(set_thrust_command, 2);
-        }
+      // Send thrust value to ROV 
+      {
+        std::lock_guard<std::mutex> lock(this->uart_write_mutex);
+        uint8_t set_thrust_command[2] = {
+          static_cast<uint8_t>(SET_THRUST_COMMAND_ID + thruster_map[thruster_index]), 
+          static_cast<uint8_t>(std::round((target_thrust_values[thruster_index] + 1.0f) * 127.5f))}; 
+        minihdlc_send_frame(set_thrust_command, 2);
       }
     }; 
 
