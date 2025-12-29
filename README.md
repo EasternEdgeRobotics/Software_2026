@@ -1,4 +1,4 @@
-# Software_2025
+# Software_2026
 
 [Eastern Edge Robotics](https://www.easternedgerobotics.com/) (EER) is a student-led engineering design team based at the Memorial University of Newfoundland and the Fisheries and Marine Institute. The team competes in the annual MATE ROV Competition. Every year at EER, we build a small remotely-operated vehicle (ROV). This repository is EER's 2026 software package.
 
@@ -33,4 +33,7 @@ More details [here](./firmware/).
 
 PCB schematics can be found in the [Electrical_2026 Repository](https://github.com/EasternEdgeRobotics/Electrical_2026).
 
+### Agentic AI Tools
+
+Agentic AI tools, such as the Github Copilot Extension, should automatically use the [copilot-instructions.md](./.github/copilot-instructions.md) file for context. This file contains useful technical information for onboarding in natural language.
 

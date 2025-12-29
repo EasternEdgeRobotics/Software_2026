@@ -30,6 +30,7 @@ include_directories(
   include/imgui
   include/imgui/backends
   include/bluestar_frontend
+  include
   include/stb
 )
 
@@ -43,7 +44,25 @@ set(IMGUI_SOURCES
     include/imgui/backends/imgui_impl_opengl3.cpp
 )
 
-add_executable(bluestar_frontend src/main.cpp ${IMGUI_SOURCES})
+# Core library (reusable by autonomy node)
+set(CORE_SOURCES
+    src/core/ConfigLoader.cpp
+    src/core/ROS.cpp
+)
+
+# GUI library (frontend-specific)
+set(GUI_SOURCES
+    src/gui/InputManager.cpp
+    src/gui/UIRenderer.cpp
+)
+
+# New modular executable
+add_executable(bluestar_frontend 
+    src/frontend_node.cpp 
+    ${CORE_SOURCES}
+    ${GUI_SOURCES}
+    ${IMGUI_SOURCES}
+)
 
 target_link_libraries(bluestar_frontend 
     ${OPENGL_LIBRARIES} 

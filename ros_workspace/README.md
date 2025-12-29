@@ -2,7 +2,21 @@
 
 This README.md details how to setup the ROS Worksapce.
 
-## Compiling directly
+## Using Docker Compose (QUICKSTART)
+
+1. Install [Docker](https://www.docker.com/) and ensure you can use `docker compose`
+ 
+2. Run `docker compose -f compose.dev.yaml up` the root of the repository (include `--build` after making changes)
+
+### Viewing the Frontend
+
+The frontend should now be running inside the `bluestar_frontend` Docker container using a virtual framebuffer. To view and interact with the frontend, use a VNC viewer like noVNC.
+
+1. Clone the [noVNC](https://github.com/novnc/noVNC.git) repository
+2. Run `./noVNC/utils/novnc_proxy --vnc localhost:5900`
+
+
+## Compiling Directly (Production)
 
 1. Ensure that you are running Ubuntu 24.04 (Noble Numbat) on your computer or in a virtualized environment
 
@@ -14,35 +28,27 @@ This README.md details how to setup the ROS Worksapce.
 
 5. Source the workspace by running `source /opt/ros/jazzy/setup.bash` and `ros_workspace/install/setup.bash`
 
+6. Run `ros2 launch bluestar_frontend bluestar_frontend.xml`
 
-You can choose the backend launch file to run based on the ROV (ex. Waterwitch or Beaumont) and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
-```
-ros2 launch <package name> <launch file>
-```
-or
-```
-ros2 run <package name> <ros2 node>
-```
+7. Run `ros2 launch bluestar_backend bluestar_backend.xml`
 
 If you make changes and would like to recompile, restart from step 4.
 
-## Setting up on Docker
+## VSCode Dev Container (Development)
 
-1. Install [Docker](https://www.docker.com/) and ensure you can use `docker compose`
- 
-2. Run the following in the root of the repository
-```
-docker compose up 
-```
+1. Install the [VSCode Dev Container Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Open `ros_workspace` directly in vscode and use the Dev Container extension to re-open the workspace in a devcontainer based on the configuration in `.devcontainer/devcontainer.json`
 
-If you make changes and would like to recompile:
-```
-docker compose up ---build 
-```
-## Simulation Environment
+This devcontainer is useful for development and testing without installing any dependencies on your local machine.
+
+#### Simulation Environment (TODO)
 
 EER has a [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim) that was integrated with the [2025 Software](https://github.com/EasternEdgeRobotics/Software_2025). 
 
 Porting this simulation environment requires:
 - Creating plugins and an associated ROV model in the [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim) to mimic Bluestar.
 - Writing a replacement for [pilot_listener.cpp](./src/bluestar_backend/src/pilot_listener.cpp) that does the same thing but publishes to Gazebo simulation topics instead of UART.
+
+#### Autonomy (TODO)
+
+The frontend has been seperated into core and gui components. Core components are meant to be reused for any autonomy ROS node. 
