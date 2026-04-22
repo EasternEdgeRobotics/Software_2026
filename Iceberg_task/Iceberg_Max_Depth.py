@@ -2,11 +2,12 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from math import sqrt
 
 
 def main():
     #open default camera
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     #check if opened
     if not cap.isOpened():
@@ -14,8 +15,8 @@ def main():
         return
 
     #Resolution
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     while True:
         # Capture frame-by-frame
@@ -33,7 +34,7 @@ def main():
             break
         
         #Renaming variable
-        img = frame
+        img = frame[:]
         #Convert to Grayscale
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
@@ -45,7 +46,7 @@ def main():
         #)
 
         #Gaussian attempt, uses blur before threshold to remove sharp edges
-        blur = cv2.GaussianBlur(gray,(5,5),2)
+        blur = cv2.GaussianBlur(gray,(3,3),2)
         ret,thresh = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         
         #find contours (Edges) of each object
@@ -62,7 +63,7 @@ def main():
             #draw bounding box
             x,y,w,h = cv2.boundingRect(cnt)
             #Specific constant used for measuring the height relative to length
-            heightrate = 55/w
+            heightrate = 60/w
             #used constant to calculate height (Assumption that the width and height
             #are both visible at once)
             adjusted_h = round(h*heightrate,1)
@@ -90,8 +91,53 @@ def main():
                          #   1,(0,0,255),2)
         #Show modified image
         cv2.imshow("image",img)
+
+    clicked_points = []
+    def points(event,x,y,flags,param):
+        clicked_points = param
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if len(clicked_points) == 4:
+                clicked_points = []
+            cv2.circle(img2,(x,y),2,(255,255,0),-1)
+            clicked_points.append((x,y))
+            print(f"Point added: ({x}, {y})")
+    def line_distance(p1,p2):
+        x_dif = p2[0]-p1[0]
+        y_dif = p2[1]-p1[1]
+        distance = sqrt(x_dif**2 + y_dif**2)
+        #print(distance,p1,p2)
+        return distance
+    
+    cv2.setMouseCallback('image', points,param = clicked_points)
+    ret, frame = cap.read()
+    #Nothing was returned
+    if not ret:
+            print("Error: Failed to capture frame.")
+            
+    while True:
+        img2 = frame[:]
+
+        cv2.imshow("image", img2 )
+        if len(clicked_points) > 1:
+            cv2.line(img2, clicked_points[0], clicked_points[1],(255,0,0),3)
+        if len(clicked_points) == 4:
+            cv2.line(img2, clicked_points[2], clicked_points[3],(0,0,255),3)
+            width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
+            height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
+            
+            rwidth = 60
+            rheight = rwidth/width_pxdistance*height_pxdistance
+            rheight = round(rheight,2)
         
+            cv2.putText(img2,f"{rwidth}cm",clicked_points[0],cv2.FONT_HERSHEY_SIMPLEX,
+                                1,(0,0,255),2)
+            cv2.putText(img2,f"{rheight}cm",clicked_points[3],cv2.FONT_HERSHEY_SIMPLEX,
+                                1,(0,0,255),2)
+            cv2.imshow("image", img2 )
         
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
     #End video feed
     cap.release()
     #destroy window
