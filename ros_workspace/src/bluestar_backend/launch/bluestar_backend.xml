@@ -1,3 +1,0 @@
-<launch>
-	<node pkg="bluestar_backend" exec="pilot_listener"/>
-</launch>

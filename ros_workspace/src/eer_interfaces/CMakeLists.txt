@@ -16,6 +16,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"srv/Cameras.srv" 
 	"msg/PilotInput.msg" 
 	"msg/SaveConfig.msg" 
+	"msg/BlueStarControl.msg" 
+	"srv/HSVColours.srv" 
 )
 ament_export_dependencies(rosidl_default_runtime)
 

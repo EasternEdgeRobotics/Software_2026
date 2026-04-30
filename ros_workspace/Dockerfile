@@ -1,57 +1,30 @@
 FROM ros:jazzy-ros-base-noble
 
-SHELL ["/bin/bash", "-c"]
+# Specify ROV name
+ARG ROV_NAME=bluestar
 
-# Base dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    ros-jazzy-rosbridge-server \
-    ros-jazzy-web-video-server \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    dos2unix \
-    # OpenGL/GLFW dependencies for bluestar_frontend
-    libglfw3 \
-    libglfw3-dev \
-    libglew-dev \
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \
-    mesa-utils \
-    libxkbcommon-dev \
-    # OpenCV
-    libopencv-dev \
-    # X11 and VNC for GUI in container
-    xvfb \
-    x11vnc \
-    xterm \
-    openbox \
-    libx11-dev \
-    libxrandr-dev \
-    libxinerama-dev \
-    libxcursor-dev \
-    libxi-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Specify whether this is being built for sim (1) or real ROV (0)
+ARG DEV_MODE=false
 
-# VNC configuration
-ENV DISPLAY=:99
-ENV VNC_PORT=5900
-ENV VNC_RESOLUTION=1280x720x24
+ENV ROV_NAME=${ROV_NAME}
+ENV DEV_MODE=${DEV_MODE}
+
+RUN if [ "$DEV_MODE" = "false" ]; then \
+    # For real ROV (compiles on Raspberry Pi)
+    apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ros-jazzy-web-video-server ffmpeg libsm6 libxext6 dos2unix libglfw3 libglfw3-dev i2c-tools python3-sqlalchemy python3-opencv python3-smbus2 python3-rpi.gpio; \
+else \
+    # For development (to interface with Simulator)
+    apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ros-jazzy-web-video-server ffmpeg libsm6 libxext6 dos2unix libglfw3 libglfw3-dev && \
+    apt install -y python3-sqlalchemy python3-opencv; \
+fi
 
 WORKDIR /app
 COPY src /app/src
-
-COPY docker_backend_entry_script.sh /app/docker_backend_entry_script.sh
-RUN chmod +x /app/docker_backend_entry_script.sh
-
-COPY docker_frontend_entry_script.sh /app/docker_frontend_entry_script.sh
-RUN chmod +x /app/docker_frontend_entry_script.sh
+COPY docker_entry_script.sh /app
 
 ARG CACHEBUST=1
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --packages-skip bluestar_frontend_frontend
+RUN echo 'source /app/install/setup.bash $ROV_NAME $DEV_MODE' >> /etc/bash.bashrc
+RUN dos2unix /app/docker_entry_script.sh
 
-# Build all ROS packages
-RUN . /opt/ros/jazzy/setup.sh && colcon build
-
-RUN echo 'source /opt/ros/jazzy/setup.bash' >> /etc/bash.bashrc 
-RUN echo 'source /app/install/setup.bash' >> /etc/bash.bashrc
+ENTRYPOINT bash /app/docker_entry_script.sh "$ROV_NAME" "$DEV_MODE"

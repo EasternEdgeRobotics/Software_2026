@@ -2,53 +2,48 @@
 
 This README.md details how to setup the ROS Worksapce.
 
-## Using Docker Compose (QUICKSTART)
-
-1. Install [Docker](https://www.docker.com/) and ensure you can use `docker compose`
- 
-2. Run `docker compose -f compose.dev.yaml up` the root of the repository (include `--build` after making changes)
-
-### Viewing the Frontend
-
-The frontend should now be running inside the `bluestar_frontend` Docker container using a virtual framebuffer. To view and interact with the frontend, use a VNC viewer like noVNC.
-
-1. Clone the [noVNC](https://github.com/novnc/noVNC.git) repository
-2. Run `./noVNC/utils/novnc_proxy --vnc localhost:5900`
-
-
-## Compiling Directly (Production)
+## Compiling directly
 
 1. Ensure that you are running Ubuntu 24.04 (Noble Numbat) on your computer or in a virtualized environment
 
 2. Install [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Releases/Release-Jazzy-Jalisco.html)
 
-3. Install necessary dependencies for our ROS2 workspace. You can look through the [Dockerfile](./Dockerfile) for the list of dependancies.
+3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2025/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies.
 
-4. Run `colcon build` in `ros_workspace`
+4. Run `colcon build` in `Software_2025/ros_workspace`
 
-5. Source the workspace by running `source /opt/ros/jazzy/setup.bash` and `ros_workspace/install/setup.bash`
+5. Source the workspace by running `source setup.bash` in `Software_2028/ros_workspace/install`
 
-6. Run `ros2 launch bluestar_frontend bluestar_frontend.xml`
 
-7. Run `ros2 launch bluestar_backend bluestar_backend.xml`
+You can choose the backend launch file to run based on the ROV and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
+```
+ros2 launch <backend package (ex. bluestar_backend)> <launch file <ex. simulation_beaumont_startup>>
+```
+If the launch file run starts an instance of ROSBridge Server, you can control the ROV using the [Web Frontend](../web_frontend/)
+
+If you are using BlueStar, you can also run our the BlueStar Frontend 
+```
+ros2 run bluestarfrontend bluestar_frontend
+```
 
 If you make changes and would like to recompile, restart from step 4.
 
-## VSCode Dev Container (Development)
+## Setting up on Docker
 
-1. Install the [VSCode Dev Container Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. Open `ros_workspace` directly in vscode and use the Dev Container extension to re-open the workspace in a devcontainer based on the configuration in `.devcontainer/devcontainer.json`
+1. Install [Docker](https://www.docker.com/) and ensure you can use `docker compose`
+ 
+2. Run the following within a terminal in `Software_2025/`.
+```
+sudo docker compose -f dev_compose.yaml up 
+```
 
-This devcontainer is useful for development and testing without installing any dependencies on your local machine.
+Note that `compose.yaml` is intended to run on the real ROVs' onboard Raspberry Pi computers and gives them access to the i2c bus for board communication. `dev_compose.yaml` runs the same code, but for interfacing with our [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim). 
 
-#### Simulation Environment (TODO)
+You should now have two docker containers, `web_frontend` and `eer_ros_packages`. 
 
-EER has a [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim) that was integrated with the [2025 Software](https://github.com/EasternEdgeRobotics/Software_2025). 
+You can type "localhost" in your browser to view the web frontend or type `sudo docker exec -it eer_ros_packages bash` in a terminal to interact with our ROS2 nodes.
 
-Porting this simulation environment requires:
-- Creating plugins and an associated ROV model in the [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim) to mimic Bluestar.
-- Writing a replacement for [pilot_listener.cpp](./src/bluestar_backend/src/pilot_listener.cpp) that does the same thing but publishes to Gazebo simulation topics instead of UART.
-
-#### Autonomy (TODO)
-
-The frontend has been seperated into core and gui components. Core components are meant to be reused for any autonomy ROS node. 
+If you make changes and would like to recompile:
+```
+sudo docker compose -f dev_compose.yaml up ---build <web_frontend and/or eer_ros_packages>
+```

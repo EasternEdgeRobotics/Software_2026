@@ -3,7 +3,7 @@
 <package format="3">
   <name>bluestar_backend</name>
   <version>0.0.0</version>
-  <description>Backend code for interfacing with the ROV named Bluestar.</description>
+  <description>Backend code for interfacing with the ROV named BlueStar.</description>
   <maintainer email="easternedgerobotics@gmail.com">Eastern Edge Robotics</maintainer>
   <license>MIT License</license>
 

@@ -3,7 +3,7 @@
 <package format="3">
  <name>bluestar_frontend</name>
   <version>0.0.0</version>
-  <description>An ROV piloting frontend built using C++ designed to control Eastern Edge's 2026 ROV Bluestar.</description>
+  <description>An ROV piloting frontend built using C++ designed to control Eastern Edge's 2026 ROV BlueStar.</description>
   <maintainer email="easternedgerobotics@gmail.com">Eastern Edge Robotics</maintainer>
   <license>MIT License</license>
 
