@@ -46,8 +46,8 @@ class PilotInputPublisher : public rclcpp::Node {
         const bool& configurationMode,
         const int& frontServoAngle,
         const int& backServoAngle,
-        const int& configurationModeThrusterNumber,
-        const uint8_t bilge_pump_speed) {
+        const int& configurationModeThrusterNumber)
+        {
             auto msg = eer_interfaces::msg::PilotInput();
             msg.surge = surge;
             msg.sway = sway;
@@ -71,7 +71,6 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.front_servo_angle = frontServoAngle;
             msg.back_servo_angle = backServoAngle;
             msg.configuration_mode_thruster_number = configurationModeThrusterNumber;
-            msg.bilge_pump_speed = bilge_pump_speed;
             publisher_->publish(msg);
             // ########################
             // Add more inputs to this function

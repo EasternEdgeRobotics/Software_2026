@@ -17,7 +17,6 @@
 #include "bluestar_constants.h"
 
 #define THRUST_SCALE 127.5
-#define BILGE_PUMP_REGISTER 6
 #define LED_REGISTER 7
 #define I2C_BUS_FILE "/dev/i2c-1"
 
@@ -39,7 +38,6 @@ public:
         }
 
         write_to_i2c(RP2040_ADDRESS, 2, LED_REGISTER, control_values_msg->led_brightness);
-        write_to_i2c(RP2040_ADDRESS, 2, BILGE_PUMP_REGISTER, control_values_msg->bilge_pump_speed);
 
         // for (size_t i = 0; i < servo_ssh_targets.size(); i++)
         // {

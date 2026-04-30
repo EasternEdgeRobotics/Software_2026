@@ -11,7 +11,6 @@ uint8 heave_multiplier
 uint8 pitch_multiplier
 uint8 yaw_multiplier
 uint8 roll_multiplier
-uint8 bilge_pump_speed
 int16 front_servo_angle
 int16 back_servo_angle
 bool open_claw

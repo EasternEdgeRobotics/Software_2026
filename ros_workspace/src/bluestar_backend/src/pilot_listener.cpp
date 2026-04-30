@@ -217,7 +217,6 @@ private:
 
       current_bluestar_control_values.camera_servos[0] = pilot_input->turn_front_servo_cw - pilot_input->turn_front_servo_ccw;
       current_bluestar_control_values.camera_servos[1] = pilot_input->turn_back_servo_cw - pilot_input->turn_back_servo_ccw;
-      current_bluestar_control_values.bilge_pump_speed = pilot_input->bilge_pump_speed;
 
       if (pilot_input->brighten_led ) {
         current_bluestar_control_values.led_brightness = 255;
@@ -235,11 +234,10 @@ private:
 
       if (std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - last_input_recieved_time).count() >= PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS)
       {
-        // Communication has been cut with topsides for too long, stop all thrusters and the pump
+        // Communication has been cut with topsides for too long, stop all thrusters
         for (int thruster_index = 0; thruster_index < 6; thruster_index++)  {
           target_thrust_values[thruster_index] = 0;
         }
-        current_bluestar_control_values.bilge_pump_speed = 0;
       }
 
     }
