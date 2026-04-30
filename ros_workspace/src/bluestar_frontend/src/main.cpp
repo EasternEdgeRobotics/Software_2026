@@ -544,6 +544,7 @@ int main(int argc, char **argv) {
 
         //user_config window
         if (showConfigWindow) {
+            ImGui::SetNextWindowSize(ImVec2(750, 400));
             ImGui::Begin("Config Editor", &showConfigWindow);
             if (ImGui::BeginTabBar("Config Tabs")) {
                 if (ImGui::BeginTabItem("Cameras (User)")) {
