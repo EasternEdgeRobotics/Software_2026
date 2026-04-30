@@ -522,7 +522,7 @@ int main(int argc, char **argv) {
 
         //user_config window
         if (showConfigWindow) {
-            ImGui::SetNextWindowSize(ImVec2(750, 400));
+            ImGui::SetNextWindowSize(ImVec2(750, 400), ImGuiCond_FirstUseEver); // Prevents the window from not being resizeable
             ImGui::Begin("Config Editor", &showConfigWindow);
             if (ImGui::BeginTabBar("Config Tabs")) {
                 if (ImGui::BeginTabItem("Cameras (User)")) {
