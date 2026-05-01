@@ -17,7 +17,8 @@
 #include "bluestar_constants.h"
 
 #define THRUST_SCALE 127.5
-#define LED_REGISTER 7
+#define LED1_REGISTER 7
+#define LED2_REGISTER 6 // Flipped to match current config on BlueStar -PC
 #define I2C_BUS_FILE "/dev/i2c-1"
 
 
@@ -37,7 +38,8 @@ public:
             write_to_i2c(RP2040_ADDRESS, 2, control_values_msg->thruster_map[thruster_index], thrust);
         }
 
-        write_to_i2c(RP2040_ADDRESS, 2, LED_REGISTER, control_values_msg->led_brightness);
+        write_to_i2c(RP2040_ADDRESS, 2, LED1_REGISTER, control_values_msg->led_brightness_1);
+        write_to_i2c(RP2040_ADDRESS, 2, LED2_REGISTER, control_values_msg->led_brightness_2);
 
         // for (size_t i = 0; i < servo_ssh_targets.size(); i++)
         // {

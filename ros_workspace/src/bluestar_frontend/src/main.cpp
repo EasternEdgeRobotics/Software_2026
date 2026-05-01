@@ -43,8 +43,10 @@ bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
 bool flipCam4HorizontallyButtonPressedLatch = false;
 
-bool brighten_led_latch = false;
-bool dim_led_latch = false;
+bool brighten_led_latch_1 = false;
+bool brighten_led_latch_2 = false;
+bool dim_led_latch_1 = false;
+bool dim_led_latch_2 = false;
 bool fast_mode_latch = false;
 bool invert_controls_latch = false;
 
@@ -140,8 +142,10 @@ int main(int argc, char **argv) {
         int heave = 0;
         int roll = 0;
         int yaw = 0;
-        bool brightenLED = false;
-        bool dimLED = false;
+        bool brightenLED_1 = false;
+        bool dimLED_1 = false;
+        bool brightenLED_2 = false;
+        bool dimLED_2 = false;
         bool turnFrontServoCw = false;
         bool turnFrontServoCcw = false;
         bool turnBackServoCw = false;
@@ -176,8 +180,10 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) roll -= 100;
                 if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) heave += 100;
                 if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) heave -= 100;
-                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED = true;
-                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED = true;
+                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED_1 = true;
+                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED_1 = true;
+                if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) brightenLED_2 = true;
+                if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) dimLED_2 = true;
                 if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnFrontServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
@@ -244,11 +250,17 @@ int main(int argc, char **argv) {
                         case ButtonAction::ROLL_CCW:
                             roll -= 100;
                             break;
-                        case ButtonAction::BRIGHTEN_LED:
-                            brightenLED = true;
+                        case ButtonAction::BRIGHTEN_LED_1:
+                            brightenLED_1 = true;
                             break;
-                        case ButtonAction::DIM_LED:
-                            dimLED = true;
+                        case ButtonAction::DIM_LED_1:
+                            dimLED_1 = true;
+                            break;
+                        case ButtonAction::BRIGHTEN_LED_2:
+                            brightenLED_1 = true;
+                            break;
+                        case ButtonAction::DIM_LED_2:
+                            dimLED_2 = true;
                             break;
                         case ButtonAction::TURN_FRONT_SERVO_CW:
                             turnFrontServoCw = true;
@@ -412,17 +424,30 @@ int main(int argc, char **argv) {
             } else {
                 fast_mode_latch = false;
             }
-            if (brightenLED) {
-                brightenLED = !brighten_led_latch;
-                brighten_led_latch = true;
+
+            if (brightenLED_1) {
+                brightenLED_1 = !brighten_led_latch_1;
+                brighten_led_latch_1 = true;
             } else {
-                brighten_led_latch = false;
+                brighten_led_latch_1 = false;
             }
-            if (dimLED) {
-                dimLED = !dim_led_latch;
-                dim_led_latch = true;
+            if (dimLED_1) {
+                dimLED_1 = !dim_led_latch_1;
+                dim_led_latch_1 = true;
             } else {
-                dim_led_latch = false;
+                dim_led_latch_1 = false;
+            }
+            if (brightenLED_2) {
+                brightenLED_2 = !brighten_led_latch_2;
+                brighten_led_latch_2 = true;
+            } else {
+                brighten_led_latch_2 = false;
+            }
+            if (dimLED_2) {
+                dimLED_1 = !dim_led_latch_2;
+                dim_led_latch_2 = true;
+            } else {
+                dim_led_latch_2 = false;
             }
         }
 
@@ -432,7 +457,7 @@ int main(int argc, char **argv) {
             yaw = -yaw;
         }
 
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
             backServoAngle, configuration_mode_thruster_number);
         
@@ -675,8 +700,10 @@ int main(int argc, char **argv) {
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
-                        ImGui::Text("Z - Brighten LED");
-                        ImGui::Text("X - Dim LED");
+                        ImGui::Text("Z - Brighten LED 1");
+                        ImGui::Text("X - Dim LED 1");
+                        ImGui::Text("J - Brighten LED 2");
+                        ImGui::Text("K - Dim LED 2");
                         ImGui::Text("Right Arrow - Turn Front Servo Clockwise");
                         ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
                         ImGui::Text("Page Up - Turn Back Servo Clockwise");

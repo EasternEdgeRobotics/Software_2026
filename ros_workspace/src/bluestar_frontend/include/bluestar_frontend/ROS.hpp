@@ -37,8 +37,10 @@ class PilotInputPublisher : public rclcpp::Node {
         const int& heave,
         const int& yaw,
         const int& roll,
-        const bool& brightenLED,
-        const bool& dimLED,
+        const bool& brightenLED_1,
+        const bool& dimLED_1,
+        const bool& brightenLED_2,
+        const bool& dimLED_2,
         const bool& turnFrontServoCw,
         const bool& turnFrontServoCcw,
         const bool& turnBackServoCw,
@@ -60,9 +62,10 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.heave_multiplier = power.heave;
             msg.roll_multiplier = power.roll;
             msg.yaw_multiplier = power.yaw;
-            //may need to remove these? not sure if leds are on the bot this year
-            msg.brighten_led = brightenLED;
-            msg.dim_led = dimLED;
+            msg.brighten_led_1 = brightenLED_1;
+            msg.dim_led_1 = dimLED_1;
+            msg.brighten_led_2 = brightenLED_2;
+            msg.dim_led_2 = dimLED_2;
             msg.turn_front_servo_cw = turnFrontServoCw;
             msg.turn_front_servo_ccw = turnFrontServoCcw;
             msg.turn_back_servo_cw = turnBackServoCw;
