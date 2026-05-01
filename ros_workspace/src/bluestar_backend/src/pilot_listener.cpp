@@ -218,19 +218,17 @@ private:
       current_bluestar_control_values.camera_servos[0] = pilot_input->turn_front_servo_cw - pilot_input->turn_front_servo_ccw;
       current_bluestar_control_values.camera_servos[1] = pilot_input->turn_back_servo_cw - pilot_input->turn_back_servo_ccw;
 
-      if (pilot_input->brighten_led_1 ) {
-        // The following line hurts to read, but it just clamps the value. -PC
-        current_bluestar_control_values.led_brightness_1 = (current_bluestar_control_values.led_brightness_1 + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : current_bluestar_control_values.led_brightness_1 + LED_BRIGHTNESS_INCREMENT;
-      }
-      else if (pilot_input->dim_led_1) {
-        current_bluestar_control_values.led_brightness_1 = (current_bluestar_control_values.led_brightness_1 - LED_BRIGHTNESS_INCREMENT < 0) ? 0 : current_bluestar_control_values.led_brightness_1 - LED_BRIGHTNESS_INCREMENT;
-      }
+      bool led_input_brighten[] = {pilot_input->brighten_led_1, pilot_input->brighten_led_2};
+      bool led_input_dim[] = {pilot_input->dim_led_1, pilot_input->dim_led_2};
 
-      if (pilot_input->brighten_led_2 ) {
-        current_bluestar_control_values.led_brightness_2 = (current_bluestar_control_values.led_brightness_2 + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : current_bluestar_control_values.led_brightness_2 + LED_BRIGHTNESS_INCREMENT;
-      }
-      else if (pilot_input->dim_led_2) {
-        current_bluestar_control_values.led_brightness_2 = (current_bluestar_control_values.led_brightness_2 - LED_BRIGHTNESS_INCREMENT < 0) ? 0 : current_bluestar_control_values.led_brightness_2 - LED_BRIGHTNESS_INCREMENT;
+      for (int i = 0; i < 2; i++) {
+        if (led_input_brighten[i] ) {
+          // The following line hurts to read, but it just clamps the value. -PC
+          current_bluestar_control_values.led_brightness[i] = (current_bluestar_control_values.led_brightness[i] + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : current_bluestar_control_values.led_brightness[i] + LED_BRIGHTNESS_INCREMENT;
+        }
+        else if (led_input_dim[i]) {
+          current_bluestar_control_values.led_brightness[i] = (current_bluestar_control_values.led_brightness[i] < LED_BRIGHTNESS_INCREMENT) ? 0 : current_bluestar_control_values.led_brightness[i] - LED_BRIGHTNESS_INCREMENT;
+        }
       }
     }
   }

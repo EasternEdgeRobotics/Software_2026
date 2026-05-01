@@ -43,5 +43,6 @@ extern const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS;
 
 extern const int LED_BRIGHTNESS_INCREMENT;
 
+extern const int LED_REGISTERS[2];
 
 #endif // BLUESTAR_CONSTANTS_H

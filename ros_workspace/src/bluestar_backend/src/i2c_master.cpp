@@ -17,10 +17,7 @@
 #include "bluestar_constants.h"
 
 #define THRUST_SCALE 127.5
-#define LED1_REGISTER 7
-#define LED2_REGISTER 6 // Flipped to match current config on BlueStar -PC
 #define I2C_BUS_FILE "/dev/i2c-1"
-
 
 class I2CMaster : public rclcpp::Node
 {
@@ -30,6 +27,7 @@ public:
 
     auto control_values_subscriber_callback =
       [this](eer_interfaces::msg::BlueStarControl::UniquePtr control_values_msg) -> void {
+        // Thrusters
         for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
 
             // Map the thrust value from the range [-1, 1] to [0, 255]
@@ -38,8 +36,10 @@ public:
             write_to_i2c(RP2040_ADDRESS, 2, control_values_msg->thruster_map[thruster_index], thrust);
         }
 
-        write_to_i2c(RP2040_ADDRESS, 2, LED1_REGISTER, control_values_msg->led_brightness_1);
-        write_to_i2c(RP2040_ADDRESS, 2, LED2_REGISTER, control_values_msg->led_brightness_2);
+        // LEDs
+        for (int i = 0; i < 2; i++) {
+            write_to_i2c(RP2040_ADDRESS, 2, LED_REGISTERS[i], control_values_msg->led_brightness[i]);
+        }
 
         // for (size_t i = 0; i < servo_ssh_targets.size(); i++)
         // {

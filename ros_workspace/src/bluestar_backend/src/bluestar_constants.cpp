@@ -40,3 +40,5 @@ const int MAX_SERVO_ANGLE = 270;
 const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS = 2000;
 
 const int LED_BRIGHTNESS_INCREMENT = 51; // 5 levels
+
+const int LED_REGISTERS[2] = {7, 6}; // Flipped to match current config on BlueStar -PC
