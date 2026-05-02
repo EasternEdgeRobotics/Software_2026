@@ -47,4 +47,6 @@ extern const int LED_REGISTERS[2];
 
 extern const int DC_MOTOR_REGISTERS[2];
 
+extern const int SERVO_REGISTERS[4];
+
 #endif // BLUESTAR_CONSTANTS_H

@@ -107,11 +107,11 @@ int main(int argc, char **argv) {
                 if (!configData["reverse_thrusters"][i].is_null()) bluestar_config.reverse_thrusters[i] = configData["reverse_thrusters"][i].get<bool>();
                 if (!configData["stronger_side_positive"][i].is_null()) bluestar_config.stronger_side_positive[i] = configData["stronger_side_positive"][i].get<bool>();
             }
-            for (size_t i = 0; i < std::size(bluestar_config.front_camera_preset_servo_angles); i++){
-                if (!configData["front_camera_preset_servo_angles"][i].is_null()) bluestar_config.front_camera_preset_servo_angles[i] = configData["front_camera_preset_servo_angles"][i].get<int>();
+            for (size_t i = 0; i < std::size(bluestar_config.servo_1_preset_angles); i++){
+                if (!configData["servo_1_preset_angles"][i].is_null()) bluestar_config.servo_1_preset_angles[i] = configData["servo_1_preset_angles"][i].get<int>();
             }
-            for (size_t i = 0; i < std::size(bluestar_config.back_camera_preset_servo_angles); i++){
-                if (!configData["back_camera_preset_servo_angles"][i].is_null()) bluestar_config.back_camera_preset_servo_angles[i] = configData["back_camera_preset_servo_angles"][i].get<int>();
+            for (size_t i = 0; i < std::size(bluestar_config.servo_2_preset_angles); i++){
+                if (!configData["servo_2_preset_angles"][i].is_null()) bluestar_config.servo_2_preset_angles[i] = configData["servo_2_preset_angles"][i].get<int>();
             }
             break;
         }
@@ -146,10 +146,14 @@ int main(int argc, char **argv) {
         bool dimLED_1 = false;
         bool brightenLED_2 = false;
         bool dimLED_2 = false;
-        bool turnFrontServoCw = false;
-        bool turnFrontServoCcw = false;
-        bool turnBackServoCw = false;
-        bool turnBackServoCcw = false;
+        bool turnServo1Cw = false;
+        bool turnServo1Ccw = false;
+        bool turnServo2Cw = false;
+        bool turnServo2Ccw = false;
+        bool turnServo3Cw = false;
+        bool turnServo3Ccw = false;
+        bool turnServo4Cw = false;
+        bool turnServo4Ccw = false;
         bool flipCam1VerticallyButtonPressed = false;
         bool flipCam2VerticallyButtonPressed = false;
         bool flipCam3VerticallyButtonPressed = false;
@@ -162,8 +166,10 @@ int main(int argc, char **argv) {
         bool invert_controls_toggle = false;
 
         // Note: A servo angle of -1 means that the exact angle is unset
-        int frontServoAngle = -1;
-        int backServoAngle = -1;
+        int Servo1Angle = -1;
+        int Servo2Angle = -1;
+        int Servo3Angle = -1;
+        int Servo4Angle = -1;
 
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
@@ -184,31 +190,35 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED_1 = true;
                 if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) brightenLED_2 = true;
                 if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) dimLED_2 = true;
-                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnFrontServoCw = true;
-                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
-                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
-                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnBackServoCcw = true;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnServo1Cw = true;
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnServo1Ccw = true;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnServo2Cw = true;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnServo2Ccw = true;
+                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) turnServo1Cw = true;
+                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) turnServo1Ccw = true;
+                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) turnServo2Cw = true;
+                if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) turnServo2Ccw = true;
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS) flipCam4VerticallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT_BRACKET) == GLFW_PRESS) flipCam4VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) flipCam1HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) invert_controls_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
-                    frontServoAngle = bluestar_config.front_camera_preset_servo_angles[0]; 
-                    backServoAngle = bluestar_config.back_camera_preset_servo_angles[0];
+                    Servo1Angle = bluestar_config.servo_1_preset_angles[0]; 
+                    Servo2Angle = bluestar_config.servo_2_preset_angles[0];
                 }
                 if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
-                    frontServoAngle = bluestar_config.front_camera_preset_servo_angles[1]; 
-                    backServoAngle = bluestar_config.back_camera_preset_servo_angles[1];
+                    Servo1Angle = bluestar_config.servo_1_preset_angles[1]; 
+                    Servo2Angle = bluestar_config.servo_2_preset_angles[1];
                 }
                 if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
-                    frontServoAngle = bluestar_config.front_camera_preset_servo_angles[2]; 
-                    backServoAngle = bluestar_config.back_camera_preset_servo_angles[2];
+                    Servo1Angle = bluestar_config.servo_1_preset_angles[2]; 
+                    Servo2Angle = bluestar_config.servo_2_preset_angles[2];
                 }
                 if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS) dc_motor_1 = 127;
                 if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS) dc_motor_1 = 255;
@@ -266,17 +276,29 @@ int main(int argc, char **argv) {
                         case ButtonAction::DIM_LED_2:
                             dimLED_2 = true;
                             break;
-                        case ButtonAction::TURN_FRONT_SERVO_CW:
-                            turnFrontServoCw = true;
+                        case ButtonAction::SERVO_1_CW:
+                            turnServo1Cw = true;
                             break;
-                        case ButtonAction::TURN_FRONT_SERVO_CCW:
-                            turnFrontServoCcw = true;
+                        case ButtonAction::SERVO_1_CCW:
+                            turnServo1Ccw = true;
                             break;
-                        case ButtonAction::TURN_BACK_SERVO_CW:
-                            turnBackServoCw = true;
+                        case ButtonAction::SERVO_2_CW:
+                            turnServo2Cw = true;
                             break;
-                        case ButtonAction::TURN_BACK_SERVO_CCW:
-                            turnBackServoCcw = true;
+                        case ButtonAction::SERVO_2_CCW:
+                            turnServo2Ccw = true;
+                            break;
+                        case ButtonAction::SERVO_3_CW:
+                            turnServo3Cw = true;
+                            break;
+                        case ButtonAction::SERVO_3_CCW:
+                            turnServo3Ccw = true;
+                            break;
+                        case ButtonAction::SERVO_4_CW:
+                            turnServo4Cw = true;
+                            break;
+                        case ButtonAction::SERVO_4_CCW:
+                            turnServo4Ccw = true;
                             break;
                         case ButtonAction::DC_MOTOR_1_CW:
                             dc_motor_1 = 127;
@@ -322,16 +344,16 @@ int main(int argc, char **argv) {
                             fast_mode_toggle = true;
                             break;  
                         case ButtonAction::USE_SERVO_ANGLE_PRESET_1:
-                            frontServoAngle = bluestar_config.front_camera_preset_servo_angles[0];
-                            backServoAngle = bluestar_config.back_camera_preset_servo_angles[0];
+                            Servo1Angle = bluestar_config.servo_1_preset_angles[0];
+                            Servo2Angle = bluestar_config.servo_2_preset_angles[0];
                             break;
                         case ButtonAction::USE_SERVO_ANGLE_PRESET_2:
-                            frontServoAngle = bluestar_config.front_camera_preset_servo_angles[1];
-                            backServoAngle = bluestar_config.back_camera_preset_servo_angles[1];
+                            Servo1Angle = bluestar_config.servo_1_preset_angles[1];
+                            Servo2Angle = bluestar_config.servo_2_preset_angles[1];
                             break;
                         case ButtonAction::USE_SERVO_ANGLE_PRESET_3:
-                            frontServoAngle = bluestar_config.front_camera_preset_servo_angles[2];
-                            backServoAngle = bluestar_config.back_camera_preset_servo_angles[2];
+                            Servo1Angle = bluestar_config.servo_1_preset_angles[2];
+                            Servo2Angle = bluestar_config.servo_2_preset_angles[2];
                             break;
                         case ButtonAction::INVERT_CONTROLS:
                             invert_controls_toggle = true;
@@ -473,9 +495,11 @@ int main(int argc, char **argv) {
             yaw = -yaw;
         }
 
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, dc_motor_1, dc_motor_2, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, turnFrontServoCw,
-            turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
-            backServoAngle, configuration_mode_thruster_number);
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
+            dc_motor_1, dc_motor_2, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, 
+            turnServo1Cw, turnServo1Ccw, turnServo2Cw, turnServo2Ccw, turnServo3Cw, turnServo3Ccw, turnServo4Cw, turnServo4Ccw, 
+            Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
+            configuration_mode, configuration_mode_thruster_number);
         
 
         //top menu bar
@@ -669,21 +693,21 @@ int main(int argc, char **argv) {
 
                             if (ImGui::TreeNode("Modify Preset Servo Angles"))
                             {
-                                for (size_t i = 0; i < std::size(bluestar_config.front_camera_preset_servo_angles); ++i) {
-                                    ImGui::Text("Front Camera Preset Servo Angle %ld", i + 1);
+                                for (size_t i = 0; i < std::size(bluestar_config.servo_1_preset_angles); ++i) {
+                                    ImGui::Text("Servo 1 Preset Angle %ld", i + 1);
                                     ImGui::SameLine();
                                     ImGui::SliderInt(
-                                        (std::string("##front_camera_preset_servo_angle_") + std::to_string(i + 1)).c_str(),
-                                        &bluestar_config.front_camera_preset_servo_angles[i],
+                                        (std::string("##preset_servo_1_angle_") + std::to_string(i + 1)).c_str(),
+                                        &bluestar_config.servo_1_preset_angles[i],
                                         0, 180, "%d", ImGuiSliderFlags_AlwaysClamp
                                     );
                                 }
-                                for (size_t i = 0; i < std::size(bluestar_config.back_camera_preset_servo_angles); ++i) {
-                                    ImGui::Text("Back Camera Preset Servo Angle %ld", i + 1);
+                                for (size_t i = 0; i < std::size(bluestar_config.servo_2_preset_angles); ++i) {
+                                    ImGui::Text("Servo 2 Preset Angle %ld", i + 1);
                                     ImGui::SameLine();
                                     ImGui::SliderInt(
-                                        (std::string("##back_camera_preset_servo_angle_") + std::to_string(i + 1)).c_str(),
-                                        &bluestar_config.back_camera_preset_servo_angles[i],
+                                        (std::string("##preset_servo_2_angle_") + std::to_string(i + 1)).c_str(),
+                                        &bluestar_config.servo_2_preset_angles[i],
                                         0, 180, "%d", ImGuiSliderFlags_AlwaysClamp
                                     );
                                 }
@@ -717,17 +741,22 @@ int main(int argc, char **argv) {
                         ImGui::Text("Numpad 2 - DC Motor 1 CCW");
                         ImGui::Text("Numpad 4 - DC Motor 2 CW");
                         ImGui::Text("Numpad 5 - DC Motor 2 CCW");
-                        ImGui::Text("Right Arrow - Turn Front Servo Clockwise");
-                        ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
-                        ImGui::Text("Page Up - Turn Back Servo Clockwise");
-                        ImGui::Text("Page Down - Turn Back Servo Counter-Clockwise");
+                        ImGui::Text("Right Arrow - Turn Servo 1 Clockwise");
+                        ImGui::Text("Left Arrow - Turn Servo 1 Counter-Clockwise");
+                        ImGui::Text("Page Up - Turn Servo 2 Clockwise");
+                        ImGui::Text("Page Down - Turn Servo 2 Counter-Clockwise");
+                        ImGui::Text("Up Arrow - Turn Servo 3 Clockwise");
+                        ImGui::Text("Down Arrow - Turn Servo 3 Counter-Clockwise");
+                        ImGui::Text("Numpad 3 - Turn Servo 4 Clockwise");
+                        ImGui::Text("Numpad 6 - Turn Servo 4 Counter-Clockwise");
                         ImGui::Text("I - Flip Camera 1 Vertically");
                         ImGui::Text("O - Flip Camera 2 Vertically");
                         ImGui::Text("P - Flip Camera 3 Vertically");
-                        ImGui::Text("] - Flip Camera 4 Vertically");
+                        ImGui::Text("[ - Flip Camera 4 Vertically");
                         ImGui::Text("B - Flip Camera 1 Horizontally");
                         ImGui::Text("N - Flip Camera 2 Horizontally");
                         ImGui::Text("M - Flip Camera 3 Horizontally");
+                        ImGui::Text(", - Flip Camera 4 Horizontally");
                         ImGui::Text("V - Fast Mode");
                         ImGui::Text("5 - Use Servo Preset Angle 1");
                         ImGui::Text("6 - Use Servo Preset Angle 2");
@@ -913,12 +942,12 @@ void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const
         configJson["stronger_side_positive"][i] = bluestar_config.stronger_side_positive[i];
     }
 
-    for (size_t i = 0; i < std::size(bluestar_config.front_camera_preset_servo_angles); i++) {
-        configJson["front_camera_preset_servo_angles"][i] = bluestar_config.front_camera_preset_servo_angles[i];
+    for (size_t i = 0; i < std::size(bluestar_config.servo_1_preset_angles); i++) {
+        configJson["servo_1_preset_angles"][i] = bluestar_config.servo_1_preset_angles[i];
     }
 
-    for (size_t i = 0; i < std::size(bluestar_config.back_camera_preset_servo_angles); i++) {
-        configJson["back_camera_preset_servo_angles"][i] = bluestar_config.back_camera_preset_servo_angles[i];
+    for (size_t i = 0; i < std::size(bluestar_config.servo_2_preset_angles); i++) {
+        configJson["servo_2_preset_angles"][i] = bluestar_config.servo_2_preset_angles[i];
     }
 
     saveConfigNode->saveConfig("bluestar_config", configJson.dump());

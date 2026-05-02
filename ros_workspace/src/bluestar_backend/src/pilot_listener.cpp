@@ -212,8 +212,10 @@ private:
 
       single_thruster_configuration_mode = pilot_input->configuration_mode;
 
-      current_bluestar_control_values.camera_servos[0] = pilot_input->turn_front_servo_cw - pilot_input->turn_front_servo_ccw;
-      current_bluestar_control_values.camera_servos[1] = pilot_input->turn_back_servo_cw - pilot_input->turn_back_servo_ccw;
+      current_bluestar_control_values.servos[0] = pilot_input->turn_servo_1_cw - pilot_input->turn_servo_1_ccw;
+      current_bluestar_control_values.servos[1] = pilot_input->turn_servo_2_cw - pilot_input->turn_servo_2_ccw;
+      current_bluestar_control_values.servos[2] = pilot_input->turn_servo_3_cw - pilot_input->turn_servo_3_ccw;
+      current_bluestar_control_values.servos[3] = pilot_input->turn_servo_4_cw - pilot_input->turn_servo_4_ccw;
 
       bool led_input_brighten[] = {pilot_input->brighten_led_1, pilot_input->brighten_led_2};
       bool led_input_dim[] = {pilot_input->dim_led_1, pilot_input->dim_led_2};

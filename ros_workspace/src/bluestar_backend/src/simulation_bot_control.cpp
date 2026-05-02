@@ -19,10 +19,14 @@ public:
       thruster_publishers[thruster_index] = this->create_publisher<std_msgs::msg::Int32>("/bluestar/" + THRUSTER_NAMES[thruster_index], 10);
     }
 
-    front_camera_forward_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/front_camera_forward_servo", 10);
-    front_camera_downtilt_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/front_camera_downtilt_servo", 10);
-    back_camera_forward_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/back_camera_forward_servo", 10);
-    back_camera_downtilt_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/back_camera_downtilt_servo", 10);
+    servo_1_forward_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_1_forward", 10);
+    servo_1_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_1_downtilt", 10);
+    servo_2_forward_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_2_forward", 10);
+    servo_2_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_2_downtilt", 10);
+    servo_3_forward_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_3_forward", 10);
+    servo_3_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_3_downtilt", 10);
+    servo_4_forward_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_4_forward", 10);
+    servo_4_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_5_downtilt", 10);
 
     auto control_values_subscriber_callback =
       [this](eer_interfaces::msg::BlueStarControl::UniquePtr control_values_msg) -> void {
@@ -39,22 +43,38 @@ public:
             thruster_publishers[thruster_index]->publish(simulation_thrust_msg);
         }
 
-        std_msgs::msg::Float64 front_servo_msg;
-        std_msgs::msg::Float64 back_servo_msg;
+        std_msgs::msg::Float64 servo_1_msg;
+        std_msgs::msg::Float64 servo_2_msg;
+        std_msgs::msg::Float64 servo_3_msg;
+        std_msgs::msg::Float64 servo_4_msg;
 
-        front_servo_msg.data = static_cast<double>(control_values_msg->camera_servos[0]);
+        servo_1_msg.data = static_cast<double>(control_values_msg->servos[0]);
 
-        if (front_servo_msg.data == 0) front_servo_msg.data = 0.001;
+        if (servo_1_msg.data == 0) servo_1_msg.data = 0.001;
 
-        front_camera_forward_servo_publisher->publish(front_servo_msg);
-        front_camera_downtilt_servo_publisher->publish(front_servo_msg);
+        servo_1_forward_publisher->publish(servo_1_msg);
+        servo_1_downtilt_publisher->publish(servo_1_msg);
 
-        back_servo_msg.data = static_cast<double>(control_values_msg->camera_servos[1]);
+        servo_2_msg.data = static_cast<double>(control_values_msg->servos[1]);
 
-        if (back_servo_msg.data == 0) back_servo_msg.data = 0.001;
+        if (servo_2_msg.data == 0) servo_2_msg.data = 0.001;
 
-        back_camera_forward_servo_publisher->publish(back_servo_msg);
-        back_camera_downtilt_servo_publisher->publish(back_servo_msg);
+        servo_2_forward_publisher->publish(servo_2_msg);
+        servo_2_downtilt_publisher->publish(servo_2_msg);
+
+        servo_3_msg.data = static_cast<double>(control_values_msg->servos[2]);
+
+        if (servo_3_msg.data == 0) servo_3_msg.data = 0.001;
+
+        servo_3_forward_publisher->publish(servo_3_msg);
+        servo_3_downtilt_publisher->publish(servo_3_msg);
+
+        servo_4_msg.data = static_cast<double>(control_values_msg->servos[3]);
+
+        if (servo_4_msg.data == 0) servo_4_msg.data = 0.001;
+
+        servo_4_forward_publisher->publish(servo_4_msg);
+        servo_4_downtilt_publisher->publish(servo_4_msg);
       };
 
     control_values_subscriber =
@@ -65,10 +85,14 @@ public:
 private:
   rclcpp::Subscription<eer_interfaces::msg::BlueStarControl>::SharedPtr control_values_subscriber;
   std::array<rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr, 6> thruster_publishers;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr front_camera_forward_servo_publisher;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr front_camera_downtilt_servo_publisher;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr back_camera_forward_servo_publisher;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr back_camera_downtilt_servo_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_1_forward_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_1_downtilt_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_2_forward_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_2_downtilt_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_3_forward_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_3_downtilt_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_4_forward_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr servo_4_downtilt_publisher;
 };
 
 int main(int argc, char * argv[])
