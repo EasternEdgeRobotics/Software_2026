@@ -43,5 +43,5 @@ You can type `sudo docker exec -it eer_ros_packages bash` in a terminal to inter
 
 If you make changes and would like to recompile:
 ```
-sudo docker compose -f dev_compose.yaml up ---build eer_ros_packages
+sudo docker compose -f dev_compose.yaml up --build eer_ros_packages
 ```

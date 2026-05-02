@@ -233,11 +233,11 @@ private:
         if (servo_cw[i])
         {
           // The following line hurts to read, but it just clamps the value. -PC
-          current_bluestar_control_values.servo[i] = (current_bluestar_control_values.servo[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : current_bluestar_control_values.led_brightness[i] + SERVO_FREQ_INCREMENT;
+          current_bluestar_control_values.servos[i] = (current_bluestar_control_values.servos[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : current_bluestar_control_values.servos[i] + SERVO_FREQ_INCREMENT;
         }
         else if (servo_ccw[i])
         {
-          current_bluestar_control_values.servo[i] = (current_bluestar_control_values.servo[i] < SERVO_FREQ_INCREMENT) ? 0 : current_bluestar_control_values.led_brightness[i] - SERVO_FREQ_INCREMENT;
+          current_bluestar_control_values.servos[i] = (current_bluestar_control_values.servos[i] < SERVO_FREQ_INCREMENT) ? 0 : current_bluestar_control_values.servos[i] - SERVO_FREQ_INCREMENT;
         }
       }
 
