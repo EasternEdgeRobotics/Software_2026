@@ -41,6 +41,9 @@ const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS = 2000;
 
 const int LED_BRIGHTNESS_INCREMENT = 51; // 5 levels
 
+const int SERVO_FREQ_INCREMENT = 17; // 15 levels
+
+
 const int LED_REGISTERS[2] = {7, 6}; // Flipped to match current config on BlueStar -PC
 
 const int DC_MOTOR_REGISTERS[2] = {8, 9};
