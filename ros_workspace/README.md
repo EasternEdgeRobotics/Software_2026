@@ -1,5 +1,4 @@
 # ROS Workspace
-
 This README.md details how to setup the ROS Worksapce.
 
 ## Compiling directly
@@ -8,22 +7,21 @@ This README.md details how to setup the ROS Worksapce.
 
 2. Install [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Releases/Release-Jazzy-Jalisco.html)
 
-3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2025/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies.
+3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2026/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies.
 
-4. Run `colcon build` in `Software_2025/ros_workspace`
+4. Run `colcon build` in `Software_2026/ros_workspace`
 
-5. Source the workspace by running `source setup.bash` in `Software_2028/ros_workspace/install`
+5. Source the workspace by running `source setup.bash` in `Software_2026/ros_workspace/install`
 
 
 You can choose the backend launch file to run based on the ROV and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
 ```
-ros2 launch <backend package (ex. bluestar_backend)> <launch file <ex. simulation_beaumont_startup>>
+ros2 launch <backend package (ex. bluestar_backend)> <launch file <ex. simulation_bluestar_startup.xml>>
 ```
-If the launch file run starts an instance of ROSBridge Server, you can control the ROV using the [Web Frontend](../web_frontend/)
 
 If you are using BlueStar, you can also run our the BlueStar Frontend 
 ```
-ros2 run bluestarfrontend bluestar_frontend
+ros2 run bluestar_frontend bluestar_frontend
 ```
 
 If you make changes and would like to recompile, restart from step 4.
@@ -32,18 +30,18 @@ If you make changes and would like to recompile, restart from step 4.
 
 1. Install [Docker](https://www.docker.com/) and ensure you can use `docker compose`
  
-2. Run the following within a terminal in `Software_2025/`.
+2. Run the following within a terminal in `Software_2026/`.
 ```
-sudo docker compose -f dev_compose.yaml up 
+sudo docker compose -f compose.dev.yaml up 
 ```
 
-Note that `compose.yaml` is intended to run on the real ROVs' onboard Raspberry Pi computers and gives them access to the i2c bus for board communication. `dev_compose.yaml` runs the same code, but for interfacing with our [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim). 
+Note that `compose.yaml` is intended to run on the real ROVs' onboard Raspberry Pi computer and gives it access to the I2C bus for communication with the RP2040 on the tooling board. `compose.dev.yaml` runs the same code, but for interfacing with our [simulation environment](https://github.com/EasternEdgeRobotics/rov-sim). 
 
-You should now have two docker containers, `web_frontend` and `eer_ros_packages`. 
+You should now have the docker container, `eer_ros_packages`. 
 
-You can type "localhost" in your browser to view the web frontend or type `sudo docker exec -it eer_ros_packages bash` in a terminal to interact with our ROS2 nodes.
+You can type `sudo docker exec -it eer_ros_packages bash` in a terminal to interact with our ROS2 nodes.
 
 If you make changes and would like to recompile:
 ```
-sudo docker compose -f dev_compose.yaml up ---build <web_frontend and/or eer_ros_packages>
+sudo docker compose -f dev_compose.yaml up ---build eer_ros_packages
 ```
