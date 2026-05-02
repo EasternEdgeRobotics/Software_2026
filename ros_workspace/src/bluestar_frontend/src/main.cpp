@@ -100,8 +100,6 @@ int main(int argc, char **argv) {
         if (names[i] == "bluestar_config")
         {
             json configData = json::parse(configs[i]);
-            if (!configData["servos"][0].is_null()) std::strncpy(bluestar_config.servo1SSHTarget, configData["servos"][0].get<std::string>().c_str(), sizeof(bluestar_config.servo1SSHTarget));
-            if (!configData["servos"][1].is_null()) std::strncpy(bluestar_config.servo2SSHTarget, configData["servos"][1].get<std::string>().c_str(), sizeof(bluestar_config.servo2SSHTarget));
             if (!configData["thruster_acceleration"].is_null()) bluestar_config.thruster_acceleration = configData["thruster_acceleration"].get<float>();
             if (!configData["thruster_stronger_side_attenuation_constant"].is_null()) bluestar_config.thruster_stronger_side_attenuation_constant = configData["thruster_stronger_side_attenuation_constant"].get<float>();
             for (size_t i = 0; i < std::size(bluestar_config.thruster_map); i++){
@@ -668,13 +666,6 @@ int main(int argc, char **argv) {
                             if (ImGui::Combo("##thruster_number", &currentThrusterNumber, thrusterNumbers, IM_ARRAYSIZE(thrusterNumbers))) {
                                 configuration_mode_thruster_number = currentThrusterNumber;
                             }
-                            
-                            ImGui::Text("Servo 1 (Front Servo) SSH Target");
-                            ImGui::SameLine();
-                            ImGui::InputText("##servo1", bluestar_config.servo1SSHTarget, 64);
-                            ImGui::Text("Servo 2 (Front Servo) SSH Target");
-                            ImGui::SameLine();
-                            ImGui::InputText("##servo2", bluestar_config.servo2SSHTarget, 64);
 
                             if (ImGui::TreeNode("Modify Preset Servo Angles"))
                             {
@@ -913,8 +904,6 @@ int main(int argc, char **argv) {
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const BlueStarConfig& bluestar_config) {
     json configJson;
     configJson["name"] = "bluestar_config";
-    configJson["servos"][0] = bluestar_config.servo1SSHTarget;
-    configJson["servos"][1] = bluestar_config.servo2SSHTarget;
     configJson["thruster_acceleration"] = bluestar_config.thruster_acceleration;
     configJson["thruster_stronger_side_attenuation_constant"] = bluestar_config.thruster_stronger_side_attenuation_constant;
 

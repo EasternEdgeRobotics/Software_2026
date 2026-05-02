@@ -24,9 +24,6 @@ public:
     // ########### CONFIGURATION ###########
     // #####################################
 
-    // Default BlueStar Camera Servo Ips
-    current_bluestar_control_values.servo_ssh_targets = {"picam0.local", "picam1.local"};
-
     // Default BlueStar Thruster Mapping to RP2040
     current_bluestar_control_values.thruster_map = {0,1,2,3,4,5};
 
@@ -297,14 +294,6 @@ private:
 
           try {
               nlohmann::json configuration_data = nlohmann::json::parse(response->config);
-
-              if (configuration_data.contains("servos") && configuration_data["servos"].is_array()) {
-                  for (size_t i = 0; i < current_bluestar_control_values.servo_ssh_targets.size(); ++i) {
-                      if (i < configuration_data["servos"].size() && !configuration_data["servos"][i].is_null()) {
-                          current_bluestar_control_values.servo_ssh_targets[i] = configuration_data["servos"][i].get<std::string>();
-                      }
-                  }
-              }
 
               if (configuration_data.contains("thruster_acceleration") && !configuration_data["thruster_acceleration"].is_null() && configuration_data["thruster_acceleration"].is_number_float())
               {
