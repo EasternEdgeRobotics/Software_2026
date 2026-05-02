@@ -41,6 +41,11 @@ public:
             write_to_i2c(RP2040_ADDRESS, 2, LED_REGISTERS[i], control_values_msg->led_brightness[i]);
         }
 
+        // DC Motors
+        for (int i = 0; i < 2; i++) {
+            write_to_i2c(RP2040_ADDRESS, 2, DC_MOTOR_REGISTERS[i], control_values_msg->dc_motors[i]);
+        }
+
         // for (size_t i = 0; i < servo_ssh_targets.size(); i++)
         // {
         //   if (servo_ssh_targets[i] != control_values_msg->servo_ssh_targets[i])

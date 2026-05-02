@@ -45,4 +45,6 @@ extern const int LED_BRIGHTNESS_INCREMENT;
 
 extern const int LED_REGISTERS[2];
 
+extern const int DC_MOTOR_REGISTERS[2];
+
 #endif // BLUESTAR_CONSTANTS_H

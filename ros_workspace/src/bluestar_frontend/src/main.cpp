@@ -142,6 +142,8 @@ int main(int argc, char **argv) {
         int heave = 0;
         int roll = 0;
         int yaw = 0;
+        int dc_motor_1 = 0;
+        int dc_motor_2 = 0;
         bool brightenLED_1 = false;
         bool dimLED_1 = false;
         bool brightenLED_2 = false;
@@ -210,6 +212,10 @@ int main(int argc, char **argv) {
                     frontServoAngle = bluestar_config.front_camera_preset_servo_angles[2]; 
                     backServoAngle = bluestar_config.back_camera_preset_servo_angles[2];
                 }
+                if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS) dc_motor_1 = 127;
+                if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS) dc_motor_1 = 255;
+                if (glfwGetKey(window, GLFW_KEY_KP_4) == GLFW_PRESS) dc_motor_2 = 127;
+                if (glfwGetKey(window, GLFW_KEY_KP_5) == GLFW_PRESS) dc_motor_2 = 255;
             }
             if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
@@ -273,6 +279,18 @@ int main(int argc, char **argv) {
                             break;
                         case ButtonAction::TURN_BACK_SERVO_CCW:
                             turnBackServoCcw = true;
+                            break;
+                        case ButtonAction::DC_MOTOR_1_CW:
+                            dc_motor_1 = 127;
+                            break;
+                        case ButtonAction::DC_MOTOR_1_CCW:
+                            dc_motor_1 = 255;
+                            break;
+                        case ButtonAction::DC_MOTOR_2_CW:
+                            dc_motor_2 = 127;
+                            break;
+                        case ButtonAction::DC_MOTOR_2_CCW:
+                            dc_motor_2 = 255;
                             break;
                         case ButtonAction::CONFIGURATION_MODE:
                             // Can either be set by user input for through the GUI
@@ -457,7 +475,7 @@ int main(int argc, char **argv) {
             yaw = -yaw;
         }
 
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, turnFrontServoCw,
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, dc_motor_1, dc_motor_2, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
             backServoAngle, configuration_mode_thruster_number);
         
@@ -704,6 +722,10 @@ int main(int argc, char **argv) {
                         ImGui::Text("X - Dim LED 1");
                         ImGui::Text("J - Brighten LED 2");
                         ImGui::Text("K - Dim LED 2");
+                        ImGui::Text("Numpad 1 - DC Motor 1 CW");
+                        ImGui::Text("Numpad 2 - DC Motor 1 CCW");
+                        ImGui::Text("Numpad 4 - DC Motor 2 CW");
+                        ImGui::Text("Numpad 5 - DC Motor 2 CCW");
                         ImGui::Text("Right Arrow - Turn Front Servo Clockwise");
                         ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
                         ImGui::Text("Page Up - Turn Back Servo Clockwise");

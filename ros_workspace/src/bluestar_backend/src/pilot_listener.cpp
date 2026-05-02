@@ -231,6 +231,9 @@ private:
         }
       }
     }
+
+    current_bluestar_control_values.dc_motors[0] = pilot_input->dc_motor_1;
+    current_bluestar_control_values.dc_motors[1] = pilot_input->dc_motor_2;
   }
 
   void software_to_board_communication_timer_callback()

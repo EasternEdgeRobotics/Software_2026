@@ -37,6 +37,8 @@ class PilotInputPublisher : public rclcpp::Node {
         const int& heave,
         const int& yaw,
         const int& roll,
+        const int& DCmotor_1,
+        const int& DCmotor_2,
         const bool& brightenLED_1,
         const bool& dimLED_1,
         const bool& brightenLED_2,
@@ -66,6 +68,8 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.dim_led_1 = dimLED_1;
             msg.brighten_led_2 = brightenLED_2;
             msg.dim_led_2 = dimLED_2;
+            msg.dc_motor_1 = DCmotor_1;
+            msg.dc_motor_2 = DCmotor_2;
             msg.turn_front_servo_cw = turnFrontServoCw;
             msg.turn_front_servo_ccw = turnFrontServoCcw;
             msg.turn_back_servo_cw = turnBackServoCw;

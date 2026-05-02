@@ -4,6 +4,8 @@ int8 heave
 int8 pitch
 int8 yaw
 int8 roll
+int8 dc_motor_1
+int8 dc_motor_2
 uint8 power_multiplier
 uint8 surge_multiplier
 uint8 sway_multiplier
