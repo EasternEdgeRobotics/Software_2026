@@ -25,14 +25,6 @@ bool pitch_up
 bool pitch_down
 bool roll_cw
 bool roll_ccw
-bool turn_servo_1_cw
-bool turn_servo_1_ccw
-bool turn_servo_2_cw
-bool turn_servo_2_ccw
-bool turn_servo_3_cw
-bool turn_servo_3_ccw
-bool turn_servo_4_cw
-bool turn_servo_4_ccw
 bool brighten_led_1
 bool dim_led_1
 bool brighten_led_2

@@ -224,21 +224,11 @@ private:
 
       single_thruster_configuration_mode = pilot_input->configuration_mode;
 
-      bool servo_cw[] = {pilot_input->turn_servo_1_cw, pilot_input->turn_servo_2_cw, pilot_input->turn_servo_3_cw, pilot_input->turn_servo_4_cw};
-      bool servo_ccw[] = {pilot_input->turn_servo_1_ccw, pilot_input->turn_servo_2_ccw, pilot_input->turn_servo_3_ccw, pilot_input->turn_servo_4_ccw};
-
       // Servos
+      int servo_angle_inputs[] = {pilot_input->servo_1_angle, pilot_input->servo_2_angle, pilot_input->servo_3_angle, pilot_input->servo_4_angle};
       for (int i = 0; i < 4; i++)
       {
-        if (servo_cw[i])
-        {
-          // The following line hurts to read, but it just clamps the value. -PC
-          current_bluestar_control_values.servos[i] = (current_bluestar_control_values.servos[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : current_bluestar_control_values.servos[i] + SERVO_FREQ_INCREMENT;
-        }
-        else if (servo_ccw[i])
-        {
-          current_bluestar_control_values.servos[i] = (current_bluestar_control_values.servos[i] < SERVO_FREQ_INCREMENT) ? 0 : current_bluestar_control_values.servos[i] - SERVO_FREQ_INCREMENT;
-        }
+        current_bluestar_control_values.servos[i] = servo_angle_inputs[i];
       }
 
       // LEDs

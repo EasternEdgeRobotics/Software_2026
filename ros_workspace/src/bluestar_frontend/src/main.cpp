@@ -50,6 +50,9 @@ bool dim_led_latch_2 = false;
 bool fast_mode_latch = false;
 bool invert_controls_latch = false;
 
+int LED_BRIGHTNESS_INCREMENT = 51; // 5 levels
+int SERVO_FREQ_INCREMENT = 17; // 15 levels
+
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const BlueStarConfig& bluestar_config);
 
@@ -146,14 +149,6 @@ int main(int argc, char **argv) {
         bool dimLED_1 = false;
         bool brightenLED_2 = false;
         bool dimLED_2 = false;
-        bool turnServo1Cw = false;
-        bool turnServo1Ccw = false;
-        bool turnServo2Cw = false;
-        bool turnServo2Ccw = false;
-        bool turnServo3Cw = false;
-        bool turnServo3Ccw = false;
-        bool turnServo4Cw = false;
-        bool turnServo4Ccw = false;
         bool flipCam1VerticallyButtonPressed = false;
         bool flipCam2VerticallyButtonPressed = false;
         bool flipCam3VerticallyButtonPressed = false;
@@ -190,14 +185,15 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED_1 = true;
                 if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) brightenLED_2 = true;
                 if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) dimLED_2 = true;
-                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnServo1Cw = true;
-                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnServo1Ccw = true;
-                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnServo2Cw = true;
-                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnServo2Ccw = true;
-                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) turnServo1Cw = true;
-                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) turnServo1Ccw = true;
-                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) turnServo2Cw = true;
-                if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) turnServo2Ccw = true;
+                // These might be the ugliest lines of code ive ever made, it works though. -PC
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) Servo1Angle  = (Servo1Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo1Angle + SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) Servo1Angle = (Servo1Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo1Angle - SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) Servo2Angle  = (Servo2Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo2Angle + SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) Servo2Angle = (Servo2Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo2Angle - SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) Servo3Angle  = (Servo3Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo3Angle + SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) Servo3Angle = (Servo3Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo3Angle - SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) Servo4Angle  = (Servo4Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo14ngle + SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) Servo4Angle = (Servo4Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo4Angle - SERVO_FREQ_INCREMENT;
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
@@ -277,28 +273,28 @@ int main(int argc, char **argv) {
                             dimLED_2 = true;
                             break;
                         case ButtonAction::SERVO_1_CW:
-                            turnServo1Cw = true;
+                            Servo1Angle  = (Servo1Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo1Angle + SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_1_CCW:
-                            turnServo1Ccw = true;
+                            Servo1Angle = (Servo1Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo1angle - SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_2_CW:
-                            turnServo2Cw = true;
+                            Servo2Angle  = (Servo2Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo2Angle + SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_2_CCW:
-                            turnServo2Ccw = true;
+                            Servo2Angle = (Servo2Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo2Angle - SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_3_CW:
-                            turnServo3Cw = true;
+                            Servo3Angle  = (Servo3Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo3Angle + SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_3_CCW:
-                            turnServo3Ccw = true;
+                            Servo3Angle = (Servo3Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo3Angle - SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_4_CW:
-                            turnServo4Cw = true;
+                            Servo4Angle  = (Servo4Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo4Angle + SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_4_CCW:
-                            turnServo4Ccw = true;
+                            Servo4Angle = (Servo4Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo4Angle - SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::DC_MOTOR_1_CW:
                             dc_motor_1 = 127;
@@ -497,7 +493,6 @@ int main(int argc, char **argv) {
 
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
             dc_motor_1, dc_motor_2, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, 
-            turnServo1Cw, turnServo1Ccw, turnServo2Cw, turnServo2Ccw, turnServo3Cw, turnServo3Ccw, turnServo4Cw, turnServo4Ccw, 
             Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
             configuration_mode, configuration_mode_thruster_number);
         
