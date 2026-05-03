@@ -130,6 +130,11 @@ int main(int argc, char **argv) {
     cam3.start();
     cam4.start();
 
+    int Servo1Angle = 127;
+    int Servo2Angle = 127;
+    int Servo3Angle = 127;
+    int Servo4Angle = 127;
+
     //render loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -159,11 +164,6 @@ int main(int argc, char **argv) {
         bool flipCam4HorizontallyButtonPressed = false;
         bool fast_mode_toggle = false;
         bool invert_controls_toggle = false;
-
-        int Servo1Angle = 127;
-        int Servo2Angle = 127;
-        int Servo3Angle = 127;
-        int Servo4Angle = 127;
 
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
