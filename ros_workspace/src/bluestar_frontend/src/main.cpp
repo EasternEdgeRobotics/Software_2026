@@ -411,14 +411,14 @@ int main(int argc, char **argv) {
             
             for (int i = 0; i < 4; i++) {
                 if (vert_cam_pressed[i]) {
-                    if (!vert_cam_latch[i]) cam_sel.flip_vertically();
+                    if (!vert_cam_latch[i]) cam_sel[i].flip_vertically();
                     vert_cam_latch[i] = true;
                 } else {
                     vert_cam_latch = false;
                 }
 
                 if (hori_cam_pressed[1]) {
-                    if (!hori_cam_latch[i]) cam_sel.flip_horizontally();
+                    if (!hori_cam_latch[i]) cam_sel[i].flip_horizontally();
                     hori_cam_latch[i] = true;
                 } else {
                     hori_cam_latch[i] = false;
