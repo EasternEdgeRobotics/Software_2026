@@ -44,8 +44,8 @@ public:
       if (!rclcpp::ok())
       {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-        return;
         rclcpp::shutdown();
+        return;
       }
       RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "config manager service not available, waiting again...");
     }
@@ -235,10 +235,10 @@ private:
       for (int i = 0; i < 2; i++) {
         current_bluestar_control_values.led_brightness[i] = led_brightness_input[i];
       }
-    }
 
-    current_bluestar_control_values.dc_motors[0] = pilot_input->dc_motor_1;
-    current_bluestar_control_values.dc_motors[1] = pilot_input->dc_motor_2;
+      current_bluestar_control_values.dc_motors[0] = pilot_input->dc_motor_1;
+      current_bluestar_control_values.dc_motors[1] = pilot_input->dc_motor_2;
+    }
   }
 
   void software_to_board_communication_timer_callback()

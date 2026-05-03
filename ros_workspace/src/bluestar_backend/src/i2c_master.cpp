@@ -95,7 +95,7 @@ private:
     if (ioctl(i2c_file, I2C_SLAVE, device_address) < 0) {
       if (!previous_i2c_write_failed)
       {
-        RCLCPP_ERROR(this->get_logger(), "I2C bus is not open");
+        RCLCPP_ERROR(this->get_logger(), "Failed to set I2C Slave Address");
         previous_i2c_write_failed = true;
       }
       return;

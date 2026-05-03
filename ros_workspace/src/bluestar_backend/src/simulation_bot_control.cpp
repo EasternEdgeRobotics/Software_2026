@@ -26,7 +26,7 @@ public:
     servo_3_forward_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_3_forward", 10);
     servo_3_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_3_downtilt", 10);
     servo_4_forward_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_4_forward", 10);
-    servo_4_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_5_downtilt", 10);
+    servo_4_downtilt_publisher = this->create_publisher<std_msgs::msg::Float64>("/servo_4_downtilt", 10);
 
     auto control_values_subscriber_callback =
       [this](eer_interfaces::msg::BlueStarControl::UniquePtr control_values_msg) -> void {
