@@ -634,11 +634,11 @@ int main(int argc, char **argv) {
             // ImGui::Text("Servo 4: %.1d", Servo4Angle);
             
             // LED debug
-            ImGui::SameLine();
-            ImGui::Text("LED 1: %.1d", LED1Brightness);
-            ImGui::SameLine();
-            ImGui::Text("LED 2: %.1d", LED2Brightness);
-            ImGui::SameLine();
+            // ImGui::SameLine();
+            // ImGui::Text("LED 1: %.1d", LED1Brightness);
+            // ImGui::SameLine();
+            // ImGui::Text("LED 2: %.1d", LED2Brightness);
+            // ImGui::SameLine();
 
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
