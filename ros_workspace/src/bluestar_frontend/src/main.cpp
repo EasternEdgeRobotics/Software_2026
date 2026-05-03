@@ -570,7 +570,7 @@ int main(int argc, char **argv) {
                             if (!configData["cameras"][0].is_null()) std::strncpy(user_config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(user_config.cam1ip));
                             if (!configData["cameras"][1].is_null()) std::strncpy(user_config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(user_config.cam2ip));
                             if (!configData["cameras"][2].is_null()) std::strncpy(user_config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(user_config.cam3ip));
-                            if (!configData["cameras"][3].is_null()) std::strncpy(user_config.cam4ip, configData["cameras"][3].get<std::string>().c_str(), sizeof(user_config.cam3ip));
+                            if (!configData["cameras"][3].is_null()) std::strncpy(user_config.cam4ip, configData["cameras"][3].get<std::string>().c_str(), sizeof(user_config.cam4ip));
                             user_config.deadzone = configData.value("deadzone", 0.1f);
                             user_config.buttonActions.clear();
                             for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {

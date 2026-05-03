@@ -41,11 +41,11 @@ class PilotInputPublisher : public rclcpp::Node {
         const int& DCmotor_2,
         const int& LED1Brightness,
         const int& LED2Brightness,
-        const bool& configurationMode,
         const int& Servo1Angle,
         const int& Servo2Angle,
         const int& Servo3Angle,
         const int& Servo4Angle,
+        const bool& configurationMode,
         const int& configurationModeThrusterNumber)
         {
             auto msg = eer_interfaces::msg::PilotInput();
