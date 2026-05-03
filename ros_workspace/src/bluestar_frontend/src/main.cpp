@@ -492,7 +492,7 @@ int main(int argc, char **argv) {
             bool  led_bri_state[]    = {LED_1_brighten_pressed,  LED_2_brighten_pressed};
             bool  led_dim_state[]   = {LED_1_dim_pressed, LED_2_dim_pressed};
 
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 2; i++) {
                 if (led_bri_state[i]) {
                     if (!*led_latch_bri[i]) {
                         *led_brightness_val[i] = (*led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : *led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT;
