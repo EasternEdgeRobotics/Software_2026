@@ -574,13 +574,13 @@ int main(int argc, char **argv) {
             
             // Servo debug
             ImGui::SameLine();
-            ImGui::Text("Servo 1: %.1f", Servo1Angle);
+            ImGui::Text("Servo 1: %.1d", Servo1Angle);
             ImGui::SameLine();
-            ImGui::Text("Servo 2: %.1f", Servo2Angle);
+            ImGui::Text("Servo 2: %.1d", Servo2Angle);
             ImGui::SameLine();
-            ImGui::Text("Servo 3: %.1f", Servo3Angle);
+            ImGui::Text("Servo 3: %.1d", Servo3Angle);
             ImGui::SameLine();
-            ImGui::Text("Servo 4: %.1f", Servo4Angle);
+            ImGui::Text("Servo 4: %.1d", Servo4Angle);
 
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
