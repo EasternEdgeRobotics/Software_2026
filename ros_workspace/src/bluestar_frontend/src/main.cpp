@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) Servo2Angle = (Servo2Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo2Angle - SERVO_FREQ_INCREMENT;
                 if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) Servo3Angle  = (Servo3Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo3Angle + SERVO_FREQ_INCREMENT;
                 if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) Servo3Angle = (Servo3Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo3Angle - SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) Servo4Angle  = (Servo4Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo14ngle + SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) Servo4Angle  = (Servo4Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo4Angle + SERVO_FREQ_INCREMENT;
                 if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) Servo4Angle = (Servo4Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo4Angle - SERVO_FREQ_INCREMENT;
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
                             Servo1Angle  = (Servo1Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo1Angle + SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_1_CCW:
-                            Servo1Angle = (Servo1Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo1angle - SERVO_FREQ_INCREMENT;
+                            Servo1Angle = (Servo1Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo1Angle - SERVO_FREQ_INCREMENT;
                             break;
                         case ButtonAction::SERVO_2_CW:
                             Servo2Angle  = (Servo2Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo2Angle + SERVO_FREQ_INCREMENT;
