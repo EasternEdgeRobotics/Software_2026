@@ -414,7 +414,7 @@ int main(int argc, char **argv) {
                     if (!vert_cam_latch[i]) cam_sel[i].flip_vertically();
                     vert_cam_latch[i] = true;
                 } else {
-                    vert_cam_latch = false;
+                    vert_cam_latch[i] = false;
                 }
 
                 if (hori_cam_pressed[1]) {
