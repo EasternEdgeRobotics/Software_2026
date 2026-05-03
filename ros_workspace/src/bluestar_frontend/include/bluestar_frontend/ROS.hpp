@@ -43,14 +43,6 @@ class PilotInputPublisher : public rclcpp::Node {
         const bool& dimLED_1,
         const bool& brightenLED_2,
         const bool& dimLED_2,
-        const bool& turnServo1Cw,
-        const bool& turnServo1Ccw,
-        const bool& turnServo2Cw,
-        const bool& turnServo2Ccw,
-        const bool& turnServo3Cw,
-        const bool& turnServo3Ccw,
-        const bool& turnServo4Cw,
-        const bool& turnServo4Ccw,
         const bool& configurationMode,
         const int& Servo1Angle,
         const int& Servo2Angle,
@@ -80,17 +72,9 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.dc_motor_1 = DCmotor_1;
             msg.dc_motor_2 = DCmotor_2;
 
-            msg.turn_servo_1_cw = turnServo1Cw;
-            msg.turn_servo_1_ccw = turnServo1Ccw;
             msg.servo_1_angle = Servo1Angle;
-            msg.turn_servo_2_cw = turnServo2Cw;
-            msg.turn_servo_2_ccw = turnServo2Ccw;
             msg.servo_2_angle = Servo2Angle;
-            msg.turn_servo_3_cw = turnServo3Cw;
-            msg.turn_servo_3_ccw = turnServo3Ccw;
             msg.servo_3_angle = Servo3Angle;
-            msg.turn_servo_4_cw = turnServo4Cw;
-            msg.turn_servo_4_ccw = turnServo4Ccw;
             msg.servo_4_angle = Servo4Angle;
 
             msg.configuration_mode = configurationMode;
