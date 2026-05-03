@@ -43,6 +43,11 @@ bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
 bool flipCam4HorizontallyButtonPressedLatch = false;
 
+bool servo_1_latch = false;
+bool servo_2_latch = false;
+bool servo_3_latch = false;
+bool servo_4_latch = false;
+
 bool brighten_led_latch_1 = false;
 bool brighten_led_latch_2 = false;
 bool dim_led_latch_1 = false;
@@ -162,6 +167,14 @@ int main(int argc, char **argv) {
         bool flipCam2HorizontallyButtonPressed = false;
         bool flipCam3HorizontallyButtonPressed = false;
         bool flipCam4HorizontallyButtonPressed = false;
+        bool Servo_1_CW_Pressed = false;
+        bool Servo_1_CCW_Pressed = false;
+        bool Servo_2_CW_Pressed = false;
+        bool Servo_2_CCW_Pressed = false;
+        bool Servo_3_CW_Pressed = false;
+        bool Servo_3_CCW_Pressed = false;
+        bool Servo_4_CW_Pressed = false;
+        bool Servo_4_CCW_Pressed = false;
         bool fast_mode_toggle = false;
         bool invert_controls_toggle = false;
 
@@ -184,15 +197,14 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED_1 = true;
                 if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) brightenLED_2 = true;
                 if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) dimLED_2 = true;
-                // These might be the ugliest lines of code ive ever made, it works though. -PC
-                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) Servo1Angle  = (Servo1Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo1Angle + SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) Servo1Angle = (Servo1Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo1Angle - SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) Servo2Angle  = (Servo2Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo2Angle + SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) Servo2Angle = (Servo2Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo2Angle - SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) Servo3Angle  = (Servo3Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo3Angle + SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) Servo3Angle = (Servo3Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo3Angle - SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) Servo4Angle  = (Servo4Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo4Angle + SERVO_FREQ_INCREMENT;
-                if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) Servo4Angle = (Servo4Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo4Angle - SERVO_FREQ_INCREMENT;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) Servo_1_CW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) Servo_1_CCW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) Servo_2_CW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) Servo_2_CCW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) Servo_3_CW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) Servo_3_CCW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) Servo_4_CW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) Servo_4_CCW_Pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
@@ -272,28 +284,28 @@ int main(int argc, char **argv) {
                             dimLED_2 = true;
                             break;
                         case ButtonAction::SERVO_1_CW:
-                            Servo1Angle  = (Servo1Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo1Angle + SERVO_FREQ_INCREMENT;
+                            Servo_1_CW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_1_CCW:
-                            Servo1Angle = (Servo1Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo1Angle - SERVO_FREQ_INCREMENT;
+                            Servo_1_CCW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_2_CW:
-                            Servo2Angle  = (Servo2Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo2Angle + SERVO_FREQ_INCREMENT;
+                            Servo_2_CW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_2_CCW:
-                            Servo2Angle = (Servo2Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo2Angle - SERVO_FREQ_INCREMENT;
+                            Servo_2_CCW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_3_CW:
-                            Servo3Angle  = (Servo3Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo3Angle + SERVO_FREQ_INCREMENT;
+                            Servo_3_CW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_3_CCW:
-                            Servo3Angle = (Servo3Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo3Angle - SERVO_FREQ_INCREMENT;
+                            Servo_3_CCW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_4_CW:
-                            Servo4Angle  = (Servo4Angle + SERVO_FREQ_INCREMENT > 255) ? 255 : Servo4Angle + SERVO_FREQ_INCREMENT;
+                            Servo_4_CW_Pressed = true;
                             break;
                         case ButtonAction::SERVO_4_CCW:
-                            Servo4Angle = (Servo4Angle < SERVO_FREQ_INCREMENT) ? 0 : Servo4Angle - SERVO_FREQ_INCREMENT;
+                            Servo_4_CCW_Pressed = true;
                             break;
                         case ButtonAction::DC_MOTOR_1_CW:
                             dc_motor_1 = 127;
@@ -335,6 +347,7 @@ int main(int argc, char **argv) {
                         case ButtonAction::FLIP_CAMERA_4_HORIZONTALLY:
                             flipCam4HorizontallyButtonPressed = true;
                             break;
+
                         case ButtonAction::FAST_MODE:
                             fast_mode_toggle = true;
                             break;  
@@ -435,6 +448,23 @@ int main(int argc, char **argv) {
                 flipCam4HorizontallyButtonPressedLatch = false;
             }
 
+            bool servo_latches[] = {servo_1_latch, servo_2_latch, servo_3_latch, servo_4_latch};
+            int servo_angle_val[] = {Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle};
+            bool servo_cw_state[] = {Servo_1_CW_Pressed, Servo_2_CW_Pressed, Servo_3_CW_Pressed, Servo_4_CW_Pressed};
+            bool servo_ccw_state[] = {Servo_1_CCW_Pressed, Servo_2_CCW_Pressed, Servo_3_CCW_Pressed, Servo_4_CCW_Pressed};
+
+            for (int i = 0; i < 4; i++) {
+                if (servo_cw_state[i]) {
+                    if (!servo_latches[i]) servo_angle_val[i]  = (servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : servo_angle_val[i] + SERVO_FREQ_INCREMENT;
+                    servo_latches[i] = true;
+                } else if (servo_ccw_state[i]) {
+                    if (!servo_latches[i]) servo_angle_val[i] = (servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : servo_angle_val[i] - SERVO_FREQ_INCREMENT;
+                    servo_latches[i] = true;
+                } else {
+                    servo_latches[i] = false;
+                }
+            }
+            
             
             if (invert_controls_toggle) {
                 if (!invert_controls_latch) invert_controls = !invert_controls;
