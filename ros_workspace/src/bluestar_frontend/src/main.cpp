@@ -403,26 +403,53 @@ int main(int argc, char **argv) {
                 
             // We only want this input to be registered once per button hit 
             // rather than toggling every frame as long as button is pressed
-            bool* vert_cam_pressed[]  = {&servo_1_cw_latch,  &servo_2_cw_latch,  &servo_3_cw_latch,  &servo_4_cw_latch};
-            bool* hori_cam_pressed[] = {&servo_1_ccw_latch, &servo_2_ccw_latch, &servo_3_ccw_latch, &servo_4_ccw_latch};
-            Camera*  cam_sel[]   = {&cam1, &cam2, &cam3, &cam4};
-            bool  vert_cam_latch[]    = {Servo_1_CW_Pressed,  Servo_2_CW_Pressed,  Servo_3_CW_Pressed,  Servo_4_CW_Pressed};
-            bool  hori_cam_latch[]   = {Servo_1_CCW_Pressed, Servo_2_CCW_Pressed, Servo_3_CCW_Pressed, Servo_4_CCW_Pressed};
-            
-            for (int i = 0; i < 4; i++) {
-                if (vert_cam_pressed[i]) {
-                    if (!vert_cam_latch[i]) cam_sel[i].flip_vertically();
-                    vert_cam_latch[i] = true;
-                } else {
-                    vert_cam_latch[i] = false;
-                }
-
-                if (hori_cam_pressed[1]) {
-                    if (!hori_cam_latch[i]) cam_sel[i].flip_horizontally();
-                    hori_cam_latch[i] = true;
-                } else {
-                    hori_cam_latch[i] = false;
-                }
+            if (flipCam1VerticallyButtonPressed) {
+                if (!flipCam1VerticallyButtonPressedLatch) cam1.flip_vertically();
+                flipCam1VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam1VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam2VerticallyButtonPressed) {
+                if (!flipCam2VerticallyButtonPressedLatch) cam2.flip_vertically();
+                flipCam2VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam2VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam3VerticallyButtonPressed) {
+                if (!flipCam3VerticallyButtonPressedLatch) cam3.flip_vertically();
+                flipCam3VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam3VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam4VerticallyButtonPressed) {
+                if (!flipCam4VerticallyButtonPressedLatch) cam4.flip_vertically();
+                flipCam4VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam4VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam1HorizontallyButtonPressed) {
+                if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
+                flipCam1HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam1HorizontallyButtonPressedLatch = false;
+            }
+            if (flipCam2HorizontallyButtonPressed) {
+                if (!flipCam2HorizontallyButtonPressedLatch) cam2.flip_horizontally();
+                flipCam2HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam2HorizontallyButtonPressedLatch = false;
+            }
+            if (flipCam3HorizontallyButtonPressed) {
+                if (!flipCam3HorizontallyButtonPressedLatch) cam3.flip_horizontally();
+                flipCam3HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam3HorizontallyButtonPressedLatch = false;
+            }
+            if (flipCam4HorizontallyButtonPressed) {
+                if (!flipCam4HorizontallyButtonPressedLatch) cam4.flip_horizontally();
+                flipCam4HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam4HorizontallyButtonPressedLatch = false;
             }
 
             // These have to be pointers, for anyone looking at this in the future, i spent so many commits trying to figure out why i couldnt change the values, it looked like a 2010s minecraft letsplay series. -PC
