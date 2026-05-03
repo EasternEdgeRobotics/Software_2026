@@ -455,11 +455,15 @@ int main(int argc, char **argv) {
 
             for (int i = 0; i < 4; i++) {
                 if (servo_cw_state[i]) {
-                    if (!servo_latches[i]) servo_angle_val[i]  = (servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : servo_angle_val[i] + SERVO_FREQ_INCREMENT;
-                    servo_latches[i] = true;
+                    if (!servo_latches[i]) {
+                        servo_angle_val[i] = (servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : servo_angle_val[i] + SERVO_FREQ_INCREMENT;
+                        servo_latches[i] = true;
+                    }
                 } else if (servo_ccw_state[i]) {
-                    if (!servo_latches[i]) servo_angle_val[i] = (servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : servo_angle_val[i] - SERVO_FREQ_INCREMENT;
-                    servo_latches[i] = true;
+                    if (!servo_latches[i]) {
+                        servo_angle_val[i] = (servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : servo_angle_val[i] - SERVO_FREQ_INCREMENT;
+                        servo_latches[i] = true;
+                    }
                 } else {
                     servo_latches[i] = false;
                 }
