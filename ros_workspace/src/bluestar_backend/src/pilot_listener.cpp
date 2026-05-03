@@ -233,7 +233,7 @@ private:
       // LEDs
       int led_brightness_input[] = {pilot_input->led_1_brightness, pilot_input->led_2_brightness};
       for (int i = 0; i < 2; i++) {
-        current_bluestar_control_values.led_brightness[i] = led_brightness_input[i]
+        current_bluestar_control_values.led_brightness[i] = led_brightness_input[i];
       }
     }
 
