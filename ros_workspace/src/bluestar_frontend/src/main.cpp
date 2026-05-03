@@ -540,7 +540,8 @@ int main(int argc, char **argv) {
             surge = -surge;
             yaw = -yaw;
         }
-
+        
+        // THIS MUST MATCH THE ORDER IN ROS.hpp -PC
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
             dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
             Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,

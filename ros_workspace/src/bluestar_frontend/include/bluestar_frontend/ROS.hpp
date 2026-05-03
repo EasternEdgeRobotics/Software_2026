@@ -48,6 +48,7 @@ class PilotInputPublisher : public rclcpp::Node {
         const bool& configurationMode,
         const int& configurationModeThrusterNumber)
         {
+            // THIS MUST MATCH THE ORDER IN main.cpp
             auto msg = eer_interfaces::msg::PilotInput();
             msg.surge = surge;
             msg.sway = sway;
