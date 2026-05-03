@@ -452,31 +452,31 @@ int main(int argc, char **argv) {
                 flipCam4HorizontallyButtonPressedLatch = false;
             }
 
-            bool servo_latches_cw[] = {servo_1_cw_latch, servo_2_cw_latch, servo_3_cw_latch, servo_4_cw_latch};
-            bool servo_latches_ccw[] = {servo_1_ccw_latch, servo_2_ccw_latch, servo_3_ccw_latch, servo_4_ccw_latch};
-            int servo_angle_val[] = {Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle};
-            bool servo_cw_state[] = {Servo_1_CW_Pressed, Servo_2_CW_Pressed, Servo_3_CW_Pressed, Servo_4_CW_Pressed};
-            bool servo_ccw_state[] = {Servo_1_CCW_Pressed, Servo_2_CCW_Pressed, Servo_3_CCW_Pressed, Servo_4_CCW_Pressed};
+            bool* servo_latches_cw[]  = {&servo_1_cw_latch,  &servo_2_cw_latch,  &servo_3_cw_latch,  &servo_4_cw_latch};
+            bool* servo_latches_ccw[] = {&servo_1_ccw_latch, &servo_2_ccw_latch, &servo_3_ccw_latch, &servo_4_ccw_latch};
+            int*  servo_angle_val[]   = {&Servo1Angle, &Servo2Angle, &Servo3Angle, &Servo4Angle};
+            bool  servo_cw_state[]    = {Servo_1_CW_Pressed,  Servo_2_CW_Pressed,  Servo_3_CW_Pressed,  Servo_4_CW_Pressed};
+            bool  servo_ccw_state[]   = {Servo_1_CCW_Pressed, Servo_2_CCW_Pressed, Servo_3_CCW_Pressed, Servo_4_CCW_Pressed};
 
             for (int i = 0; i < 4; i++) {
                 if (servo_cw_state[i]) {
-                    if (!servo_latches_cw[i]) {
-                        servo_angle_val[i] = (servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : servo_angle_val[i] + SERVO_FREQ_INCREMENT;
-                        servo_latches_cw[i] = true;
+                    if (!*servo_latches_cw[i]) {
+                        *servo_angle_val[i] = (*servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : *servo_angle_val[i] + SERVO_FREQ_INCREMENT;
+                        *servo_latches_cw[i] = true;
                     }
                 } else {
-                    servo_latches_cw[i] = false;
+                    *servo_latches_cw[i] = false;
                 }
+
                 if (servo_ccw_state[i]) {
-                    if (!servo_latches_ccw[i]) {
-                        servo_angle_val[i] = (servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : servo_angle_val[i] - SERVO_FREQ_INCREMENT;
-                        servo_latches_ccw[i] = true;
+                    if (!*servo_latches_ccw[i]) {
+                        *servo_angle_val[i] = (*servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : *servo_angle_val[i] - SERVO_FREQ_INCREMENT;
+                        *servo_latches_ccw[i] = true;
                     }
                 } else {
-                    servo_latches_ccw[i] = false;
+                    *servo_latches_ccw[i] = false;
                 }
             }
-            
             
             if (invert_controls_toggle) {
                 if (!invert_controls_latch) invert_controls = !invert_controls;
