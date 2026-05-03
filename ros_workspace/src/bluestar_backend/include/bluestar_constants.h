@@ -41,10 +41,6 @@ extern const int MAX_SERVO_ANGLE;
 
 extern const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS;
 
-extern const int LED_BRIGHTNESS_INCREMENT;
-
-extern const int SERVO_FREQ_INCREMENT;
-
 extern const int LED_REGISTERS[2];
 
 extern const int DC_MOTOR_REGISTERS[2];

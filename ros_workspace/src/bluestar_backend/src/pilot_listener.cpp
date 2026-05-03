@@ -226,26 +226,14 @@ private:
 
       // Servos
       int servo_angle_inputs[] = {pilot_input->servo_1_angle, pilot_input->servo_2_angle, pilot_input->servo_3_angle, pilot_input->servo_4_angle};
-      for (int i = 0; i < 4; i++)
-      {
+      for (int i = 0; i < 4; i++) {
         current_bluestar_control_values.servos[i] = servo_angle_inputs[i];
       }
 
       // LEDs
-      bool led_input_brighten[] = {pilot_input->brighten_led_1, pilot_input->brighten_led_2};
-      bool led_input_dim[] = {pilot_input->dim_led_1, pilot_input->dim_led_2};
-
-      for (int i = 0; i < 2; i++)
-      {
-        if (led_input_brighten[i])
-        {
-          // The following line hurts to read, but it just clamps the value. -PC
-          current_bluestar_control_values.led_brightness[i] = (current_bluestar_control_values.led_brightness[i] + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : current_bluestar_control_values.led_brightness[i] + LED_BRIGHTNESS_INCREMENT;
-        }
-        else if (led_input_dim[i])
-        {
-          current_bluestar_control_values.led_brightness[i] = (current_bluestar_control_values.led_brightness[i] < LED_BRIGHTNESS_INCREMENT) ? 0 : current_bluestar_control_values.led_brightness[i] - LED_BRIGHTNESS_INCREMENT;
-        }
+      bool led_brightness_input[] = {pilot_input->led_1_brightness, pilot_input->led_2_brightness};
+      for (int i = 0; i < 2; i++) {
+        current_bluestar_control_values.led_brightness[i] = led_brightness_input[i]
       }
     }
 

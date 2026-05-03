@@ -144,6 +144,13 @@ int main(int argc, char **argv) {
     int Servo3Angle = 127;
     int Servo4Angle = 127;
 
+    int LED1Brightness = 0;
+    int LED2Brightness = 0;
+
+    // Uncomment these to keep the DC motors at a speed w/o holding the button
+    // int dc_motor_1 = 0;
+    // int dc_motor_2 = 0;
+
     //render loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -159,10 +166,10 @@ int main(int argc, char **argv) {
         int yaw = 0;
         int dc_motor_1 = 0;
         int dc_motor_2 = 0;
-        bool brightenLED_1 = false;
-        bool dimLED_1 = false;
-        bool brightenLED_2 = false;
-        bool dimLED_2 = false;
+        bool LED_1_brighten_pressed = false;
+        bool LED_2_brighten_pressed = false;
+        bool LED_1_dim_pressed = false;
+        bool LED_2_dim_pressed = false;
         bool flipCam1VerticallyButtonPressed = false;
         bool flipCam2VerticallyButtonPressed = false;
         bool flipCam3VerticallyButtonPressed = false;
@@ -197,10 +204,10 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) roll -= 100;
                 if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) heave += 100;
                 if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) heave -= 100;
-                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED_1 = true;
-                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED_1 = true;
-                if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) brightenLED_2 = true;
-                if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) dimLED_2 = true;
+                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) LED_1_brighten_pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) LED_1_dim_pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) LED_2_brighten_pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) LED_2_dim_pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) Servo_1_CW_Pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) Servo_1_CCW_Pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) Servo_2_CW_Pressed = true;
@@ -276,16 +283,16 @@ int main(int argc, char **argv) {
                             roll -= 100;
                             break;
                         case ButtonAction::BRIGHTEN_LED_1:
-                            brightenLED_1 = true;
+                            LED_1_brighten_pressed = true;
                             break;
                         case ButtonAction::DIM_LED_1:
-                            dimLED_1 = true;
+                            LED_1_dim_pressed = true;
                             break;
                         case ButtonAction::BRIGHTEN_LED_2:
-                            brightenLED_1 = true;
+                            LED_2_brighten_pressed = true;
                             break;
                         case ButtonAction::DIM_LED_2:
-                            dimLED_2 = true;
+                            LED_2_dim_pressed = true;
                             break;
                         case ButtonAction::SERVO_1_CW:
                             Servo_1_CW_Pressed = true;
@@ -478,6 +485,32 @@ int main(int argc, char **argv) {
                     *servo_latches_ccw[i] = false;
                 }
             }
+
+            bool* led_latch_bri[]  = {&brighten_led_latch_1,  &brighten_led_latch_2};
+            bool* led_latch_dim[] = {&dim_led_latch_1, &dim_led_latch_2};
+            int*  led_brightness_val[]   = {&LED1Brightness, &LED2Brightness};
+            bool  led_bri_state[]    = {LED_1_brighten_pressed,  LED_2_brighten_pressed};
+            bool  led_dim_state[]   = {LED_1_dim_pressed, LED_2_dim_pressed};
+
+            for (int i = 0; i < 4; i++) {
+                if (led_bri_state[i]) {
+                    if (!*led_latch_bri[i]) {
+                        *led_brightness_val[i] = (*led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : *led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT;
+                        *led_latch_bri[i] = true;
+                    }
+                } else {
+                    *led_latch_bri[i] = false;
+                }
+
+                if (led_dim_state[i]) {
+                    if (!*led_latch_dim[i]) {
+                        *led_brightness_val[i] = (*led_brightness_val[i] < LED_BRIGHTNESS_INCREMENT) ? 0 : *led_brightness_val[i] - LED_BRIGHTNESS_INCREMENT;
+                        *led_latch_dim[i] = true;
+                    }
+                } else {
+                    *led_latch_dim[i] = false;
+                }
+            }
             
             if (invert_controls_toggle) {
                 if (!invert_controls_latch) invert_controls = !invert_controls;
@@ -500,31 +533,6 @@ int main(int argc, char **argv) {
             } else {
                 fast_mode_latch = false;
             }
-
-            if (brightenLED_1) {
-                brightenLED_1 = !brighten_led_latch_1;
-                brighten_led_latch_1 = true;
-            } else {
-                brighten_led_latch_1 = false;
-            }
-            if (dimLED_1) {
-                dimLED_1 = !dim_led_latch_1;
-                dim_led_latch_1 = true;
-            } else {
-                dim_led_latch_1 = false;
-            }
-            if (brightenLED_2) {
-                brightenLED_2 = !brighten_led_latch_2;
-                brighten_led_latch_2 = true;
-            } else {
-                brighten_led_latch_2 = false;
-            }
-            if (dimLED_2) {
-                dimLED_1 = !dim_led_latch_2;
-                dim_led_latch_2 = true;
-            } else {
-                dim_led_latch_2 = false;
-            }
         }
 
         if (invert_controls)
@@ -534,7 +542,7 @@ int main(int argc, char **argv) {
         }
 
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
-            dc_motor_1, dc_motor_2, brightenLED_1, dimLED_1, brightenLED_2, dimLED_2, 
+            dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
             Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
             configuration_mode, configuration_mode_thruster_number);
         
@@ -616,14 +624,21 @@ int main(int argc, char **argv) {
             }
             
             // Servo debug
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 1: %.1d", Servo1Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 2: %.1d", Servo2Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 3: %.1d", Servo3Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 4: %.1d", Servo4Angle);
+            
+            // LED debug
             ImGui::SameLine();
-            ImGui::Text("Servo 1: %.1d", Servo1Angle);
+            ImGui::Text("LED 1: %.1d", LED1Brightness);
             ImGui::SameLine();
-            ImGui::Text("Servo 2: %.1d", Servo2Angle);
+            ImGui::Text("LED 2: %.1d", LED2Brightness);
             ImGui::SameLine();
-            ImGui::Text("Servo 3: %.1d", Servo3Angle);
-            ImGui::SameLine();
-            ImGui::Text("Servo 4: %.1d", Servo4Angle);
 
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);

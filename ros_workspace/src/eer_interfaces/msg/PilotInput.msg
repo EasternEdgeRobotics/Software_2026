@@ -13,10 +13,12 @@ uint8 heave_multiplier
 uint8 pitch_multiplier
 uint8 yaw_multiplier
 uint8 roll_multiplier
-int16 servo_1_angle
-int16 servo_2_angle
-int16 servo_3_angle
-int16 servo_4_angle
+int8 servo_1_angle
+int8 servo_2_angle
+int8 servo_3_angle
+int8 servo_4_angle
+int8 led_1_brightness
+int8 led_2_brightness
 bool open_claw
 bool close_claw
 bool heave_up
@@ -25,10 +27,6 @@ bool pitch_up
 bool pitch_down
 bool roll_cw
 bool roll_ccw
-bool brighten_led_1
-bool dim_led_1
-bool brighten_led_2
-bool dim_led_2
 bool enter_auto_mode
 bool configuration_mode
 int8 configuration_mode_thruster_number

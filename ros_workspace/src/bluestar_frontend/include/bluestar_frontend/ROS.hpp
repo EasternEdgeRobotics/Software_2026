@@ -39,10 +39,8 @@ class PilotInputPublisher : public rclcpp::Node {
         const int& roll,
         const int& DCmotor_1,
         const int& DCmotor_2,
-        const bool& brightenLED_1,
-        const bool& dimLED_1,
-        const bool& brightenLED_2,
-        const bool& dimLED_2,
+        const int& LED1Brightness,
+        const int& LED2Brightness,
         const bool& configurationMode,
         const int& Servo1Angle,
         const int& Servo2Angle,
@@ -64,10 +62,8 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.roll_multiplier = power.roll;
             msg.yaw_multiplier = power.yaw;
 
-            msg.brighten_led_1 = brightenLED_1;
-            msg.dim_led_1 = dimLED_1;
-            msg.brighten_led_2 = brightenLED_2;
-            msg.dim_led_2 = dimLED_2;
+            msg.led_1_brightness = LED1Brightness;
+            msg.led_2_brightness = LED2Brightness;
 
             msg.dc_motor_1 = DCmotor_1;
             msg.dc_motor_2 = DCmotor_2;
