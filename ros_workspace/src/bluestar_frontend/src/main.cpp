@@ -160,11 +160,10 @@ int main(int argc, char **argv) {
         bool fast_mode_toggle = false;
         bool invert_controls_toggle = false;
 
-        // Note: A servo angle of -1 means that the exact angle is unset
-        int Servo1Angle = -1;
-        int Servo2Angle = -1;
-        int Servo3Angle = -1;
-        int Servo4Angle = -1;
+        int Servo1Angle = 127;
+        int Servo2Angle = 127;
+        int Servo3Angle = 127;
+        int Servo4Angle = 127;
 
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
@@ -572,6 +571,16 @@ int main(int argc, char **argv) {
             if (ImGui::Button("Cam4 Screenshot")) {                
                 if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");
             }
+            
+            // Servo debug
+            ImGui::SameLine();
+            ImGui::Text("Servo 1: %.1f", Servo1Angle);
+            ImGui::SameLine();
+            ImGui::Text("Servo 2: %.1f", Servo2Angle);
+            ImGui::SameLine();
+            ImGui::Text("Servo 3: %.1f", Servo3Angle);
+            ImGui::SameLine();
+            ImGui::Text("Servo 4: %.1f", Servo4Angle);
 
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
