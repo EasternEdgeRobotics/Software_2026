@@ -589,10 +589,10 @@ int main(int argc, char **argv) {
                         }
                         if (ImGui::MenuItem(names[i].c_str())) {
                             json configData = json::parse(configs[i]);
-                            if (!configData["cameras"][0].is_null()) std::strncpy(user_config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(user_config.cam1ip));
-                            if (!configData["cameras"][1].is_null()) std::strncpy(user_config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(user_config.cam2ip));
-                            if (!configData["cameras"][2].is_null()) std::strncpy(user_config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(user_config.cam3ip));
-                            if (!configData["cameras"][3].is_null()) std::strncpy(user_config.cam4ip, configData["cameras"][3].get<std::string>().c_str(), sizeof(user_config.cam4ip));
+                            if (!configData["cameras"][0].is_null()) std::snprintf(user_config.cam1ip, sizeof(user_config.cam1ip), "%s",configData["cameras"][0].get<std::string>().c_str());
+                            if (!configData["cameras"][1].is_null()) std::snprintf(user_config.cam2ip, sizeof(user_config.cam2ip), "%s",configData["cameras"][1].get<std::string>().c_str());
+                            if (!configData["cameras"][2].is_null()) std::snprintf(user_config.cam3ip, sizeof(user_config.cam3ip), "%s",configData["cameras"][2].get<std::string>().c_str());
+                            if (!configData["cameras"][3].is_null()) std::snprintf(user_config.cam4ip, sizeof(user_config.cam4ip), "%s",configData["cameras"][3].get<std::string>().c_str());
                             user_config.deadzone = configData.value("deadzone", 0.1f);
                             user_config.buttonActions.clear();
                             for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {
@@ -677,16 +677,16 @@ int main(int argc, char **argv) {
                 if (ImGui::BeginTabItem("Cameras (User)")) {
                     ImGui::Text("Camera 1 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera1", user_config.cam1ip, 64);
+                    ImGui::InputText("##camera1", user_config.cam1ip, 512);
                     ImGui::Text("Camera 2 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera2", user_config.cam2ip, 64);
+                    ImGui::InputText("##camera2", user_config.cam2ip, 512);
                     ImGui::Text("Camera 3 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera3", user_config.cam3ip, 64);
+                    ImGui::InputText("##camera3", user_config.cam3ip, 512);
                     ImGui::Text("Camera 4 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera4", user_config.cam4ip, 64);
+                    ImGui::InputText("##camera4", user_config.cam4ip, 512);
                     ImGui::EndTabItem();
                     
                 }
@@ -1007,6 +1007,11 @@ int main(int argc, char **argv) {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    cam1.stop();
+    cam2.stop();
+    cam3.stop();
+    cam4.stop();
 
     glfwTerminate();
 

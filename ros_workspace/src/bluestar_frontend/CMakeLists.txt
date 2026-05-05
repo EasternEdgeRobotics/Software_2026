@@ -7,10 +7,17 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(eer_interfaces REQUIRED) 
-find_package(GLEW REQUIRED)
+find_package(eer_interfaces REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(GST REQUIRED IMPORTED_TARGET
+  gstreamer-1.0
+  gstreamer-app-1.0
+  gstreamer-webrtc-1.0
+  gstreamer-sdp-1.0
+  gstreamer-video-1.0
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -24,9 +31,8 @@ add_subdirectory(include/json)
 add_subdirectory(include/glad)
 
 include_directories(
-  ${eer_interfaces_INCLUDE_DIRS} 
+  ${eer_interfaces_INCLUDE_DIRS}
   ${OPENGL_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
   include/glfw/include
   include/imgui
   include/imgui/backends
@@ -36,27 +42,41 @@ include_directories(
 )
 
 set(IMGUI_SOURCES
-    include/imgui/imgui.cpp
-    include/imgui/imgui_draw.cpp
-    include/imgui/imgui_widgets.cpp
-    include/imgui/imgui_tables.cpp
-    include/imgui/imgui_demo.cpp
-    include/imgui/backends/imgui_impl_glfw.cpp
-    include/imgui/backends/imgui_impl_opengl3.cpp
+  include/imgui/imgui.cpp
+  include/imgui/imgui_draw.cpp
+  include/imgui/imgui_widgets.cpp
+  include/imgui/imgui_tables.cpp
+  include/imgui/imgui_demo.cpp
+  include/imgui/backends/imgui_impl_glfw.cpp
+  include/imgui/backends/imgui_impl_opengl3.cpp
 )
 
-add_executable(bluestar_frontend src/main.cpp ${IMGUI_SOURCES})
-
-target_link_libraries(bluestar_frontend 
-    ${OPENGL_LIBRARIES} 
-    ${OpenCV_LIBRARIES}
-    glfw
-    glad
-    nlohmann_json::nlohmann_json
-    rclcpp::rclcpp
+add_executable(
+  bluestar_frontend
+  src/main.cpp
+  src/Camera.cpp
+  src/webrtc_stream.cpp
+  ${IMGUI_SOURCES}
 )
 
-set_target_properties(bluestar_frontend PROPERTIES
+target_link_libraries(
+  bluestar_frontend
+  ${OPENGL_LIBRARIES}
+  glfw
+  glad
+  nlohmann_json::nlohmann_json
+  rclcpp::rclcpp
+  PkgConfig::GST
+)
+
+target_compile_options(
+  bluestar_frontend
+  PRIVATE ${GST_CFLAGS_OTHER}
+)
+
+set_target_properties(
+  bluestar_frontend
+  PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
@@ -72,11 +92,21 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-# Add the launch files
 install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
 
+target_compile_options(
+  bluestar_frontend
+  PRIVATE -O0 -g -fsanitize=address,undefined
+)
+
+target_link_options(
+  bluestar_frontend
+  PRIVATE -fsanitize=address,undefined
+)
+
 ament_package()
+
 target_compile_options(glad PRIVATE -Wno-pedantic)

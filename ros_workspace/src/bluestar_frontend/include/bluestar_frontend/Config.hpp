@@ -47,10 +47,10 @@ AxisAction stringToAxisAction(const string& action) {
 
 class UserConfig {
     public:
-        char cam1ip[64];
-        char cam2ip[64];
-        char cam3ip[64]; 
-        char cam4ip[64]; 
+        char cam1ip[512];
+        char cam2ip[512];
+        char cam3ip[512]; 
+        char cam4ip[512]; 
         char name[64];
         float deadzone = 0.1;
         vector<ButtonAction> buttonActions;
