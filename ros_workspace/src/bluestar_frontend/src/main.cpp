@@ -677,20 +677,50 @@ int main(int argc, char **argv) {
             if (ImGui::BeginTabBar("Config Tabs")) {
                 if (ImGui::BeginTabItem("Cameras (User)")) {
                     ImGui::Text("URLs must include all elements. (ie http://192.168.137.200:8889/cam/whep)");
-                    ImGui::Text("Camera 1 URL");
-                    ImGui::SameLine(); 
-                    ImGui::InputText("##camera1", bluestar_config.cam1ip, 512);
-                    ImGui::Text("Camera 2 URL");
-                    ImGui::SameLine(); 
-                    ImGui::InputText("##camera2", bluestar_config.cam2ip, 512);
-                    ImGui::Text("Camera 3 URL");
-                    ImGui::SameLine(); 
-                    ImGui::InputText("##camera3", bluestar_config.cam3ip, 512);
-                    ImGui::Text("Camera 4 URL");
-                    ImGui::SameLine(); 
-                    ImGui::InputText("##camera4", bluestar_config.cam4ip, 512);
+                    if (ImGui::BeginTable("Camera Table", 2, ImGuiTableFlags_Borders |
+                                ImGuiTableFlags_RowBg |
+                                ImGuiTableFlags_SizingStretchSame |
+                                ImGuiTableFlags_Resizable)) {
+
+                        ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                        ImGui::TableSetupColumn("URL", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableHeadersRow();
+
+                        // -FLT_MIN Sets it to be as wide as the col
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Camera 1 URL");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        ImGui::InputText("##camera1", bluestar_config.cam1ip, 512);
+                        
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Camera 2 URL");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        ImGui::InputText("##camera2", bluestar_config.cam2ip, 512);
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Camera 3 URL");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        ImGui::InputText("##camera3", bluestar_config.cam3ip, 512);
+                        
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Camera 4 URL");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        ImGui::InputText("##camera4", bluestar_config.cam4ip, 512);
+
+                        ImGui::EndTable();
+                    }
+
                     ImGui::EndTabItem();
-                    
+
                 }
                 if (ImGui::BeginTabItem("BlueStar Config")){
                     if (!(keyboard_mode || glfwJoystickPresent(GLFW_JOYSTICK_1)))
