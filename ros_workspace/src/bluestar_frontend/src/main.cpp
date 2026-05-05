@@ -146,14 +146,19 @@ int main(int argc, char **argv) {
             for (size_t i = 0; i < std::size(bluestar_config.servo_2_preset_angles); i++){
                 if (!configData["servo_2_preset_angles"][i].is_null()) bluestar_config.servo_2_preset_angles[i] = configData["servo_2_preset_angles"][i].get<int>();
             }
+
+            if (!configData["cam1ip"].is_null()) std::snprintf(bluestar_config.cam1ip, sizeof(bluestar_config.cam1ip), "%s",configData["cam1ip"].get<std::string>().c_str());
+            if (!configData["cam2ip"].is_null()) std::snprintf(bluestar_config.cam2ip, sizeof(bluestar_config.cam2ip), "%s",configData["cam2ip"].get<std::string>().c_str());
+            if (!configData["cam3ip"].is_null()) std::snprintf(bluestar_config.cam3ip, sizeof(bluestar_config.cam3ip), "%s",configData["cam3ip"].get<std::string>().c_str());
+            if (!configData["cam4ip"].is_null()) std::snprintf(bluestar_config.cam4ip, sizeof(bluestar_config.cam4ip), "%s",configData["cam4ip"].get<std::string>().c_str());
             break;
         }
     }
 
-    Camera cam1(user_config.cam1ip, noSignal);
-    Camera cam2(user_config.cam2ip, noSignal);
-    Camera cam3(user_config.cam3ip, noSignal);
-    Camera cam4(user_config.cam4ip, noSignal);
+    Camera cam1(bluestar_config.cam1ip, noSignal);
+    Camera cam2(bluestar_config.cam2ip, noSignal);
+    Camera cam3(bluestar_config.cam3ip, noSignal);
+    Camera cam4(bluestar_config.cam4ip, noSignal);
 
     cam1.start();
     cam2.start();
@@ -589,10 +594,6 @@ int main(int argc, char **argv) {
                         }
                         if (ImGui::MenuItem(names[i].c_str())) {
                             json configData = json::parse(configs[i]);
-                            if (!configData["cameras"][0].is_null()) std::snprintf(user_config.cam1ip, sizeof(user_config.cam1ip), "%s",configData["cameras"][0].get<std::string>().c_str());
-                            if (!configData["cameras"][1].is_null()) std::snprintf(user_config.cam2ip, sizeof(user_config.cam2ip), "%s",configData["cameras"][1].get<std::string>().c_str());
-                            if (!configData["cameras"][2].is_null()) std::snprintf(user_config.cam3ip, sizeof(user_config.cam3ip), "%s",configData["cameras"][2].get<std::string>().c_str());
-                            if (!configData["cameras"][3].is_null()) std::snprintf(user_config.cam4ip, sizeof(user_config.cam4ip), "%s",configData["cameras"][3].get<std::string>().c_str());
                             user_config.deadzone = configData.value("deadzone", 0.1f);
                             user_config.buttonActions.clear();
                             for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {
@@ -675,18 +676,19 @@ int main(int argc, char **argv) {
             ImGui::Begin("Config Editor", &showConfigWindow);
             if (ImGui::BeginTabBar("Config Tabs")) {
                 if (ImGui::BeginTabItem("Cameras (User)")) {
+                    ImGui::Text("URLs must include all elements. (ie http://192.168.137.200:8889/cam/whep)");
                     ImGui::Text("Camera 1 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera1", user_config.cam1ip, 512);
+                    ImGui::InputText("##camera1", bluestar_config.cam1ip, 512);
                     ImGui::Text("Camera 2 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera2", user_config.cam2ip, 512);
+                    ImGui::InputText("##camera2", bluestar_config.cam2ip, 512);
                     ImGui::Text("Camera 3 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera3", user_config.cam3ip, 512);
+                    ImGui::InputText("##camera3", bluestar_config.cam3ip, 512);
                     ImGui::Text("Camera 4 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera4", user_config.cam4ip, 512);
+                    ImGui::InputText("##camera4", bluestar_config.cam4ip, 512);
                     ImGui::EndTabItem();
                     
                 }
@@ -706,54 +708,77 @@ int main(int argc, char **argv) {
                             saveGlobalConfig(saveConfigNode, bluestar_config);
                         }
                         if (configuration_mode_checkbox) { 
-                            ImGui::Text("For Star (Forward Right)");
-                            ImGui::SameLine();
-                            ImGui::InputText("##for_star", bluestar_config.thruster_map[0], 64);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Reverse Thruster##for_star_rev_thruster", &bluestar_config.reverse_thrusters[0]);
-                            ImGui::SameLine();
+                            if (ImGui::BeginTable("Thrusters", 4, ImGuiTableFlags_Borders |
+                                     ImGuiTableFlags_RowBg |
+                                     ImGuiTableFlags_Resizable)) {
+                                ImGui::TableSetupColumn("Name");
+                                ImGui::TableSetupColumn("Index");
+                                ImGui::TableSetupColumn("Reverse");
+                                ImGui::TableSetupColumn("Stronger Side Positive");
+                                ImGui::TableHeadersRow();
 
-                            ImGui::Checkbox("Stronger Side Positive##for_star_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[0]);
-        
-                            ImGui::Text("For Port (Forward Left)");
-                            ImGui::SameLine();
-                            ImGui::InputText("##for_port", bluestar_config.thruster_map[1], 64);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Reverse Thruster##for_port_rev_thruster", &bluestar_config.reverse_thrusters[1]);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Stronger Side Positive##for_port_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[1]);
-        
-                            ImGui::Text("Aft star (Back Right)");
-                            ImGui::SameLine();
-                            ImGui::InputText("##aft_star", bluestar_config.thruster_map[2], 64);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Reverse Thruster##aft_star_rev_thruster", &bluestar_config.reverse_thrusters[2]);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Stronger Side Positive##aft_star_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[2]);
-        
-                            ImGui::Text("Aft Port (Back Left)");
-                            ImGui::SameLine();
-                            ImGui::InputText("##aft_port", bluestar_config.thruster_map[3], 64);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Reverse Thruster##aft_port_rev_thruster", &bluestar_config.reverse_thrusters[3]);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Stronger Side Positive##aft_port_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[3]);
-        
-                            ImGui::Text("Star Top (Right Top)");
-                            ImGui::SameLine();
-                            ImGui::InputText("##star_top", bluestar_config.thruster_map[4], 64);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Reverse Thruster##star_top_rev_thruster", &bluestar_config.reverse_thrusters[4]);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Stronger Side Positive##star_top_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[4]);
-        
-                            ImGui::Text("Port Top (Left Top)");
-                            ImGui::SameLine();
-                            ImGui::InputText("##Port_top", bluestar_config.thruster_map[5], 64);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Reverse Thruster##port_top_rev_thruster", &bluestar_config.reverse_thrusters[5]);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Stronger Side Positive##port_top_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[5]);
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("For Star (Forward Right)");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::InputText("##for_star", bluestar_config.thruster_map[0], 64);
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Checkbox("##for_star_rev_thruster", &bluestar_config.reverse_thrusters[0]);
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::Checkbox("##for_star_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[0]);
+
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("For Port (Forward Left)");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::InputText("##for_port", bluestar_config.thruster_map[1], 64);
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Checkbox("##for_port_rev_thruster", &bluestar_config.reverse_thrusters[1]);
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::Checkbox("##for_port_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[1]);
+                                
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Aft star (Back Right)");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::InputText("##aft_star", bluestar_config.thruster_map[2], 64);
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Checkbox("##aft_star_rev_thruster", &bluestar_config.reverse_thrusters[2]);
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::Checkbox("##aft_star_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[2]);
+
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Aft Port (Back Left)");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::InputText("##aft_port", bluestar_config.thruster_map[3], 64);
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Checkbox("##aft_port_rev_thruster", &bluestar_config.reverse_thrusters[3]);
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::Checkbox("##aft_port_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[3]);
+
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Star Top (Right Top)");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::InputText("##star_top", bluestar_config.thruster_map[4], 64);
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Checkbox("##star_top_rev_thruster", &bluestar_config.reverse_thrusters[4]);
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::Checkbox("##star_top_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[4]);
+
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Port Top (Left Top)");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::InputText("##Port_top", bluestar_config.thruster_map[5], 64);
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Checkbox("##port_top_rev_thruster", &bluestar_config.reverse_thrusters[5]);
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::Checkbox("##port_top_thruster_stronger_size_positive", &bluestar_config.stronger_side_positive[5]);
+
+                                ImGui::EndTable();
+                            }
                             
                             ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
 
@@ -776,24 +801,50 @@ int main(int argc, char **argv) {
                             }
 
                             if (ImGui::TreeNode("Modify Preset Servo Angles"))
-                            {
-                                for (size_t i = 0; i < std::size(bluestar_config.servo_1_preset_angles); ++i) {
-                                    ImGui::Text("Servo 1 Preset Angle %ld", i + 1);
-                                    ImGui::SameLine();
-                                    ImGui::SliderInt(
-                                        (std::string("##preset_servo_1_angle_") + std::to_string(i + 1)).c_str(),
-                                        &bluestar_config.servo_1_preset_angles[i],
-                                        0, 180, "%d", ImGuiSliderFlags_AlwaysClamp
-                                    );
-                                }
-                                for (size_t i = 0; i < std::size(bluestar_config.servo_2_preset_angles); ++i) {
-                                    ImGui::Text("Servo 2 Preset Angle %ld", i + 1);
-                                    ImGui::SameLine();
-                                    ImGui::SliderInt(
-                                        (std::string("##preset_servo_2_angle_") + std::to_string(i + 1)).c_str(),
-                                        &bluestar_config.servo_2_preset_angles[i],
-                                        0, 180, "%d", ImGuiSliderFlags_AlwaysClamp
-                                    );
+                            {   
+                                if (ImGui::BeginTable("Servo Angle Config Table", 3, ImGuiTableFlags_Borders |
+                                        ImGuiTableFlags_RowBg |
+                                        ImGuiTableFlags_Resizable)) {
+                                    ImGui::TableSetupColumn("Preset");
+                                    ImGui::TableSetupColumn("Servo 1");
+                                    ImGui::TableSetupColumn("Servo 2");
+                                    ImGui::TableHeadersRow();
+                                    
+                                    auto& s1 = bluestar_config.servo_1_preset_angles;
+                                    auto& s2 = bluestar_config.servo_2_preset_angles;
+
+                                    size_t row_count = std::max(s1.size(), s2.size());
+
+                                    for (size_t row = 0; row < row_count; ++row) {
+                                        ImGui::TableNextRow();
+
+                                        ImGui::TableSetColumnIndex(0);
+                                        ImGui::Text("Preset Angle %ld", row + 1);
+
+                                        ImGui::TableSetColumnIndex(1);
+                                        if (row < s1.size()) {
+                                            ImGui::SliderInt(
+                                                (std::string("##preset_servo_1_angle_") + std::to_string(row + 1)).c_str(),
+                                                &bluestar_config.servo_1_preset_angles[row],
+                                                0, 255, "%d", ImGuiSliderFlags_AlwaysClamp
+                                            );
+                                        } else {
+                                            ImGui::TextUnformatted("-");
+                                        }
+
+                                        ImGui::TableSetColumnIndex(2);
+                                        if (row < s2.size()) {
+                                            ImGui::SliderInt(
+                                                (std::string("##preset_servo_2_angle_") + std::to_string(row + 1)).c_str(),
+                                                &bluestar_config.servo_2_preset_angles[row],
+                                                0, 255, "%d", ImGuiSliderFlags_AlwaysClamp
+                                            );
+                                        } else {
+                                            ImGui::TextUnformatted("-");
+                                        }
+                                    }
+                                    ImGui::EndTable();
+
                                 }
                                 ImGui::TreePop();
                             }
@@ -805,7 +856,7 @@ int main(int argc, char **argv) {
                 if (ImGui::BeginTabItem("Controls (User)")) {
                     if (keyboard_mode)
                     {
-                        ImGui::SeparatorText("Keyboard Bindings");
+                        ImGui::SeparatorText("Movement");
                         ImGui::Text("W - Surge Forward");
                         ImGui::Text("S - Surge Backward");
                         ImGui::Text("A - Sway Left");
@@ -817,14 +868,18 @@ int main(int argc, char **argv) {
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
+                        ImGui::Text("V - Fast Mode");
+                        ImGui::SeparatorText("LEDs");
                         ImGui::Text("Z - Brighten LED 1");
                         ImGui::Text("X - Dim LED 1");
                         ImGui::Text("J - Brighten LED 2");
                         ImGui::Text("K - Dim LED 2");
+                        ImGui::SeparatorText("DC Motors");
                         ImGui::Text("Numpad 1 - DC Motor 1 CW");
                         ImGui::Text("Numpad 2 - DC Motor 1 CCW");
                         ImGui::Text("Numpad 4 - DC Motor 2 CW");
                         ImGui::Text("Numpad 5 - DC Motor 2 CCW");
+                        ImGui::SeparatorText("Servos");
                         ImGui::Text("Right Arrow - Turn Servo 1 Clockwise");
                         ImGui::Text("Left Arrow - Turn Servo 1 Counter-Clockwise");
                         ImGui::Text("Page Up - Turn Servo 2 Clockwise");
@@ -833,6 +888,10 @@ int main(int argc, char **argv) {
                         ImGui::Text("Down Arrow - Turn Servo 3 Counter-Clockwise");
                         ImGui::Text("Numpad 3 - Turn Servo 4 Clockwise");
                         ImGui::Text("Numpad 6 - Turn Servo 4 Counter-Clockwise");
+                        ImGui::Text("5 - Use Servo Preset Angle 1");
+                        ImGui::Text("6 - Use Servo Preset Angle 2");
+                        ImGui::Text("7 - Use Servo Preset Angle 3");
+                        ImGui::SeparatorText("Camera Controls");
                         ImGui::Text("I - Flip Camera 1 Vertically");
                         ImGui::Text("O - Flip Camera 2 Vertically");
                         ImGui::Text("P - Flip Camera 3 Vertically");
@@ -841,11 +900,6 @@ int main(int argc, char **argv) {
                         ImGui::Text("N - Flip Camera 2 Horizontally");
                         ImGui::Text("M - Flip Camera 3 Horizontally");
                         ImGui::Text(", - Flip Camera 4 Horizontally");
-                        ImGui::Text("V - Fast Mode");
-                        ImGui::Text("5 - Use Servo Preset Angle 1");
-                        ImGui::Text("6 - Use Servo Preset Angle 2");
-                        ImGui::Text("7 - Use Servo Preset Angle 3");
-                        
                     }
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         int buttonCount, axisCount;
@@ -889,10 +943,6 @@ int main(int argc, char **argv) {
                     } else if (ImGui::Button("Save")) {
                         json configJson;
                         configJson["name"] = user_config.name;
-                        configJson["cameras"][0] = user_config.cam1ip;
-                        configJson["cameras"][1] = user_config.cam2ip;
-                        configJson["cameras"][2] = user_config.cam3ip;
-                        configJson["cameras"][3] = user_config.cam4ip;
                         configJson["controller1"] = glfwGetJoystickName(GLFW_JOYSTICK_1);
                         configJson["controller2"] = "null";
                         configJson["deadzone"] = user_config.deadzone;
@@ -1038,6 +1088,11 @@ void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const
     for (size_t i = 0; i < std::size(bluestar_config.servo_2_preset_angles); i++) {
         configJson["servo_2_preset_angles"][i] = bluestar_config.servo_2_preset_angles[i];
     }
+
+    configJson["cam1ip"] = bluestar_config.cam1ip;
+    configJson["cam2ip"] = bluestar_config.cam2ip;
+    configJson["cam3ip"] = bluestar_config.cam3ip;
+    configJson["cam4ip"] = bluestar_config.cam4ip;
 
     saveConfigNode->saveConfig("bluestar_config", configJson.dump());
 }

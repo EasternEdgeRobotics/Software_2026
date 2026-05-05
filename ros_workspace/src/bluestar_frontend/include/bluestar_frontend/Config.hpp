@@ -47,10 +47,6 @@ AxisAction stringToAxisAction(const string& action) {
 
 class UserConfig {
     public:
-        char cam1ip[512];
-        char cam2ip[512];
-        char cam3ip[512]; 
-        char cam4ip[512]; 
         char name[64];
         float deadzone = 0.1;
         vector<ButtonAction> buttonActions;
@@ -60,10 +56,14 @@ class UserConfig {
 class BlueStarConfig {
     public:
         std::array<char[64], 6> thruster_map = {"0", "1", "2", "3", "4", "5"};
-        std::array<bool, 6> reverse_thrusters = {false, false, false, false, false};
-        std::array<bool, 6> stronger_side_positive = {false, false, false, false, false};
+        std::array<bool, 6> reverse_thrusters = {false, false, false, false, false, false};
+        std::array<bool, 6> stronger_side_positive = {false, false, false, false, false, false};
         float thruster_stronger_side_attenuation_constant = 1.0f;
         float thruster_acceleration = 1.0f;
-        std::array<int, 3> servo_1_preset_angles = {0, 90, 180};
-        std::array<int, 3> servo_2_preset_angles = {0, 90, 180};
+        std::array<int, 3> servo_1_preset_angles = {0, 127, 255};
+        std::array<int, 3> servo_2_preset_angles = {0, 127, 255};
+        char cam1ip[512];
+        char cam2ip[512];
+        char cam3ip[512]; 
+        char cam4ip[512]; 
 };

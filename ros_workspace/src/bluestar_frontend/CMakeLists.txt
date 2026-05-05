@@ -97,16 +97,6 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
 )
 
-target_compile_options(
-  bluestar_frontend
-  PRIVATE -O0 -g -fsanitize=address,undefined
-)
-
-target_link_options(
-  bluestar_frontend
-  PRIVATE -fsanitize=address,undefined
-)
-
 ament_package()
 
 target_compile_options(glad PRIVATE -Wno-pedantic)
