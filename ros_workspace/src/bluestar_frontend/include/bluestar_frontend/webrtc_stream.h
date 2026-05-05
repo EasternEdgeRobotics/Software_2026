@@ -30,7 +30,7 @@ public:
     WebRTCStream();
     ~WebRTCStream();
     
-    bool start(const StreamConfig& cfg, GMainContext* shared_context);
+    bool start(const StreamConfig& cfg);
     void stop();
     bool poll_frame(FrameData& out);
 

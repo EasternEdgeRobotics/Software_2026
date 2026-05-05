@@ -13,12 +13,11 @@ WebRTCStream::~WebRTCStream() { stop(); }
 // start — create pipeline + whepclientsrc; all WHEP signalling, SDP
 // negotiation, ICE, RTP depayloading, and decoding happen inside the element.
 // ---------------------------------------------------------------------------
-bool WebRTCStream::start(
-    const StreamConfig& cfg,
-    GMainContext* shared_context) {
+bool WebRTCStream::start(const StreamConfig& cfg) {
     cfg_ = cfg;
 
-    g_main_context_push_thread_default(shared_context);
+    video_linked_ = false;
+    audio_linked_ = false;
 
     pipeline_ = gst_pipeline_new(nullptr);
     whepclientsrc_ = gst_element_factory_make("whepclientsrc", nullptr);
@@ -26,7 +25,6 @@ bool WebRTCStream::start(
     if (!pipeline_ || !whepclientsrc_) {
         std::cerr << "[" << cfg_.label << "] Failed to create pipeline or "
                      "whepclientsrc\n";
-        g_main_context_pop_thread_default(shared_context);
         return false;
     }
 
@@ -70,7 +68,6 @@ bool WebRTCStream::start(
 
     gst_element_set_state(pipeline_, GST_STATE_PLAYING);
 
-    g_main_context_pop_thread_default(shared_context);
     return true;
 }
 
@@ -211,7 +208,49 @@ void WebRTCStream::on_pad_added(GstPad* pad) {
         }
 
     } else if (name.rfind("audio_", 0) == 0) {
-        return;
+        if (audio_linked_) return;
+        audio_linked_ = true;
+
+        GstElement* queue = gst_element_factory_make("queue", nullptr);
+        GstElement* sink = gst_element_factory_make("fakesink", nullptr);
+
+        if (!queue || !sink) {
+            std::cerr << "[" << cfg_.label
+                    << "] Failed to create audio fakesink chain\n";
+            return;
+        }
+
+        g_object_set(
+            queue,
+            "max-size-buffers", (guint)2,
+            "leaky", (guint)2,
+            nullptr);
+
+        g_object_set(
+            sink,
+            "sync", FALSE,
+            "async", FALSE,
+            nullptr);
+
+        gst_bin_add_many(GST_BIN(pipeline_), queue, sink, nullptr);
+
+        if (!gst_element_link(queue, sink)) {
+            std::cerr << "[" << cfg_.label
+                    << "] Failed to link audio fakesink chain\n";
+            return;
+        }
+
+        gst_element_sync_state_with_parent(queue);
+        gst_element_sync_state_with_parent(sink);
+
+        GstPad* sink_pad = gst_element_get_static_pad(queue, "sink");
+        GstPadLinkReturn ret = gst_pad_link(pad, sink_pad);
+        gst_object_unref(sink_pad);
+
+        if (ret != GST_PAD_LINK_OK) {
+            std::cerr << "[" << cfg_.label
+                    << "] Failed to link audio pad to fakesink chain\n";
+        }
     }
 }
 

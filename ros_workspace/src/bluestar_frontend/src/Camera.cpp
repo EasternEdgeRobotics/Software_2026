@@ -13,6 +13,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <future>
 
 namespace fs = std::filesystem;
 
@@ -305,6 +306,30 @@ void flipBufferHorizontally(
 
 } // namespace
 
+template <typename F>
+auto runOnGstThread(F&& fn) -> decltype(fn()) {
+    using R = decltype(fn());
+
+    auto task =
+        std::make_shared<std::packaged_task<R()>>(std::forward<F>(fn));
+    auto future = task->get_future();
+
+    g_main_context_invoke_full(
+        gGstContext,
+        G_PRIORITY_DEFAULT,
+        [](gpointer data) -> gboolean {
+            auto* taskPtr =
+                static_cast<std::shared_ptr<std::packaged_task<R()>>*>(data);
+            (**taskPtr)();
+            delete taskPtr;
+            return G_SOURCE_REMOVE;
+        },
+        new std::shared_ptr<std::packaged_task<R()>>(task),
+        nullptr);
+
+    return future.get();
+}
+
 Camera::Camera(char (&urlRef)[512], unsigned int fallback)
     : urlPtr(urlRef),
       fallback(fallback),
@@ -331,7 +356,13 @@ void Camera::start() {
 void Camera::stop() {
     if (!running) return;
 
-    stream.reset();
+    if (stream) {
+        auto old = std::move(stream);
+        runOnGstThread([&]() {
+            old->stop();
+            return 0;
+        });
+    }
     activeUrl.clear();
     running = false;
 
@@ -349,7 +380,13 @@ void Camera::syncStream() {
         return;
     }
 
-    stream.reset();
+    if (stream) {
+        auto old = std::move(stream);
+        runOnGstThread([&]() {
+            old->stop();
+            return 0;
+        });
+    }
     activeUrl.clear();
 
     if (desiredUrl.empty()) {
@@ -362,7 +399,11 @@ void Camera::syncStream() {
     cfg.whep_url = desiredUrl;
     cfg.label = "Camera";
 
-    if (!next->start(cfg, gGstContext)) {
+    bool ok = runOnGstThread([&]() {
+        return next->start(cfg);
+    });
+
+    if (!ok) {
         std::cerr << "Failed to start WebRTC stream: " << desiredUrl
                 << std::endl;
         return;
