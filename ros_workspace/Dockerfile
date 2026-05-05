@@ -11,11 +11,10 @@ ENV DEV_MODE=${DEV_MODE}
 
 RUN if [ "$DEV_MODE" = "false" ]; then \
     # For real ROV (compiles on Raspberry Pi)
-    apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ros-jazzy-web-video-server ffmpeg libsm6 libxext6 dos2unix libglfw3 libglfw3-dev i2c-tools python3-sqlalchemy python3-opencv python3-smbus2 python3-rpi.gpio; \
+    apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ros-jazzy-web-video-server ffmpeg libsm6 libxext6 dos2unix libglfw3 libglfw3-dev i2c-tools python3-sqlalchemy python3-opencv python3-smbus2 python3-rpi.gpio gstreamer1.0-plugins-bad gstreamer1.0-nice; \
 else \
     # For development (to interface with Simulator)
-    apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ros-jazzy-web-video-server ffmpeg libsm6 libxext6 dos2unix libglfw3 libglfw3-dev && \
-    apt install -y python3-sqlalchemy python3-opencv; \
+    apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ros-jazzy-web-video-server ffmpeg libsm6 libxext6 dos2unix libglfw3 libglfw3-dev python3-sqlalchemy python3-opencv gstreamer1.0-plugins-bad gstreamer1.0-nice; \
 fi
 
 WORKDIR /app

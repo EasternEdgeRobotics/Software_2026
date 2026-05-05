@@ -9,7 +9,8 @@ if [ -f /etc/os-release ]; then
   . /etc/os-release
   #echo "$ID and $VERSION_ID"
   if [[ ! "$ID" = "ubuntu" || ! "$VERSION_ID" = "24.04" ]]; then
-    read -p "This script was designed for Ubuntu 24.04 LTS, are you sure you want to continue? " CONT
+    printf "This script was designed for Ubuntu 24.04 LTS. \nAre you sure you want to continue? (y/n) "
+    read -r CONT
     if [[ ! $CONT =~ ^[Yy]$ ]]; then
       exit 1
     fi
@@ -23,7 +24,8 @@ gst_pot_paths=(
 
 for i in "${gst_pot_paths[@]}"; do
   if [ -f "$i/libgstrswebrtc.so" ]; then
-    read -p "You seem to already have the library installed at $i/libgstrswebrtc.so, are you sure you want to continue? " CONT
+    printf "You seem to already have the library installed at: \n   $i/libgstrswebrtc.so. \n\nAre you sure you want to continue? (y/n) "
+    read -r CONT
     if [[ ! $CONT =~ ^[Yy]$ ]]; then
       exit 1
     fi

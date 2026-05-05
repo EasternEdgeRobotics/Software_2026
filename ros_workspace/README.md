@@ -7,11 +7,11 @@ This README.md details how to setup the ROS Worksapce.
 
 2. Install [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Releases/Release-Jazzy-Jalisco.html)
 
-3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2026/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies.
+3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2026/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies. You additionally have to run `sudo install_rswebrtc.bash` in `Software_2026/Tools/`.
 
 4. Run `colcon build` in `Software_2026/ros_workspace`
 
-5. Source the workspace by running `source setup.bash` in `Software_2026/ros_workspace/install`
+5. Source the workspace by running `source install/setup.bash` in `Software_2026/ros_workspace/`
 
 
 You can choose the backend launch file to run based on the ROV and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
