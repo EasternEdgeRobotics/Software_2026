@@ -14,6 +14,8 @@ WebRTCStream::~WebRTCStream() { stop(); }
 // negotiation, ICE, RTP depayloading, and decoding happen inside the element.
 // ---------------------------------------------------------------------------
 bool WebRTCStream::start(const StreamConfig& cfg) {
+    stopping_ = false;
+    failed_ = false;
     cfg_ = cfg;
 
     video_linked_ = false;
@@ -88,7 +90,8 @@ GstBusSyncReply WebRTCStream::on_bus_sync(
 
             std::cerr << "[" << self->cfg_.label << "] GStreamer error: "
                       << (err ? err->message : "unknown") << "\n";
-
+            
+            self->failed_ = true;
             if (debug_info) {
                 std::cerr << "  Debug: " << debug_info << "\n";
             }
@@ -99,6 +102,7 @@ GstBusSyncReply WebRTCStream::on_bus_sync(
         }
 
         case GST_MESSAGE_EOS:
+            self->failed_ = true;
             std::cerr << "[" << self->cfg_.label << "] End of stream\n";
             break;
 
@@ -110,6 +114,8 @@ GstBusSyncReply WebRTCStream::on_bus_sync(
 }
 
 void WebRTCStream::stop() {
+    stopping_ = true;
+
     if (pipeline_) {
         GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline_));
         gst_bus_set_sync_handler(bus, nullptr, nullptr, nullptr);
@@ -121,6 +127,12 @@ void WebRTCStream::stop() {
     }
 
     appsink_ = nullptr;
+    video_linked_ = false;
+    audio_linked_ = false;
+}
+
+bool WebRTCStream::failed() const {
+    return failed_.load();
 }
 
 bool WebRTCStream::poll_frame(FrameData& out) {

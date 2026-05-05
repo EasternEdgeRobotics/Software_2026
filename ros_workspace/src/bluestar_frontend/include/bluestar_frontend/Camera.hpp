@@ -40,7 +40,7 @@ private:
     bool flip_frame_vertically = false;
     bool flip_frame_horizontally = false;
     bool take_screenshot = false;
-
+    
     GLuint texY = 0;
     GLuint texUV = 0;
     GLuint fbo = 0;
@@ -51,7 +51,10 @@ private:
     int fboWidth = 0;
     int fboHeight = 0;
 
+    bool hasReceivedFrame = false;
     std::chrono::steady_clock::time_point lastFrameTime;
+    std::chrono::steady_clock::time_point streamStartTime;
+    std::chrono::steady_clock::time_point lastReconnectAttempt;
 };
 
 #endif

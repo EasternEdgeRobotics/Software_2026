@@ -33,6 +33,7 @@ public:
     bool start(const StreamConfig& cfg);
     void stop();
     bool poll_frame(FrameData& out);
+    bool failed() const;
 
     void on_pad_added(GstPad* pad);
 
@@ -42,6 +43,7 @@ private:
     GstElement* appsink_       = nullptr;
     std::atomic<bool> stopping_{false};
     bool video_linked_ = false;
+    std::atomic<bool> failed_{false};
     bool audio_linked_ = false;
 
     StreamConfig cfg_;

@@ -19,6 +19,10 @@ namespace fs = std::filesystem;
 
 namespace {
 
+constexpr auto kInitialFrameTimeout = std::chrono::seconds(8);
+constexpr auto kFrameTimeout = std::chrono::seconds(3);
+constexpr auto kReconnectCooldown = std::chrono::seconds(2);
+
 static const char* kVertSrc = R"(
 #version 330 core
 layout(location = 0) in vec2 a_pos;
@@ -333,7 +337,10 @@ auto runOnGstThread(F&& fn) -> decltype(fn()) {
 Camera::Camera(char (&urlRef)[512], unsigned int fallback)
     : urlPtr(urlRef),
       fallback(fallback),
-      lastFrameTime(std::chrono::steady_clock::now()) {}
+      lastFrameTime(std::chrono::steady_clock::now()),
+      streamStartTime(std::chrono::steady_clock::now()),
+      lastReconnectAttempt(
+          std::chrono::steady_clock::now() - kReconnectCooldown) {}
 
 Camera::~Camera() {
     stop();
@@ -348,6 +355,12 @@ void Camera::start() {
 
     acquireGst();
     acquireSharedGl();
+
+    auto now = std::chrono::steady_clock::now();
+    hasReceivedFrame = false;
+    lastFrameTime = now;
+    streamStartTime = now;
+    lastReconnectAttempt = now - kReconnectCooldown;
 
     running = true;
     syncStream();
@@ -365,6 +378,7 @@ void Camera::stop() {
     }
     activeUrl.clear();
     running = false;
+    hasReceivedFrame = false;
 
     releaseSharedGl();
     releaseGst();
@@ -376,9 +390,40 @@ void Camera::syncStream() {
     const size_t len = strnlen(urlPtr, sizeof(urlPtr));
     std::string desiredUrl(urlPtr, len);
 
-    if (desiredUrl == activeUrl) {
-        return;
+    auto now = std::chrono::steady_clock::now();
+
+    bool urlChanged = desiredUrl != activeUrl;
+    bool shouldReconnect = false;
+
+    if (!urlChanged && stream && !activeUrl.empty()) {
+        const bool streamFailed = stream->failed();
+        const bool frameTimedOut =
+            hasReceivedFrame
+                ? (now - lastFrameTime) > kFrameTimeout
+                : (now - streamStartTime) > kInitialFrameTimeout;
+
+        const bool reconnectCooldownElapsed =
+            (now - lastReconnectAttempt) >= kReconnectCooldown;
+
+        shouldReconnect =
+            reconnectCooldownElapsed && (streamFailed || frameTimedOut);
+
+        if (shouldReconnect) {
+            std::cerr << "Reconnecting WebRTC stream: " << activeUrl
+                      << (streamFailed ? " (stream failed)" : " (frame timeout)")
+                      << std::endl;
+            lastReconnectAttempt = now;
+        }
     }
+
+    if (!urlChanged && !shouldReconnect) {
+         return;
+     }
+ 
+    if (urlChanged) {
+        hasReceivedFrame = false;
+    }
+
 
     if (stream) {
         auto old = std::move(stream);
@@ -411,6 +456,10 @@ void Camera::syncStream() {
 
     stream = std::move(next);
     activeUrl = desiredUrl;
+    hasReceivedFrame = false;
+    streamStartTime = now;
+    lastFrameTime = now;
+    lastReconnectAttempt = now;
 }
 
 void Camera::ensureFbo(int width, int height) {
@@ -526,6 +575,7 @@ void Camera::uploadFrame() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     lastFrameTime = std::chrono::steady_clock::now();
+    hasReceivedFrame = true;
 
     if (take_screenshot) {
         take_screenshot = false;
