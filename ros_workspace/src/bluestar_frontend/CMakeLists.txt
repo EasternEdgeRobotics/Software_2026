@@ -21,6 +21,7 @@ endif()
 
 add_subdirectory(include/glfw)
 add_subdirectory(include/json)
+add_subdirectory(include/glad)
 
 include_directories(
   ${eer_interfaces_INCLUDE_DIRS} 
@@ -31,6 +32,7 @@ include_directories(
   include/imgui/backends
   include/bluestar_frontend
   include/stb
+  include/glad/include
 )
 
 set(IMGUI_SOURCES
@@ -49,6 +51,7 @@ target_link_libraries(bluestar_frontend
     ${OPENGL_LIBRARIES} 
     ${OpenCV_LIBRARIES}
     glfw
+    glad
     nlohmann_json::nlohmann_json
     rclcpp::rclcpp
 )
@@ -76,3 +79,4 @@ install(DIRECTORY
 )
 
 ament_package()
+target_compile_options(glad PRIVATE -Wno-pedantic)

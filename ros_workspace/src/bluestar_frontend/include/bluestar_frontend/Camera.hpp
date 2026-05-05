@@ -3,6 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <imgui.h>
+#include <glad/glad.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>

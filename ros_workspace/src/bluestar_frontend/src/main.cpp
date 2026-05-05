@@ -1,4 +1,5 @@
 #include "Image.hpp"
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
@@ -79,6 +80,26 @@ int main(int argc, char **argv) {
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
+    #ifndef __APPLE__
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
+    }
+    #endif
+
+    const GLubyte* version = glGetString(GL_VERSION);
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+
+    std::cerr << "GL_VERSION: "
+            << (version ? reinterpret_cast<const char*>(version) : "null")
+            << std::endl;
+    std::cerr << "GL_RENDERER: "
+            << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
+            << std::endl;
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
