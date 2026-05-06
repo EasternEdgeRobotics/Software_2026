@@ -106,13 +106,16 @@ def draw_mode(picture,heights, clicked_points):
             height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
             
             rwidth = 60
-            rheight = rwidth/width_pxdistance*height_pxdistance
-            rheight = round(rheight,2)
+            if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
+                rheight = rwidth/width_pxdistance*height_pxdistance
+                rheight = round(rheight,2)
         
-            cv2.putText(img2,f"{rwidth}cm",clicked_points[0],cv2.FONT_HERSHEY_SIMPLEX,
-                                1,(0,0,255),2)
-            cv2.putText(img2,f"{rheight}cm",clicked_points[3],cv2.FONT_HERSHEY_SIMPLEX,
-                                1,(0,0,255),2)
+                cv2.putText(img2,f"{rwidth}cm",clicked_points[0],cv2.FONT_HERSHEY_SIMPLEX,
+                                    1,(0,0,255),2)
+                cv2.putText(img2,f"{rheight}cm",clicked_points[3],cv2.FONT_HERSHEY_SIMPLEX,
+                                    1,(0,0,255),2)
+            else:
+                 print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
             
         cv2.imshow("snap", img2 )
         cv2.setMouseCallback('snap', points, param = clicked_points)
@@ -127,7 +130,7 @@ def draw_mode(picture,heights, clicked_points):
 
 def main():
     #open default camera
-    cap = cv2.VideoCapture("rtsp://localhost:8554/mystream")
+    cap = cv2.VideoCapture("rtsp://192.168.137.200:8554/cam")
     global mouse_x,mouse_y
     mouse_x,mouse_y = -1,-1
 
