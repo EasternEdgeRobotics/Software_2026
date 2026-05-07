@@ -130,7 +130,7 @@ def draw_mode(picture,heights, clicked_points):
 
 def main():
     #open default camera
-    cap = cv2.VideoCapture("rtsp://192.168.137.200:8554/cam")
+    cap = cv2.VideoCapture("rtsp://192.168.137.200:8554/cam2")
     global mouse_x,mouse_y
     mouse_x,mouse_y = -1,-1
 
