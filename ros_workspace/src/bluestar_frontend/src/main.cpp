@@ -90,15 +90,16 @@ int main(int argc, char **argv) {
     }
     #endif
 
+    // OpenGL info
     const GLubyte* version = glGetString(GL_VERSION);
     const GLubyte* renderer = glGetString(GL_RENDERER);
 
-    std::cerr << "GL_VERSION: "
-            << (version ? reinterpret_cast<const char*>(version) : "null")
-            << std::endl;
-    std::cerr << "GL_RENDERER: "
-            << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
-            << std::endl;
+    // std::cerr << "GL_VERSION: "
+    //         << (version ? reinterpret_cast<const char*>(version) : "null")
+    //         << std::endl;
+    // std::cerr << "GL_RENDERER: "
+    //         << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
+    //         << std::endl;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -989,6 +990,31 @@ int main(int argc, char **argv) {
                     }
                     ImGui::EndTabItem();
                 }
+
+                if (ImGui::BeginTabItem("About GUI")) {
+                    ImGui::Text("Eastern Edge");
+                    ImGui::Spacing();
+                    ImGui::Text("BlueStar GUI");
+                    ImGui::Text("MATE ROV 2026");
+
+                    ImGui::Spacing();
+                    ImGui::Spacing();
+
+                    ImGui::Text("Camera Backend:");
+                    ImGui::SameLine(); 
+                    ImGui::Text("Placeholder");
+
+                    ImGui::Text("OpenGL Version::");
+                    ImGui::SameLine(); 
+                    ImGui::TextUnformatted((version ? reinterpret_cast<const char*>(version) : "null"));
+
+                    ImGui::Text("OpenGL Renderer::");
+                    ImGui::SameLine(); 
+                    ImGui::TextUnformatted((renderer ? reinterpret_cast<const char*>(renderer) : "null"));
+                    
+                    ImGui::EndTabItem();
+                }
+                
                 ImGui::EndTabBar();
             }
             ImGui::End();
