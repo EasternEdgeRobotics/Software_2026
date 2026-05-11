@@ -19,6 +19,48 @@ pkg_check_modules(GST REQUIRED IMPORTED_TARGET
   gstreamer-video-1.0
 )
 
+set(BLUESTAR_CAMERA_BACKEND "whepclientsrc" CACHE STRING
+  "Camera backend: whepclientsrc or webrtcbin"
+)
+
+set_property(CACHE BLUESTAR_CAMERA_BACKEND PROPERTY STRINGS
+  whepclientsrc
+  webrtcbin
+)
+
+set(CAMERA_BACKEND_SOURCES
+  src/streaming/CameraStreamFactory.cpp
+)
+
+set(CAMERA_BACKEND_DEFINES)
+
+if(BLUESTAR_CAMERA_BACKEND STREQUAL "whepclientsrc")
+  list(APPEND CAMERA_BACKEND_SOURCES
+    src/streaming/backend_whepclientsrc.cpp
+  )
+
+  list(APPEND CAMERA_BACKEND_DEFINES
+    BLUESTAR_CAMERA_BACKEND_WHEPCLIENTSRC=1
+  )
+
+elseif(BLUESTAR_CAMERA_BACKEND STREQUAL "webrtcbin")
+  list(APPEND CAMERA_BACKEND_SOURCES
+    src/streaming/backend_webrtcbin.cpp
+  )
+
+  list(APPEND CAMERA_BACKEND_DEFINES
+    BLUESTAR_CAMERA_BACKEND_WEBRTCBIN=1
+  )
+
+else()
+  message(FATAL_ERROR
+    "Invalid BLUESTAR_CAMERA_BACKEND: ${BLUESTAR_CAMERA_BACKEND}. "
+    "Expected 'whepclientsrc' or 'webrtcbin'."
+  )
+endif()
+
+message(STATUS "BlueStar camera backend: ${BLUESTAR_CAMERA_BACKEND}")
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
@@ -55,8 +97,14 @@ add_executable(
   bluestar_frontend
   src/main.cpp
   src/Camera.cpp
-  src/webrtc_stream.cpp
+  ${CAMERA_BACKEND_SOURCES}
   ${IMGUI_SOURCES}
+)
+
+target_compile_definitions(
+  bluestar_frontend
+  PRIVATE
+    ${CAMERA_BACKEND_DEFINES}
 )
 
 target_link_libraries(

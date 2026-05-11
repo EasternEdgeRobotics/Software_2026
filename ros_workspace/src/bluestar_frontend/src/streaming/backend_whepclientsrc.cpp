@@ -1,4 +1,4 @@
-#include "webrtc_stream.h"
+#include "streaming/backend_whepclientsrc.hpp"
 
 #include <gst/app/gstappsink.h>
 #include <gst/video/video.h>
@@ -6,14 +6,14 @@
 #include <cstring>
 #include <iostream>
 
-WebRTCStream::WebRTCStream()  = default;
-WebRTCStream::~WebRTCStream() { stop(); }
+WhepClientStream::WhepClientStream()  = default;
+WhepClientStream::~WhepClientStream() { stop(); }
 
 // ---------------------------------------------------------------------------
 // start — create pipeline + whepclientsrc; all WHEP signalling, SDP
 // negotiation, ICE, RTP depayloading, and decoding happen inside the element.
 // ---------------------------------------------------------------------------
-bool WebRTCStream::start(const StreamConfig& cfg) {
+bool WhepClientStream::start(const StreamConfig& cfg) {
     stopping_ = false;
     failed_ = false;
     cfg_ = cfg;
@@ -33,7 +33,7 @@ bool WebRTCStream::start(const StreamConfig& cfg) {
     gst_child_proxy_set(
         GST_CHILD_PROXY(whepclientsrc_),
         "signaller::whep-endpoint",
-        cfg_.whep_url.c_str(),
+        cfg_.url.c_str(),
         nullptr);
 
     g_object_set(whepclientsrc_, "stun-server", NULL, nullptr);
@@ -60,7 +60,7 @@ bool WebRTCStream::start(const StreamConfig& cfg) {
         whepclientsrc_,
         "pad-added",
         G_CALLBACK(+[](GstElement*, GstPad* pad, gpointer d) {
-            static_cast<WebRTCStream*>(d)->on_pad_added(pad);
+            static_cast<WhepClientStream*>(d)->on_pad_added(pad);
         }),
         this);
 
@@ -73,11 +73,11 @@ bool WebRTCStream::start(const StreamConfig& cfg) {
     return true;
 }
 
-GstBusSyncReply WebRTCStream::on_bus_sync(
+GstBusSyncReply WhepClientStream::on_bus_sync(
     GstBus*,
     GstMessage* msg,
     gpointer data) {
-    auto* self = static_cast<WebRTCStream*>(data);
+    auto* self = static_cast<WhepClientStream*>(data);
     if (!self) {
         return GST_BUS_PASS;
     }
@@ -113,7 +113,7 @@ GstBusSyncReply WebRTCStream::on_bus_sync(
     return GST_BUS_PASS;
 }
 
-void WebRTCStream::stop() {
+void WhepClientStream::stop() {
     stopping_ = true;
 
     if (pipeline_) {
@@ -131,11 +131,11 @@ void WebRTCStream::stop() {
     audio_linked_ = false;
 }
 
-bool WebRTCStream::failed() const {
+bool WhepClientStream::failed() const {
     return failed_.load();
 }
 
-bool WebRTCStream::poll_frame(FrameData& out) {
+bool WhepClientStream::poll_frame(FrameData& out) {
     std::lock_guard<std::mutex> lock(frame_mutex_);
     if (!pending_frame_.dirty) return false;
     out = pending_frame_;
@@ -151,7 +151,7 @@ bool WebRTCStream::poll_frame(FrameData& out) {
 // For video we colour-convert to NV12 (handles HW surface download too) and
 // push into appsink.  For audio we route to autoaudiosink.
 // ---------------------------------------------------------------------------
-void WebRTCStream::on_pad_added(GstPad* pad) {
+void WhepClientStream::on_pad_added(GstPad* pad) {
     if (stopping_) return;
 
     const std::string name = GST_PAD_NAME(pad);
@@ -269,8 +269,8 @@ void WebRTCStream::on_pad_added(GstPad* pad) {
 // ---------------------------------------------------------------------------
 // on_new_sample — unchanged; frame arrives as NV12 from capsfilter above.
 // ---------------------------------------------------------------------------
-GstFlowReturn WebRTCStream::on_new_sample(GstElement* sink, gpointer data) {
-    auto* self = static_cast<WebRTCStream*>(data);
+GstFlowReturn WhepClientStream::on_new_sample(GstElement* sink, gpointer data) {
+    auto* self = static_cast<WhepClientStream*>(data);
     if (!self || self->stopping_) return GST_FLOW_EOS;
 
     GstSample* sample = gst_app_sink_pull_sample(GST_APP_SINK(sink));

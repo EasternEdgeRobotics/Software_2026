@@ -13,6 +13,7 @@
 #include <memory>
 #include "images/logo.h"
 #include "images/nosignal.h"
+#include "streaming/CameraStreamFactory.hpp"
 
 using json = nlohmann::json;
 
@@ -1002,7 +1003,7 @@ int main(int argc, char **argv) {
 
                     ImGui::Text("Camera Backend:");
                     ImGui::SameLine(); 
-                    ImGui::Text("Placeholder");
+                    ImGui::TextUnformatted(cameraStreamBackendName());
 
                     ImGui::Text("OpenGL Version::");
                     ImGui::SameLine(); 

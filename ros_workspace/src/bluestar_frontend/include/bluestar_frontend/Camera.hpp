@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-class WebRTCStream;
+class CameraStream;
 
 class Camera {
 public:
@@ -33,7 +33,7 @@ private:
     char (&urlPtr)[512];
     unsigned int fallback;
 
-    std::unique_ptr<WebRTCStream> stream;
+    std::unique_ptr<CameraStream> stream;
     std::string activeUrl;
     bool running = false;
 

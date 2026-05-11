@@ -1,9 +1,12 @@
 #include "Camera.hpp"
-#include "webrtc_stream.h"
+
+#include "streaming/CameraStream.hpp"
+#include "streaming/CameraStreamFactory.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#include <gst/gst.h>
 #include <GLFW/glfw3.h>
 
 #include <cstdlib>
@@ -438,10 +441,10 @@ void Camera::syncStream() {
         return;
     }
 
-    auto next = std::make_unique<WebRTCStream>();
+    auto next = createCameraStream();
 
     StreamConfig cfg;
-    cfg.whep_url = desiredUrl;
+    cfg.url = desiredUrl;
     cfg.label = "Camera";
 
     bool ok = runOnGstThread([&]() {
