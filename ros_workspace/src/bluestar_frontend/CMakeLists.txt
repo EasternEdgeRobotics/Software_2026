@@ -10,6 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(eer_interfaces REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(CURL REQUIRED)
 
 pkg_check_modules(GST REQUIRED IMPORTED_TARGET
   gstreamer-1.0
@@ -115,6 +116,7 @@ target_link_libraries(
   nlohmann_json::nlohmann_json
   rclcpp::rclcpp
   PkgConfig::GST
+  CURL::libcurl
 )
 
 target_compile_options(
