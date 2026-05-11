@@ -337,8 +337,10 @@ auto runOnGstThread(F&& fn) -> decltype(fn()) {
     return future.get();
 }
 
-Camera::Camera(char (&urlRef)[512], unsigned int fallback)
+Camera::Camera(char (&urlRef)[512], char (&videoCapsRef)[1024], char (&audioCapsRef)[1024], unsigned int fallback)
     : urlPtr(urlRef),
+      videoCapsPtr(videoCapsRef),
+      audioCapsPtr(audioCapsRef),
       fallback(fallback),
       lastFrameTime(std::chrono::steady_clock::now()),
       streamStartTime(std::chrono::steady_clock::now()),
@@ -380,6 +382,8 @@ void Camera::stop() {
         });
     }
     activeUrl.clear();
+    activeVideoCaps.clear();
+    activeAudioCaps.clear();
     running = false;
     hasReceivedFrame = false;
 
@@ -390,15 +394,23 @@ void Camera::stop() {
 void Camera::syncStream() {
     if (!running) return;
 
-    const size_t len = strnlen(urlPtr, sizeof(urlPtr));
-    std::string desiredUrl(urlPtr, len);
+    const size_t urlLen = strnlen(urlPtr, sizeof(urlPtr));
+    const size_t videoCapsLen = strnlen(videoCapsPtr, sizeof(videoCapsPtr));
+    const size_t audioCapsLen = strnlen(audioCapsPtr, sizeof(audioCapsPtr));
+
+    std::string desiredUrl(urlPtr, urlLen);
+    std::string desiredVideoCaps(videoCapsPtr, videoCapsLen);
+    std::string desiredAudioCaps(audioCapsPtr, audioCapsLen);
 
     auto now = std::chrono::steady_clock::now();
 
-    bool urlChanged = desiredUrl != activeUrl;
+    bool streamConfigChanged =
+        desiredUrl != activeUrl ||
+        desiredVideoCaps != activeVideoCaps ||
+        desiredAudioCaps != activeAudioCaps;
     bool shouldReconnect = false;
 
-    if (!urlChanged && stream && !activeUrl.empty()) {
+    if (!streamConfigChanged && stream && !activeUrl.empty()) {
         const bool streamFailed = stream->failed();
         const bool frameTimedOut =
             hasReceivedFrame
@@ -419,11 +431,11 @@ void Camera::syncStream() {
         }
     }
 
-    if (!urlChanged && !shouldReconnect) {
+    if (!streamConfigChanged && !shouldReconnect) {
          return;
      }
  
-    if (urlChanged) {
+    if (streamConfigChanged) {
         hasReceivedFrame = false;
     }
 
@@ -436,6 +448,8 @@ void Camera::syncStream() {
         });
     }
     activeUrl.clear();
+    activeVideoCaps.clear();
+    activeAudioCaps.clear();
 
     if (desiredUrl.empty()) {
         return;
@@ -445,6 +459,8 @@ void Camera::syncStream() {
 
     StreamConfig cfg;
     cfg.url = desiredUrl;
+    cfg.video_caps = desiredVideoCaps;
+    cfg.audio_caps = desiredAudioCaps;
     cfg.label = "Camera";
 
     bool ok = runOnGstThread([&]() {
@@ -459,6 +475,8 @@ void Camera::syncStream() {
 
     stream = std::move(next);
     activeUrl = desiredUrl;
+    activeVideoCaps = desiredVideoCaps;
+    activeAudioCaps = desiredAudioCaps;
     hasReceivedFrame = false;
     streamStartTime = now;
     lastFrameTime = now;

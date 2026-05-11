@@ -12,7 +12,11 @@ class CameraStream;
 
 class Camera {
 public:
-    Camera(char (&urlRef)[512], unsigned int fallback);
+    Camera(
+        char (&urlRef)[512], 
+        char (&videoCapsRef)[1024],
+        char (&audioCapsRef)[1024],
+        unsigned int fallback);
     ~Camera();
 
     void start();
@@ -31,10 +35,14 @@ private:
     bool saveScreenshot();
 
     char (&urlPtr)[512];
+    char (&videoCapsPtr)[1024];
+    char (&audioCapsPtr)[1024];
     unsigned int fallback;
 
     std::unique_ptr<CameraStream> stream;
     std::string activeUrl;
+    std::string activeVideoCaps;
+    std::string activeAudioCaps;
     bool running = false;
 
     bool flip_frame_vertically = false;

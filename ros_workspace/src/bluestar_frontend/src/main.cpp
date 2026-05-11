@@ -153,14 +153,26 @@ int main(int argc, char **argv) {
             if (!configData["cam2ip"].is_null()) std::snprintf(bluestar_config.cam2ip, sizeof(bluestar_config.cam2ip), "%s",configData["cam2ip"].get<std::string>().c_str());
             if (!configData["cam3ip"].is_null()) std::snprintf(bluestar_config.cam3ip, sizeof(bluestar_config.cam3ip), "%s",configData["cam3ip"].get<std::string>().c_str());
             if (!configData["cam4ip"].is_null()) std::snprintf(bluestar_config.cam4ip, sizeof(bluestar_config.cam4ip), "%s",configData["cam4ip"].get<std::string>().c_str());
+
+            if (!configData["cam1_video_caps"].is_null()) std::snprintf(bluestar_config.cam1_video_caps, sizeof(bluestar_config.cam1_video_caps), "%s",configData["cam1_video_caps"].get<std::string>().c_str());
+            if (!configData["cam1_audio_caps"].is_null()) std::snprintf(bluestar_config.cam1_audio_caps, sizeof(bluestar_config.cam1_audio_caps), "%s",configData["cam1_audio_caps"].get<std::string>().c_str());
+
+            if (!configData["cam2_video_caps"].is_null()) std::snprintf(bluestar_config.cam2_video_caps, sizeof(bluestar_config.cam2_video_caps), "%s",configData["cam2_video_caps"].get<std::string>().c_str());
+            if (!configData["cam2_audio_caps"].is_null()) std::snprintf(bluestar_config.cam2_audio_caps, sizeof(bluestar_config.cam2_audio_caps), "%s",configData["cam2_audio_caps"].get<std::string>().c_str());
+
+            if (!configData["cam3_video_caps"].is_null()) std::snprintf(bluestar_config.cam3_video_caps, sizeof(bluestar_config.cam3_video_caps), "%s",configData["cam3_video_caps"].get<std::string>().c_str());
+            if (!configData["cam3_audio_caps"].is_null()) std::snprintf(bluestar_config.cam3_audio_caps, sizeof(bluestar_config.cam3_audio_caps), "%s",configData["cam3_audio_caps"].get<std::string>().c_str());
+
+            if (!configData["cam4_video_caps"].is_null()) std::snprintf(bluestar_config.cam4_video_caps, sizeof(bluestar_config.cam4_video_caps), "%s",configData["cam4_video_caps"].get<std::string>().c_str());
+            if (!configData["cam4_audio_caps"].is_null()) std::snprintf(bluestar_config.cam4_audio_caps, sizeof(bluestar_config.cam4_audio_caps), "%s",configData["cam4_audio_caps"].get<std::string>().c_str());
             break;
         }
     }
 
-    Camera cam1(bluestar_config.cam1ip, noSignal);
-    Camera cam2(bluestar_config.cam2ip, noSignal);
-    Camera cam3(bluestar_config.cam3ip, noSignal);
-    Camera cam4(bluestar_config.cam4ip, noSignal);
+    Camera cam1(bluestar_config.cam1ip, bluestar_config.cam1_video_caps, bluestar_config.cam1_audio_caps, noSignal);
+    Camera cam2(bluestar_config.cam2ip, bluestar_config.cam2_video_caps, bluestar_config.cam2_audio_caps, noSignal);
+    Camera cam3(bluestar_config.cam3ip, bluestar_config.cam3_video_caps, bluestar_config.cam3_audio_caps, noSignal);
+    Camera cam4(bluestar_config.cam4ip, bluestar_config.cam4_video_caps, bluestar_config.cam4_audio_caps, noSignal);
 
     cam1.start();
     cam2.start();
@@ -677,46 +689,89 @@ int main(int argc, char **argv) {
             ImGui::SetNextWindowSize(ImVec2(750, 400), ImGuiCond_FirstUseEver); // Prevents the window from not being resizeable
             ImGui::Begin("Config Editor", &showConfigWindow);
             if (ImGui::BeginTabBar("Config Tabs")) {
-                if (ImGui::BeginTabItem("Cameras (User)")) {
+                if (ImGui::BeginTabItem("Cameras")) {
+
+                    #if defined(BLUESTAR_CAMERA_BACKEND_WEBRTCBIN)
+                        constexpr int cameraColumnCount = 4;
+                    #else
+                        constexpr int cameraColumnCount = 2;
+                    #endif
+
                     ImGui::Text("URLs must include all elements. (ie http://192.168.137.200:8889/cam/whep)");
-                    if (ImGui::BeginTable("Camera Table", 2, ImGuiTableFlags_Borders |
+
+                    #if defined(BLUESTAR_CAMERA_BACKEND_WEBRTCBIN)
+                        ImGui::Text("Video and audio caps can be left blank if they match defaults. (H264 w/ no audio)");
+                    #endif
+                    if (ImGui::BeginTable("Camera Table", cameraColumnCount, ImGuiTableFlags_Borders |
                                 ImGuiTableFlags_RowBg |
                                 ImGuiTableFlags_SizingStretchSame |
                                 ImGuiTableFlags_Resizable)) {
 
                         ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                         ImGui::TableSetupColumn("URL", ImGuiTableColumnFlags_WidthStretch);
+
+                        #if defined(BLUESTAR_CAMERA_BACKEND_WEBRTCBIN)
+                            ImGui::TableSetupColumn(
+                                "Video Caps",
+                                ImGuiTableColumnFlags_WidthStretch);
+
+                            ImGui::TableSetupColumn(
+                                "Audio Caps",
+                                ImGuiTableColumnFlags_WidthStretch);
+                        #endif
+
                         ImGui::TableHeadersRow();
 
-                        // -FLT_MIN Sets it to be as wide as the col
+                        char* cameraUrls[] = {
+                            bluestar_config.cam1ip,
+                            bluestar_config.cam2ip,
+                            bluestar_config.cam3ip,
+                            bluestar_config.cam4ip,
+                        };
 
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::Text("Camera 1 URL");
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::SetNextItemWidth(-FLT_MIN);
-                        ImGui::InputText("##camera1", bluestar_config.cam1ip, 512);
-                        
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::Text("Camera 2 URL");
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::SetNextItemWidth(-FLT_MIN);
-                        ImGui::InputText("##camera2", bluestar_config.cam2ip, 512);
+                        for (size_t cam = 0; cam < 4; ++cam) {
+                            ImGui::TableNextRow();
 
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::Text("Camera 3 URL");
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::SetNextItemWidth(-FLT_MIN);
-                        ImGui::InputText("##camera3", bluestar_config.cam3ip, 512);
-                        
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::Text("Camera 4 URL");
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::SetNextItemWidth(-FLT_MIN);
-                        ImGui::InputText("##camera4", bluestar_config.cam4ip, 512);
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::Text("Camera %zu", cam + 1);
+
+                            ImGui::TableSetColumnIndex(1);
+                            ImGui::SetNextItemWidth(-FLT_MIN); // -FLT_MIN Sets it to be as wide as the col
+                            ImGui::InputText(
+                                (std::string("##camera_url_") + std::to_string(cam)).c_str(),
+                                cameraUrls[cam],
+                                512);
+
+                            #if defined(BLUESTAR_CAMERA_BACKEND_WEBRTCBIN)
+                                char* cameravcap[] = {
+                                    bluestar_config.cam1_video_caps,
+                                    bluestar_config.cam2_video_caps,
+                                    bluestar_config.cam3_video_caps,
+                                    bluestar_config.cam4_video_caps,
+                                };
+                                
+                                char* cameraacap[] = {
+                                    bluestar_config.cam1_audio_caps,
+                                    bluestar_config.cam2_audio_caps,
+                                    bluestar_config.cam3_audio_caps,
+                                    bluestar_config.cam4_audio_caps,
+                                };
+
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::SetNextItemWidth(-FLT_MIN);
+                                ImGui::InputText(
+                                    (std::string("##camera_video_caps_") + std::to_string(cam)).c_str(),
+                                    cameravcap[cam],
+                                    1024);
+
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::SetNextItemWidth(-FLT_MIN);
+                                ImGui::InputText(
+                                    (std::string("##camera_audio_caps_") + std::to_string(cam)).c_str(),
+                                    cameraacap[cam],
+                                    1024);
+                            #endif
+                        }
 
                         ImGui::EndTable();
                     }
@@ -1150,6 +1205,18 @@ void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const
     configJson["cam2ip"] = bluestar_config.cam2ip;
     configJson["cam3ip"] = bluestar_config.cam3ip;
     configJson["cam4ip"] = bluestar_config.cam4ip;
+
+    configJson["cam1_video_caps"] = bluestar_config.cam1_video_caps;
+    configJson["cam1_audio_caps"] = bluestar_config.cam1_audio_caps;
+
+    configJson["cam2_video_caps"] = bluestar_config.cam2_video_caps;
+    configJson["cam2_audio_caps"] = bluestar_config.cam2_audio_caps;
+
+    configJson["cam3_video_caps"] = bluestar_config.cam3_video_caps;
+    configJson["cam3_audio_caps"] = bluestar_config.cam3_audio_caps;
+
+    configJson["cam4_video_caps"] = bluestar_config.cam4_video_caps;
+    configJson["cam4_audio_caps"] = bluestar_config.cam4_audio_caps;
 
     saveConfigNode->saveConfig("bluestar_config", configJson.dump());
 }

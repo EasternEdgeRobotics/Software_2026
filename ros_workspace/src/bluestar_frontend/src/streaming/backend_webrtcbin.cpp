@@ -14,8 +14,8 @@ static constexpr const char* kDefaultVideoCaps =
     "payload=127,clock-rate=90000";
 
 static constexpr const char* kDefaultAudioCaps =
-    "application/x-rtp,media=audio,encoding-name=OPUS,"
-    "payload=111,clock-rate=48000,encoding-params=(string)2";
+    "application/x-rtp,media=audio,encoding-name=PCMU,"
+    "payload=0,clock-rate=8000";
 
 static size_t curl_write_cb(
     char* ptr,
@@ -57,7 +57,7 @@ bool WebRtcBinStream::start(const StreamConfig& cfg) {
         "bundle-policy",
         GST_WEBRTC_BUNDLE_POLICY_MAX_BUNDLE,
         "stun-server",
-        "stun://stun.l.google.com:19302", // Remember to set to NULL
+        NULL,
         nullptr);
 
     gst_bin_add(GST_BIN(pipeline_), webrtcbin_);

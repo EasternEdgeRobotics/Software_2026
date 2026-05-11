@@ -38,21 +38,8 @@ bool WhepClientStream::start(const StreamConfig& cfg) {
 
     g_object_set(whepclientsrc_, "stun-server", NULL, nullptr);
 
-    if (!cfg_.video_caps.empty()) {
-        GstCaps* vcaps = gst_caps_from_string(cfg_.video_caps.c_str());
-        if (vcaps) {
-            g_object_set(whepclientsrc_, "video-caps", vcaps, nullptr);
-            gst_caps_unref(vcaps);
-        }
-    }
-
-    if (!cfg_.audio_caps.empty()) {
-        GstCaps* acaps = gst_caps_from_string(cfg_.audio_caps.c_str());
-        if (acaps) {
-            g_object_set(whepclientsrc_, "audio-caps", acaps, nullptr);
-            gst_caps_unref(acaps);
-        }
-    }
+    (void)cfg_.video_caps;
+    (void)cfg_.audio_caps;
 
     gst_bin_add(GST_BIN(pipeline_), whepclientsrc_);
 

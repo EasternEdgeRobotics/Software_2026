@@ -149,4 +149,5 @@ install(DIRECTORY
 
 ament_package()
 
+target_compile_definitions(bluestar_frontend PRIVATE GST_USE_UNSTABLE_API)
 target_compile_options(glad PRIVATE -Wno-pedantic)
