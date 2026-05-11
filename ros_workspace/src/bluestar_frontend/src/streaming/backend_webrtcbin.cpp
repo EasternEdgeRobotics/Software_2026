@@ -21,7 +21,7 @@ constexpr guint kAppSinkBuffers = 1;
 // 2 = downstream/old buffers
 constexpr guint kQueueLeakyMode = 2;
 
-constexpr guint kWebRtcBinLatencyMs = 5;
+constexpr guint kWebRtcBinLatencyMs = 10;
 
 } // namespac
 
@@ -633,8 +633,6 @@ void WebRtcBinStream::on_pad_added(GstPad* pad) {
             FALSE,
             "async",
             FALSE,
-            "drop",
-            TRUE,
             nullptr);
 
         gst_bin_add_many(

@@ -260,8 +260,6 @@ void WhepClientStream::on_pad_added(GstPad* pad) {
             FALSE,
             "async",
             FALSE,
-            "drop",
-            TRUE,
             nullptr);
 
         gst_bin_add_many(GST_BIN(pipeline_), queue, sink, nullptr);
