@@ -6,6 +6,20 @@
 #include <cstring>
 #include <iostream>
 
+namespace {
+
+constexpr guint kVideoQueueBuffers = 1;
+constexpr guint kAudioQueueBuffers = 1;
+constexpr guint kAppSinkBuffers = 1;
+
+// Queue leaky modes:
+// 0 = no leak
+// 1 = upstream/new buffers
+// 2 = downstream/old buffers
+constexpr guint kQueueLeakyMode = 2;
+
+} // namespac
+
 WhepClientStream::WhepClientStream()  = default;
 WhepClientStream::~WhepClientStream() { stop(); }
 
@@ -160,7 +174,16 @@ void WhepClientStream::on_pad_added(GstPad* pad) {
         }
 
         g_object_set(
-            queue, "max-size-buffers", (guint)2, "leaky", (guint)2, nullptr);
+            queue,
+            "max-size-buffers",
+            kVideoQueueBuffers,
+            "max-size-bytes",
+            (guint)0,
+            "max-size-time",
+            (guint64)0,
+            "leaky",
+            kQueueLeakyMode,
+            nullptr);
 
         GstCaps* nv12 = gst_caps_from_string("video/x-raw,format=NV12");
         g_object_set(capsfilter, "caps", nv12, nullptr);
@@ -173,7 +196,7 @@ void WhepClientStream::on_pad_added(GstPad* pad) {
             "sync",
             FALSE,
             "max-buffers",
-            (guint)1,
+            kAppSinkBuffers,
             "drop",
             TRUE,
             nullptr);
@@ -221,14 +244,24 @@ void WhepClientStream::on_pad_added(GstPad* pad) {
 
         g_object_set(
             queue,
-            "max-size-buffers", (guint)2,
-            "leaky", (guint)2,
+            "max-size-buffers",
+            kAudioQueueBuffers,
+            "max-size-bytes",
+            (guint)0,
+            "max-size-time",
+            (guint64)0,
+            "leaky",
+            kQueueLeakyMode,
             nullptr);
 
         g_object_set(
             sink,
-            "sync", FALSE,
-            "async", FALSE,
+            "sync",
+            FALSE,
+            "async",
+            FALSE,
+            "drop",
+            TRUE,
             nullptr);
 
         gst_bin_add_many(GST_BIN(pipeline_), queue, sink, nullptr);

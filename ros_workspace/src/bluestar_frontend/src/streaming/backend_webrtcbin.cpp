@@ -9,6 +9,22 @@
 #include <iostream>
 #include <string>
 
+namespace {
+
+constexpr guint kVideoQueueBuffers = 1;
+constexpr guint kAudioQueueBuffers = 1;
+constexpr guint kAppSinkBuffers = 1;
+
+// Queue leaky modes:
+// 0 = no leak
+// 1 = upstream/new buffers
+// 2 = downstream/old buffers
+constexpr guint kQueueLeakyMode = 2;
+
+constexpr guint kWebRtcBinLatencyMs = 5;
+
+} // namespac
+
 static constexpr const char* kDefaultVideoCaps =
     "application/x-rtp,media=video,encoding-name=H264,"
     "payload=127,clock-rate=90000";
@@ -489,14 +505,18 @@ void WebRtcBinStream::on_pad_added(GstPad* pad) {
             return;
         }
 
-        g_object_set(jitterbuffer, "latency", (guint)0, nullptr);
+        g_object_set(jitterbuffer, "latency", kWebRtcBinLatencyMs, nullptr);
 
         g_object_set(
             queue,
             "max-size-buffers",
-            (guint)2,
+            kVideoQueueBuffers,
+            "max-size-bytes",
+            (guint)0,
+            "max-size-time",
+            (guint64)0,
             "leaky",
-            (guint)2,
+            kQueueLeakyMode,
             nullptr);
 
         GstCaps* nv12 = gst_caps_from_string("video/x-raw,format=NV12");
@@ -510,7 +530,7 @@ void WebRtcBinStream::on_pad_added(GstPad* pad) {
             "sync",
             FALSE,
             "max-buffers",
-            (guint)1,
+            kAppSinkBuffers,
             "drop",
             TRUE,
             nullptr);
@@ -596,12 +616,16 @@ void WebRtcBinStream::on_pad_added(GstPad* pad) {
         g_object_set(
             queue,
             "max-size-buffers",
-            (guint)2,
+            kAudioQueueBuffers,
+            "max-size-bytes",
+            (guint)0,
+            "max-size-time",
+            (guint64)0,
             "leaky",
-            (guint)2,
+            kQueueLeakyMode,
             nullptr);
 
-        g_object_set(jitterbuffer, "latency", (guint)0, nullptr);
+        g_object_set(jitterbuffer, "latency", kWebRtcBinLatencyMs, nullptr);
 
         g_object_set(
             sink,
@@ -609,6 +633,8 @@ void WebRtcBinStream::on_pad_added(GstPad* pad) {
             FALSE,
             "async",
             FALSE,
+            "drop",
+            TRUE,
             nullptr);
 
         gst_bin_add_many(

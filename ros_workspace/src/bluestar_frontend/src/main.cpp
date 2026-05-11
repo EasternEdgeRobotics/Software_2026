@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_RIGHT_BRACKET) == GLFW_PRESS) flipCam4VerticallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS) flipCam4VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) flipCam1HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
@@ -1060,11 +1060,11 @@ int main(int argc, char **argv) {
                     ImGui::SameLine(); 
                     ImGui::TextUnformatted(cameraStreamBackendName());
 
-                    ImGui::Text("OpenGL Version::");
+                    ImGui::Text("OpenGL Version:");
                     ImGui::SameLine(); 
                     ImGui::TextUnformatted((version ? reinterpret_cast<const char*>(version) : "null"));
 
-                    ImGui::Text("OpenGL Renderer::");
+                    ImGui::Text("OpenGL Renderer:");
                     ImGui::SameLine(); 
                     ImGui::TextUnformatted((renderer ? reinterpret_cast<const char*>(renderer) : "null"));
                     

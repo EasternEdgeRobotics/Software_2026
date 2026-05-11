@@ -20,7 +20,7 @@ pkg_check_modules(GST REQUIRED IMPORTED_TARGET
   gstreamer-video-1.0
 )
 
-set(BLUESTAR_CAMERA_BACKEND "whepclientsrc" CACHE STRING
+set(BLUESTAR_CAMERA_BACKEND "webrtcbin" CACHE STRING
   "Camera backend: whepclientsrc or webrtcbin"
 )
 
