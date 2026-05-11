@@ -24,6 +24,11 @@ If you are using BlueStar, you can also run our the BlueStar Frontend
 ros2 run bluestar_frontend bluestar_frontend
 ```
 
+At compile time, you can choose the camera backend used in BlueStar's frontend. By default it will use a backend based off gstreamer's webrtcbin, but a backend based off gstrreamer's whepclientsrc can be selected by building with the following argument:
+```
+colcon build --cmake-args -DBLUESTAR_CAMERA_BACKEND=whepclientsrc
+```
+
 If you make changes and would like to recompile, restart from step 4.
 
 ## Setting up on Docker
