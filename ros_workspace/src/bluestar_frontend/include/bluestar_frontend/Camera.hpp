@@ -16,7 +16,8 @@ public:
         char (&urlRef)[512], 
         char (&videoCapsRef)[1024],
         char (&audioCapsRef)[1024],
-        unsigned int fallback);
+        unsigned int fallback, 
+        int cameraNumber);
     ~Camera();
 
     void start();
@@ -38,6 +39,7 @@ private:
     char (&videoCapsPtr)[1024];
     char (&audioCapsPtr)[1024];
     unsigned int fallback;
+    std::string label;
 
     std::unique_ptr<CameraStream> stream;
     std::string activeUrl;

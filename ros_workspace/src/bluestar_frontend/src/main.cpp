@@ -169,10 +169,10 @@ int main(int argc, char **argv) {
         }
     }
 
-    Camera cam1(bluestar_config.cam1ip, bluestar_config.cam1_video_caps, bluestar_config.cam1_audio_caps, noSignal);
-    Camera cam2(bluestar_config.cam2ip, bluestar_config.cam2_video_caps, bluestar_config.cam2_audio_caps, noSignal);
-    Camera cam3(bluestar_config.cam3ip, bluestar_config.cam3_video_caps, bluestar_config.cam3_audio_caps, noSignal);
-    Camera cam4(bluestar_config.cam4ip, bluestar_config.cam4_video_caps, bluestar_config.cam4_audio_caps, noSignal);
+    Camera cam1(bluestar_config.cam1ip, bluestar_config.cam1_video_caps, bluestar_config.cam1_audio_caps, noSignal, 1);
+    Camera cam2(bluestar_config.cam2ip, bluestar_config.cam2_video_caps, bluestar_config.cam2_audio_caps, noSignal, 2);
+    Camera cam3(bluestar_config.cam3ip, bluestar_config.cam3_video_caps, bluestar_config.cam3_audio_caps, noSignal, 3);
+    Camera cam4(bluestar_config.cam4ip, bluestar_config.cam4_video_caps, bluestar_config.cam4_audio_caps, noSignal, 4);
 
     cam1.start();
     cam2.start();
@@ -749,7 +749,7 @@ int main(int argc, char **argv) {
                                     bluestar_config.cam3_video_caps,
                                     bluestar_config.cam4_video_caps,
                                 };
-                                
+
                                 char* cameraacap[] = {
                                     bluestar_config.cam1_audio_caps,
                                     bluestar_config.cam2_audio_caps,

@@ -337,11 +337,12 @@ auto runOnGstThread(F&& fn) -> decltype(fn()) {
     return future.get();
 }
 
-Camera::Camera(char (&urlRef)[512], char (&videoCapsRef)[1024], char (&audioCapsRef)[1024], unsigned int fallback)
+Camera::Camera(char (&urlRef)[512], char (&videoCapsRef)[1024], char (&audioCapsRef)[1024], unsigned int fallback, int cameraNumber)
     : urlPtr(urlRef),
       videoCapsPtr(videoCapsRef),
       audioCapsPtr(audioCapsRef),
       fallback(fallback),
+      label("Camera " + std::to_string(cameraNumber)),
       lastFrameTime(std::chrono::steady_clock::now()),
       streamStartTime(std::chrono::steady_clock::now()),
       lastReconnectAttempt(
@@ -424,7 +425,7 @@ void Camera::syncStream() {
             reconnectCooldownElapsed && (streamFailed || frameTimedOut);
 
         if (shouldReconnect) {
-            std::cerr << "Reconnecting WebRTC stream: " << activeUrl
+            std::cerr << "[" << label << "] Reconnecting WebRTC stream: " << activeUrl
                       << (streamFailed ? " (stream failed)" : " (frame timeout)")
                       << std::endl;
             lastReconnectAttempt = now;
@@ -461,14 +462,14 @@ void Camera::syncStream() {
     cfg.url = desiredUrl;
     cfg.video_caps = desiredVideoCaps;
     cfg.audio_caps = desiredAudioCaps;
-    cfg.label = "Camera";
+    cfg.label = label;
 
     bool ok = runOnGstThread([&]() {
         return next->start(cfg);
     });
 
     if (!ok) {
-        std::cerr << "Failed to start WebRTC stream: " << desiredUrl
+        std::cerr << "[" << label << "] Failed to start WebRTC stream: " << desiredUrl
                 << std::endl;
         return;
     }
