@@ -49,6 +49,10 @@ class UserConfig {
     public:
         char name[64];
         float deadzone = 0.1;
+        
+        std::string controllerName;
+        std::string controllerGuid;
+        
         vector<ButtonAction> buttonActions;
         vector<AxisAction> axisActions;
 };

@@ -14,6 +14,8 @@
 #include "images/logo.h"
 #include "images/nosignal.h"
 #include "streaming/CameraStreamFactory.hpp"
+#include <optional>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
@@ -67,6 +69,154 @@ int SERVO_FREQ_INCREMENT = 17; // 15 levels
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const BlueStarConfig& bluestar_config);
 
+
+struct CliOptions {
+    std::optional<std::string> userConfigName;
+};
+
+CliOptions parseCliOptions(int argc, char** argv) {
+    CliOptions options;
+
+    auto args = rclcpp::remove_ros_arguments(argc, argv);
+
+    for (size_t i = 1; i < args.size(); ++i) {
+        const std::string arg = args[i];
+
+        if (arg == "--user-config") {
+            if (i + 1 >= args.size()) {
+                throw std::runtime_error("--user-config requires a value");
+            }
+
+            options.userConfigName = args[++i];
+        } else if (arg == "--help") {
+            std::cout
+                << "BlueStar GUI options:\n"
+                << "  --user-config NAME    Load user config from CLI\n";
+
+            std::exit(0);
+        }
+    }
+
+    return options;
+}
+
+
+// Userconfig loading
+bool loadUserConfigFromJson(
+    UserConfig& output,
+    const std::string& configName,
+    const std::string& configString
+) {
+    try {
+        json configData = json::parse(configString);
+
+        std::snprintf(
+            output.name,
+            sizeof(output.name),
+            "%s",
+            configData.value("name", configName).c_str()
+        );
+
+        output.deadzone = configData.value("deadzone", 0.1f);
+        output.controllerName = configData.value("controller1", "");
+        output.controllerGuid = configData.value("controller1_guid", "");
+
+        output.buttonActions.clear();
+        output.axisActions.clear();
+
+        if (configData.contains("mappings") &&
+            configData["mappings"].contains("0")) {
+            const auto& mappings = configData["mappings"]["0"];
+
+            if (mappings.contains("buttons")) {
+                for (auto& mapping : mappings["buttons"].items()) {
+                    output.buttonActions.push_back(
+                        stringToButtonAction(mapping.value())
+                    );
+                }
+            }
+
+            if (mappings.contains("axes")) {
+                for (auto& mapping : mappings["axes"].items()) {
+                    output.axisActions.push_back(
+                        stringToAxisAction(mapping.value())
+                    );
+                }
+            }
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to load user config '" << configName
+                  << "': " << e.what() << std::endl;
+        return false;
+    }
+}
+
+bool loadUserConfigByName(
+    UserConfig& output,
+    const std::string& configName,
+    const std::vector<std::string>& names,
+    const std::vector<std::string>& configs
+) {
+    for (size_t i = 0; i < names.size(); ++i) {
+        if (names[i] == configName) {
+            return loadUserConfigFromJson(output, names[i], configs[i]);
+        }
+    }
+
+    std::cerr << "User config not found: " << configName << std::endl;
+    return false;
+}
+
+bool validateUserConfig(
+    const UserConfig& config,
+    std::string& error
+) {
+    if (!glfwJoystickPresent(GLFW_JOYSTICK_1)) {
+        error = "No controller connected as GLFW_JOYSTICK_1";
+        return false;
+    }
+
+    const char* joystickName = glfwGetJoystickName(GLFW_JOYSTICK_1);
+    const char* joystickGuid = glfwGetJoystickGUID(GLFW_JOYSTICK_1);
+
+    if (!config.controllerGuid.empty()) {
+        if (!joystickGuid || config.controllerGuid != joystickGuid) {
+            error = "Controller GUID does not match config";
+            return false;
+        }
+    } else if (!config.controllerName.empty()) {
+        if (!joystickName || config.controllerName != joystickName) {
+            error = "Controller name does not match config";
+            return false;
+        }
+    } else {
+        error = "Config does not contain controller identity metadata";
+        return false;
+    }
+
+    int buttonCount = 0;
+    int axisCount = 0;
+
+    glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+    glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+
+    if (config.buttonActions.size() > static_cast<size_t>(buttonCount)) {
+        error = "Config expects more buttons than GLFW_JOYSTICK_1 has";
+        return false;
+    }
+
+    if (config.axisActions.size() > static_cast<size_t>(axisCount)) {
+        error = "Config expects more axes than GLFW_JOYSTICK_1 has";
+        return false;
+    }
+
+    error.clear();
+    return true;
+}
+
+
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
     if (!glfwInit()) return -1;
@@ -109,6 +259,15 @@ int main(int argc, char **argv) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     rclcpp::init(argc, argv);
+
+    CliOptions cliOptions;
+
+    try {
+        cliOptions = parseCliOptions(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "CLI error: " << e.what() << std::endl;
+        return 1;
+    }
     
     //create images
     unsigned int noSignal = loadEmbeddedTexture(nosignal_jpg, nosignal_jpg_len);
@@ -122,6 +281,34 @@ int main(int argc, char **argv) {
     names = configRes[0];
     configs = configRes[1];
 
+    if (cliOptions.userConfigName.has_value()) {
+        UserConfig cliUserConfig;
+
+        if (loadUserConfigByName(
+                cliUserConfig,
+                *cliOptions.userConfigName,
+                names,
+                configs
+            )) {
+            std::string validationError;
+
+            if (validateUserConfig(
+                    cliUserConfig,
+                    validationError
+                )) {
+                user_config = cliUserConfig;
+
+                std::cout << "Loaded CLI user config: "
+                        << *cliOptions.userConfigName << std::endl;
+            } else {
+                std::cerr << "Refusing to load CLI user config '"
+                        << *cliOptions.userConfigName
+                        << "': "
+                        << validationError
+                        << std::endl;
+            }
+        }
+    }
     // Set the default fast mode settings
     fast_mode_settings.power = 75;
     fast_mode_settings.surge = 75;
@@ -607,16 +794,7 @@ int main(int argc, char **argv) {
                             continue;
                         }
                         if (ImGui::MenuItem(names[i].c_str())) {
-                            json configData = json::parse(configs[i]);
-                            user_config.deadzone = configData.value("deadzone", 0.1f);
-                            user_config.buttonActions.clear();
-                            for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {
-                                user_config.buttonActions.push_back(stringToButtonAction(mapping.value()));
-                            }
-                            user_config.axisActions.clear();
-                            for (auto& mapping : configData["mappings"]["0"]["axes"].items()) {
-                                user_config.axisActions.push_back(stringToAxisAction(mapping.value()));
-                            }
+                            loadUserConfigFromJson(user_config, names[i], configs[i]);
                         }
                     }
                     ImGui::EndMenu();
@@ -1030,8 +1208,13 @@ int main(int argc, char **argv) {
                     } else if (ImGui::Button("Save")) {
                         json configJson;
                         configJson["name"] = user_config.name;
-                        configJson["controller1"] = glfwGetJoystickName(GLFW_JOYSTICK_1);
-                        configJson["controller2"] = "null";
+
+                        const char* controllerName = glfwGetJoystickName(GLFW_JOYSTICK_1);
+                        const char* controllerGuid = glfwGetJoystickGUID(GLFW_JOYSTICK_1);
+
+                        configJson["controller1"] = controllerName ? controllerName : "";
+                        configJson["controller1_guid"] = controllerGuid ? controllerGuid : "";
+
                         configJson["deadzone"] = user_config.deadzone;
                         for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                             configJson["mappings"]["0"]["deadzones"][std::to_string(i)] = user_config.deadzone; //for compatability with react gui
