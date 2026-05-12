@@ -1,0 +1,10 @@
+build/
+install/
+log/
+config/
+.vscode/
+imgui.ini
+.DS_Store
+configs/
+venv/
+Tools/gst-plugins-rs/
