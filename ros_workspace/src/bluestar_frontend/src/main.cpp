@@ -66,6 +66,8 @@ bool invert_controls_latch = false;
 int LED_BRIGHTNESS_INCREMENT = 51; // 5 levels
 int SERVO_FREQ_INCREMENT = 17; // 15 levels
 
+const char* app_id = "EasternEdge.BlueStar.Frontend";
+
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const BlueStarConfig& bluestar_config);
 
@@ -226,6 +228,20 @@ bool validateUserConfig(
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
     if (!glfwInit()) return -1;
+
+    // Gnome wont respect the icon or name of apps without an app id
+    #if defined(GLFW_WAYLAND_APP_ID)
+        glfwWindowHintString(GLFW_WAYLAND_APP_ID, app_id);
+    #endif
+
+    #if defined(GLFW_X11_CLASS_NAME)
+        glfwWindowHintString(GLFW_X11_CLASS_NAME, app_id);
+    #endif
+
+    #if defined(GLFW_X11_INSTANCE_NAME)
+        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "easternedge_bluestar_frontend");
+    #endif 
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
