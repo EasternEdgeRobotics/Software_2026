@@ -55,6 +55,9 @@ class UserConfig {
         
         vector<ButtonAction> buttonActions;
         vector<AxisAction> axisActions;
+
+        bool show_co_pilot_window = false;
+        bool show_camera_window = false;
 };
 
 class BlueStarConfig {

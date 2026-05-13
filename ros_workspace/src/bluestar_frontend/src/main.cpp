@@ -121,6 +121,12 @@ bool loadUserConfigFromJson(
         output.controllerName = configData.value("controller1", "");
         output.controllerGuid = configData.value("controller1_guid", "");
 
+        output.show_co_pilot_window = configData.value("show_co_pilot_window", false);
+        output.show_camera_window = configData.value("show_camera_window", false);
+
+        showPilotWindow = output.show_co_pilot_window;
+        showCameraWindow = output.show_camera_window;
+
         output.buttonActions.clear();
         output.axisActions.clear();
 
@@ -1203,6 +1209,29 @@ int main(int argc, char **argv) {
                     ImGui::Text("User Config Name");
                     ImGui::SameLine(); 
                     ImGui::InputText("##configName", user_config.name, 64);
+
+                    if (ImGui::BeginTable("Windows", 2, ImGuiTableFlags_Borders |
+                                ImGuiTableFlags_RowBg |
+                                ImGuiTableFlags_Resizable)) {
+                        ImGui::TableSetupColumn("Window");
+                        ImGui::TableSetupColumn("Show");
+                        ImGui::TableHeadersRow();
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Camera Window");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Checkbox("##config_window_show_camera", &user_config.show_camera_window);
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Co-Pilot Window");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Checkbox("##config_window_show_co_pilot", &user_config.show_co_pilot_window);
+                        
+                        ImGui::EndTable();
+                    }
+
                     if (!glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         ImGui::Text("Controller must be connected");
                     } else if (ImGui::Button("Save")) {
@@ -1214,6 +1243,9 @@ int main(int argc, char **argv) {
 
                         configJson["controller1"] = controllerName ? controllerName : "";
                         configJson["controller1_guid"] = controllerGuid ? controllerGuid : "";
+                        
+                        configJson["show_co_pilot_window"] = user_config.show_co_pilot_window;
+                        configJson["show_camera_window"] = user_config.show_camera_window;
 
                         configJson["deadzone"] = user_config.deadzone;
                         for (size_t i = 0; i < user_config.axisActions.size(); i++) {
@@ -1225,6 +1257,7 @@ int main(int argc, char **argv) {
                         for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                             configJson["mappings"]["0"]["axes"][i] = axisActionCodes[static_cast<int>(user_config.axisActions[i])];
                         }
+
                         saveConfigNode->saveConfig(string(user_config.name), configJson.dump());
                     }
                     ImGui::EndTabItem();
