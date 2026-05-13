@@ -12,6 +12,7 @@ enum class ButtonAction { NONE, SURGE_FORWARD, SURGE_BACKWARD, SWAY_LEFT, SWAY_R
     SERVO_1_CW, SERVO_1_CCW, SERVO_2_CW, SERVO_2_CCW, SERVO_3_CW, SERVO_3_CCW, SERVO_4_CW, SERVO_4_CCW, 
     FLIP_CAMERA_1_VERTICALLY, FLIP_CAMERA_2_VERTICALLY, FLIP_CAMERA_3_VERTICALLY, FLIP_CAMERA_4_VERTICALLY, 
     FLIP_CAMERA_1_HORIZONTALLY, FLIP_CAMERA_2_HORIZONTALLY, FLIP_CAMERA_3_HORIZONTALLY, FLIP_CAMERA_4_HORIZONTALLY, 
+    CAMERA_1_SCREENSHOT, CAMERA_2_SCREENSHOT, CAMERA_3_SCREENSHOT, CAMERA_4_SCREENSHOT,
     USE_SERVO_ANGLE_PRESET_1, USE_SERVO_ANGLE_PRESET_2, USE_SERVO_ANGLE_PRESET_3, 
     ROLL_CW, ROLL_CCW, CONFIGURATION_MODE, FAST_MODE, INVERT_CONTROLS, SIZE};
 const char* buttonActionLabels[] = { "None", "Surge Forward", "Surge Backward", "Sway Left", "Sway Right", "Yaw Left", "Yaw Right", "Heave Up", "Heave Down", 
@@ -19,6 +20,7 @@ const char* buttonActionLabels[] = { "None", "Surge Forward", "Surge Backward", 
     "Servo 1 CW", "Servo 1 CCW", "Servo 2 CW", "Servo 2 CCW", "Servo 3 CW", "Servo 3 CCW", "Servo 4 CW", "Servo 4 CCW", 
     "Flip Camera 1 Vertically", "Flip Camera 2 Vertically", "Flip Camera 3 Vertically", "Flip Camera 4 Vertically", 
     "Flip Camera 1 Horizontally", "Flip Camera 2 Horizontally", "Flip Camera 3 Horizontally", "Flip Camera 4 Horizontally", 
+    "Camera 1 Screenshot", "Camera 2 Screenshot", "Camera 3 Screenshot", "Camera 4 Screenshot",
     "Use Servo Angle Preset 1", "Use Servo Angle Preset 2", "Use Servo Angle Preset 3", 
     "Roll CW", "Roll CCW", "Configuration Mode", "Fast Mode", "Invert Controls"};
 const char* buttonActionCodes[] = { "none", "surge_forward", "surge_backward", "sway_left", "sway_right", "yaw_left", "yaw_right", "heave_up", "heave_down", 
@@ -26,6 +28,7 @@ const char* buttonActionCodes[] = { "none", "surge_forward", "surge_backward", "
     "servo_1_cw", "servo_1_ccw", "servo_2_cw", "servo_2_ccw", "servo_3_cw", "servo_3_ccw", "servo_4_cw", "servo_4_ccw", 
     "flip_camera_1_vertically", "flip_camera_2_vertically", "flip_camera_3_vertically", "flip_camera_4_vertically",
     "flip_camera_1_horizontally", "flip_camera_2_horizontally", "flip_camera_3_horizontally", "flip_camera_4_horizontally", 
+    "camera_1_screenshot", "camera_2_screenshot", "camera_3_screenshot", "camera_4_screenshot", 
     "use_servo_angle_preset_1", "use_servo_angle_preset_2", "use_servo_angle_preset_3", 
     "roll_cw", "roll_ccw", "configuration_mode", "fast_mode", "invert_controls"};
 

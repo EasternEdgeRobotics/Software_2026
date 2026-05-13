@@ -42,10 +42,16 @@ bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
 bool flipCam3VerticallyButtonPressedLatch = false;
 bool flipCam4VerticallyButtonPressedLatch = false;
+
 bool flipCam1HorizontallyButtonPressedLatch = false;
 bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
 bool flipCam4HorizontallyButtonPressedLatch = false;
+
+bool cam1ScreenshotButtonPressedLatch = false;
+bool cam2ScreenshotButtonPressedLatch = false;
+bool cam3ScreenshotButtonPressedLatch = false;
+bool cam4ScreenshotButtonPressedLatch = false;
 
 bool servo_1_cw_latch = false;
 bool servo_2_cw_latch = false;
@@ -427,6 +433,10 @@ int main(int argc, char **argv) {
         bool flipCam2HorizontallyButtonPressed = false;
         bool flipCam3HorizontallyButtonPressed = false;
         bool flipCam4HorizontallyButtonPressed = false;
+        bool cam1ScreenshotButtonPressed = false;
+        bool cam2ScreenshotButtonPressed = false;
+        bool cam3ScreenshotButtonPressed = false;
+        bool cam4ScreenshotButtonPressed = false;
         bool Servo_1_CW_Pressed = false;
         bool Servo_1_CCW_Pressed = false;
         bool Servo_2_CW_Pressed = false;
@@ -437,6 +447,93 @@ int main(int argc, char **argv) {
         bool Servo_4_CCW_Pressed = false;
         bool fast_mode_toggle = false;
         bool invert_controls_toggle = false;
+
+        //top menu bar
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Cameras")) {
+                if (ImGui::MenuItem("Open Camera Window")) {
+                    showCameraWindow = true;
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Config")) {
+                if (ImGui::MenuItem("Open Config Editor")) {
+                    showConfigWindow = true;
+                }
+                if (ImGui::BeginMenu("Load UserConfig")) {
+                    for (size_t i = 0; i < names.size(); i++) {
+                        if (names[i] == "bluestar_config")
+                        {
+                            continue;
+                        }
+                        if (ImGui::MenuItem(names[i].c_str())) {
+                            loadUserConfigFromJson(user_config, names[i], configs[i]);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();                
+            }
+            if (ImGui::BeginMenu("Pilot")) {
+                if (ImGui::MenuItem("Open Piloting Menu")) {
+                    showPilotWindow = true;
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, fast_mode ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(fast_mode ? " FAST MODE ON" : "FAST MODE OFF");
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, invert_controls ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(invert_controls ?  "INVERT CONTROLS ON" : "INVERT CONTROLS OFF");
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cam1 Screenshot")) {
+                cam1ScreenshotButtonPressed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam2 Screenshot")) {                
+                cam2ScreenshotButtonPressed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam3 Screenshot")) {                
+                cam3ScreenshotButtonPressed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam4 Screenshot")) {                
+                cam4ScreenshotButtonPressed = true;
+            }
+            
+            // Servo debug
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 1: %.1d", Servo1Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 2: %.1d", Servo2Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 3: %.1d", Servo3Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 4: %.1d", Servo4Angle);
+            
+            // LED debug
+            // ImGui::SameLine();
+            // ImGui::Text("LED 1: %.1d", LED1Brightness);
+            // ImGui::SameLine();
+            // ImGui::Text("LED 2: %.1d", LED2Brightness);
+            // ImGui::SameLine();
+
+            //fps counter
+            ImGui::SameLine(ImGui::GetWindowWidth() - 100);
+            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+
+            ImGui::EndMainMenuBar();
+        }
 
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
@@ -608,6 +705,19 @@ int main(int argc, char **argv) {
                             flipCam4HorizontallyButtonPressed = true;
                             break;
 
+                        case ButtonAction::CAMERA_1_SCREENSHOT:
+                            cam1ScreenshotButtonPressed = true;
+                            break;
+                        case ButtonAction::CAMERA_2_SCREENSHOT:
+                            cam2ScreenshotButtonPressed = true;
+                            break;
+                        case ButtonAction::CAMERA_3_SCREENSHOT:
+                            cam3ScreenshotButtonPressed = true;
+                            break;
+                        case ButtonAction::CAMERA_4_SCREENSHOT:
+                            cam4ScreenshotButtonPressed = true;
+                            break;
+
                         case ButtonAction::FAST_MODE:
                             fast_mode_toggle = true;
                             break;  
@@ -708,6 +818,34 @@ int main(int argc, char **argv) {
                 flipCam4HorizontallyButtonPressedLatch = false;
             }
 
+            if (cam1ScreenshotButtonPressed) {
+                if (!cam1ScreenshotButtonPressedLatch) if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");;
+                cam1ScreenshotButtonPressedLatch = true;
+            } else {
+                cam1ScreenshotButtonPressedLatch = false;
+            }
+
+            if (cam2ScreenshotButtonPressed) {
+                if (!cam2ScreenshotButtonPressedLatch) if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");;
+                cam2ScreenshotButtonPressedLatch = true;
+            } else {
+                cam2ScreenshotButtonPressedLatch = false;
+            }
+
+            if (cam3ScreenshotButtonPressed) {
+                if (!cam3ScreenshotButtonPressedLatch) if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");;
+                cam3ScreenshotButtonPressedLatch = true;
+            } else {
+                cam3ScreenshotButtonPressedLatch = false;
+            }
+
+            if (cam4ScreenshotButtonPressed) {
+                if (!cam4ScreenshotButtonPressedLatch) if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");;
+                cam4ScreenshotButtonPressedLatch = true;
+            } else {
+                cam4ScreenshotButtonPressedLatch = false;
+            }
+
             // These have to be pointers, for anyone looking at this in the future, i spent so many commits trying to figure out why i couldnt change the values, it looked like a 2010s minecraft letsplay series. -PC
             bool* servo_latches_cw[]  = {&servo_1_cw_latch,  &servo_2_cw_latch,  &servo_3_cw_latch,  &servo_4_cw_latch};
             bool* servo_latches_ccw[] = {&servo_1_ccw_latch, &servo_2_ccw_latch, &servo_3_ccw_latch, &servo_4_ccw_latch};
@@ -795,94 +933,6 @@ int main(int argc, char **argv) {
             dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
             Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
             configuration_mode, configuration_mode_thruster_number);
-        
-
-        //top menu bar
-        if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("Cameras")) {
-                if (ImGui::MenuItem("Open Camera Window")) {
-                    showCameraWindow = true;
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Config")) {
-                if (ImGui::MenuItem("Open Config Editor")) {
-                    showConfigWindow = true;
-                }
-                if (ImGui::BeginMenu("Load UserConfig")) {
-                    for (size_t i = 0; i < names.size(); i++) {
-                        if (names[i] == "bluestar_config")
-                        {
-                            continue;
-                        }
-                        if (ImGui::MenuItem(names[i].c_str())) {
-                            loadUserConfigFromJson(user_config, names[i], configs[i]);
-                        }
-                    }
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMenu();                
-            }
-            if (ImGui::BeginMenu("Pilot")) {
-                if (ImGui::MenuItem("Open Piloting Menu")) {
-                    showPilotWindow = true;
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Text, fast_mode ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
-            ImGui::Text(fast_mode ? " FAST MODE ON" : "FAST MODE OFF");
-            ImGui::PopStyleColor();
-
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Text, invert_controls ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
-            ImGui::Text(invert_controls ?  "INVERT CONTROLS ON" : "INVERT CONTROLS OFF");
-            ImGui::PopStyleColor();
-
-            ImGui::SameLine();
-            ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
-
-            ImGui::SameLine();
-            if (ImGui::Button("Cam1 Screenshot")) {
-                if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cam2 Screenshot")) {                
-                if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cam3 Screenshot")) {                
-                if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cam4 Screenshot")) {                
-                if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");
-            }
-            
-            // Servo debug
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 1: %.1d", Servo1Angle);
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 2: %.1d", Servo2Angle);
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 3: %.1d", Servo3Angle);
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 4: %.1d", Servo4Angle);
-            
-            // LED debug
-            // ImGui::SameLine();
-            // ImGui::Text("LED 1: %.1d", LED1Brightness);
-            // ImGui::SameLine();
-            // ImGui::Text("LED 2: %.1d", LED2Brightness);
-            // ImGui::SameLine();
-
-            //fps counter
-            ImGui::SameLine(ImGui::GetWindowWidth() - 100);
-            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-
-            ImGui::EndMainMenuBar();
-        }
 
         //user_config window
         if (showConfigWindow) {
