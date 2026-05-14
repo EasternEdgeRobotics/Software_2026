@@ -16,6 +16,7 @@
 #include "streaming/CameraStreamFactory.hpp"
 #include <optional>
 #include <stdexcept>
+#include <algorithm>
 
 using json = nlohmann::json;
 
@@ -45,7 +46,63 @@ bool cam4ScreenshotButtonPressedLatch = false;
 bool camIncrementSectionPressedLatch = false;
 int camScreenshotSection = 0;
 
+bool cam1ScreenshotCropButtonPressedLatch = false;
+bool cam2ScreenshotCropButtonPressedLatch = false;
+bool cam3ScreenshotCropButtonPressedLatch = false;
+bool cam4ScreenshotCropButtonPressedLatch = false;
+
+bool cam1ScreenshotCropEnabled = false;
+float cam1ScreenshotCropLeft = 0.0f;
+float cam1ScreenshotCropRight = 0.0f;
+float cam1ScreenshotCropTop = 0.0f;
+float cam1ScreenshotCropBottom = 0.0f;
+
+bool cam2ScreenshotCropEnabled = false;
+float cam2ScreenshotCropLeft = 0.0f;
+float cam2ScreenshotCropRight = 0.0f;
+float cam2ScreenshotCropTop = 0.0f;
+float cam2ScreenshotCropBottom = 0.0f;
+
+bool cam3ScreenshotCropEnabled = false;
+float cam3ScreenshotCropLeft = 0.0f;
+float cam3ScreenshotCropRight = 0.0f;
+float cam3ScreenshotCropTop = 0.0f;
+float cam3ScreenshotCropBottom = 0.0f;
+
+bool cam4ScreenshotCropEnabled = false;
+float cam4ScreenshotCropLeft = 0.0f;
+float cam4ScreenshotCropRight = 0.0f;
+float cam4ScreenshotCropTop = 0.0f;
+float cam4ScreenshotCropBottom = 0.0f;
+
 const char* app_id = "EasternEdge.BlueStar.OfficerFrontend";
+
+void normalizeScreenshotCrop(
+    float& left,
+    float& right,
+    float& top,
+    float& bottom)
+{
+    left = std::clamp(left, 0.0f, 0.95f);
+    right = std::clamp(right, 0.0f, 0.95f);
+    top = std::clamp(top, 0.0f, 0.95f);
+    bottom = std::clamp(bottom, 0.0f, 0.95f);
+
+    const float horizontalCrop = left + right;
+    const float verticalCrop = top + bottom;
+
+    if (horizontalCrop > 0.95f) {
+        const float scale = 0.95f / horizontalCrop;
+        left *= scale;
+        right *= scale;
+    }
+
+    if (verticalCrop > 0.95f) {
+        const float scale = 0.95f / verticalCrop;
+        top *= scale;
+        bottom *= scale;
+    }
+}
 
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
@@ -156,6 +213,38 @@ int main(int argc, char **argv) {
 
     updateScreenshotSuffix();
 
+    auto updateScreenshotCrop = [&]() {
+        cam1.setScreenshotCrop(
+            cam1ScreenshotCropEnabled,
+            cam1ScreenshotCropLeft,
+            cam1ScreenshotCropRight,
+            cam1ScreenshotCropTop,
+            cam1ScreenshotCropBottom);
+
+        cam2.setScreenshotCrop(
+            cam2ScreenshotCropEnabled,
+            cam2ScreenshotCropLeft,
+            cam2ScreenshotCropRight,
+            cam2ScreenshotCropTop,
+            cam2ScreenshotCropBottom);
+
+        cam3.setScreenshotCrop(
+            cam3ScreenshotCropEnabled,
+            cam3ScreenshotCropLeft,
+            cam3ScreenshotCropRight,
+            cam3ScreenshotCropTop,
+            cam3ScreenshotCropBottom);
+
+        cam4.setScreenshotCrop(
+            cam4ScreenshotCropEnabled,
+            cam4ScreenshotCropLeft,
+            cam4ScreenshotCropRight,
+            cam4ScreenshotCropTop,
+            cam4ScreenshotCropBottom);
+    };
+
+    updateScreenshotCrop();
+
     cam1.start();
     cam2.start();
     cam3.start();
@@ -181,6 +270,10 @@ int main(int argc, char **argv) {
         bool cam2ScreenshotButtonPressed = false;
         bool cam3ScreenshotButtonPressed = false;
         bool cam4ScreenshotButtonPressed = false;
+        bool cam1ScreenshotCropButtonPressed = false;
+        bool cam2ScreenshotCropButtonPressed = false;
+        bool cam3ScreenshotCropButtonPressed = false;
+        bool cam4ScreenshotCropButtonPressed = false;
         bool camIncrementSectionPressed = false;
 
         //top menu bar
@@ -239,6 +332,11 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam2ScreenshotButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam3ScreenshotButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) cam4ScreenshotButtonPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) camIncrementSectionPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) cam1ScreenshotCropButtonPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) cam2ScreenshotCropButtonPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) cam3ScreenshotCropButtonPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) cam4ScreenshotCropButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) camIncrementSectionPressed = true;
         
         // We only want this input to be registered once per button hit 
@@ -318,6 +416,42 @@ int main(int argc, char **argv) {
             cam4ScreenshotButtonPressedLatch = true;
         } else {
             cam4ScreenshotButtonPressedLatch = false;
+        }
+
+        if (cam1ScreenshotCropButtonPressed) {
+            if (!cam1ScreenshotCropButtonPressedLatch) cam1ScreenshotCropEnabled = !cam1ScreenshotCropEnabled;;
+            normalizeScreenshotCrop(cam1ScreenshotCropLeft, cam1ScreenshotCropRight, cam1ScreenshotCropTop, cam1ScreenshotCropBottom);
+            updateScreenshotCrop();
+            cam1ScreenshotCropButtonPressedLatch = true;
+        } else {
+            cam1ScreenshotCropButtonPressedLatch = false;
+        }
+
+        if (cam2ScreenshotCropButtonPressed) {
+            if (!cam2ScreenshotCropButtonPressedLatch) cam2ScreenshotCropEnabled = !cam2ScreenshotCropEnabled;;
+            normalizeScreenshotCrop(cam2ScreenshotCropLeft, cam2ScreenshotCropRight, cam2ScreenshotCropTop, cam2ScreenshotCropBottom);
+            updateScreenshotCrop();
+            cam2ScreenshotCropButtonPressedLatch = true;
+        } else {
+            cam2ScreenshotCropButtonPressedLatch = false;
+        }
+
+        if (cam3ScreenshotCropButtonPressed) {
+            if (!cam3ScreenshotCropButtonPressedLatch) cam3ScreenshotCropEnabled = !cam3ScreenshotCropEnabled;;
+            normalizeScreenshotCrop(cam3ScreenshotCropLeft, cam3ScreenshotCropRight, cam3ScreenshotCropTop, cam3ScreenshotCropBottom);
+            updateScreenshotCrop();
+            cam3ScreenshotCropButtonPressedLatch = true;
+        } else {
+            cam3ScreenshotCropButtonPressedLatch = false;
+        }
+
+        if (cam4ScreenshotCropButtonPressed) {
+            if (!cam4ScreenshotCropButtonPressedLatch) cam4ScreenshotCropEnabled = !cam4ScreenshotCropEnabled;;
+            normalizeScreenshotCrop(cam4ScreenshotCropLeft, cam4ScreenshotCropRight, cam4ScreenshotCropTop, cam4ScreenshotCropBottom);
+            updateScreenshotCrop();
+            cam4ScreenshotCropButtonPressedLatch = true;
+        } else {
+            cam4ScreenshotCropButtonPressedLatch = false;
         }
 
         if (camIncrementSectionPressed) {
@@ -422,6 +556,56 @@ int main(int argc, char **argv) {
                         ImGui::EndTable();
                     }
 
+                    ImGui::SeparatorText("Screenshot Crop");
+                    if (ImGui::BeginTable("Camera Crop", 6, ImGuiTableFlags_Borders |
+                                     ImGuiTableFlags_RowBg |
+                                     ImGuiTableFlags_SizingStretchSame |
+                                     ImGuiTableFlags_Borders |
+                                     ImGuiTableFlags_Resizable)) {
+                    
+                        ImGui::TableSetupColumn("Camera", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                        ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                        ImGui::TableSetupColumn("Crop Left", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Crop Right", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Crop Top", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Crop Bottom", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableHeadersRow();
+                        
+                        bool* CropEnabled[] = {&cam1ScreenshotCropEnabled, &cam2ScreenshotCropEnabled, &cam3ScreenshotCropEnabled, &cam4ScreenshotCropEnabled,};
+                        float* CropLeft[] = {&cam1ScreenshotCropLeft, &cam2ScreenshotCropLeft, &cam3ScreenshotCropLeft, &cam4ScreenshotCropLeft,};
+                        float* CropRight[] = {&cam1ScreenshotCropRight, &cam2ScreenshotCropRight, &cam3ScreenshotCropRight, &cam4ScreenshotCropRight,};
+                        float* CropTop[] = {&cam1ScreenshotCropTop, &cam2ScreenshotCropTop, &cam3ScreenshotCropTop, &cam4ScreenshotCropTop,};
+                        float* CropBottom[] = {&cam1ScreenshotCropBottom, &cam2ScreenshotCropBottom, &cam3ScreenshotCropBottom, &cam4ScreenshotCropBottom,};
+                        bool cropChanged[4] = {};
+
+                        for (size_t cam = 0; cam < 4; ++cam) {
+                            ImGui::TableNextRow();
+
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::Text("Camera %zu", cam + 1);
+
+                            ImGui::TableSetColumnIndex(1);
+                            cropChanged[cam] |= ImGui::Checkbox((std::string("##camera_crop_enabled_") + std::to_string(cam)).c_str(), CropEnabled[cam]);
+                            ImGui::TableSetColumnIndex(2);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_left_") + std::to_string(cam)).c_str(), CropLeft[cam], 0.0f, 0.95f,"%.2f");
+                            ImGui::TableSetColumnIndex(3);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_right_") + std::to_string(cam)).c_str(), CropRight[cam], 0.0f, 0.95f,"%.2f");
+                            ImGui::TableSetColumnIndex(4);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_top_") + std::to_string(cam)).c_str(), CropTop[cam], 0.0f, 0.95f,"%.2f");
+                            ImGui::TableSetColumnIndex(5);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_bottom_") + std::to_string(cam)).c_str(), CropBottom[cam], 0.0f, 0.95f,"%.2f");
+
+                            if (cropChanged[cam]) {
+                                normalizeScreenshotCrop(*CropLeft[cam], *CropRight[cam], *CropTop[cam], *CropBottom[cam]);
+                                updateScreenshotCrop();
+                            }
+                        }
+                        ImGui::EndTable();
+                    }
                     ImGui::EndTabItem();
 
                 }
@@ -437,11 +621,16 @@ int main(int argc, char **argv) {
                     ImGui::Text("X - Flip Camera 2 Horizontally");
                     ImGui::Text("C - Flip Camera 3 Horizontally");
                     ImGui::Text("V - Flip Camera 4 Horizontally");
-                    ImGui::SeparatorText("Screemshot Cameras");
+                    ImGui::SeparatorText("Screenshot Cameras");
                     ImGui::Text("A - Screenshot Camera 1");
                     ImGui::Text("S - Screenshot Camera 2");
                     ImGui::Text("D - Screenshot Camera 3");
                     ImGui::Text("F - Screenshot Camera 4");
+                    ImGui::SeparatorText("Screenshot Crop");
+                    ImGui::Text("1 - Crop Camera 1");
+                    ImGui::Text("2 - Crop Camera 2");
+                    ImGui::Text("3 - Crop Camera 3");
+                    ImGui::Text("4 - Crop Camera 4");
                     ImGui::SeparatorText("Other");
                     ImGui::Text("T - Increment Section");
                     

@@ -17,6 +17,7 @@
 #include <thread>
 #include <vector>
 #include <future>
+#include <algorithm>
 
 namespace fs = std::filesystem;
 
@@ -309,6 +310,61 @@ void flipBufferHorizontally(
             }
         }
     }
+}
+
+bool cropRgbaBuffer(
+    const std::vector<uint8_t>& src,
+    int srcWidth,
+    int srcHeight,
+    float left,
+    float right,
+    float top,
+    float bottom,
+    std::vector<uint8_t>& dst,
+    int& dstWidth,
+    int& dstHeight)
+{
+    if (srcWidth <= 0 || srcHeight <= 0) {
+        return false;
+    }
+
+    left = std::clamp(left, 0.0f, 0.95f);
+    right = std::clamp(right, 0.0f, 0.95f);
+    top = std::clamp(top, 0.0f, 0.95f);
+    bottom = std::clamp(bottom, 0.0f, 0.95f);
+
+    int cropLeft = static_cast<int>(srcWidth * left);
+    int cropRight = static_cast<int>(srcWidth * right);
+    int cropTop = static_cast<int>(srcHeight * top);
+    int cropBottom = static_cast<int>(srcHeight * bottom);
+
+    int x0 = cropLeft;
+    int y0 = cropTop;
+    int x1 = srcWidth - cropRight;
+    int y1 = srcHeight - cropBottom;
+
+    if (x1 <= x0 || y1 <= y0) {
+        return false;
+    }
+
+    dstWidth = x1 - x0;
+    dstHeight = y1 - y0;
+
+    constexpr int channels = 4;
+    dst.resize(static_cast<size_t>(dstWidth) * dstHeight * channels);
+
+    for (int y = 0; y < dstHeight; ++y) {
+        const uint8_t* srcRow =
+            src.data() + static_cast<size_t>(y0 + y) * srcWidth * channels +
+            static_cast<size_t>(x0) * channels;
+
+        uint8_t* dstRow =
+            dst.data() + static_cast<size_t>(y) * dstWidth * channels;
+
+        std::memcpy(dstRow, srcRow, static_cast<size_t>(dstWidth) * channels);
+    }
+
+    return true;
 }
 
 } // namespace
@@ -631,6 +687,10 @@ void Camera::render(const ImVec2& size) {
             size,
             ImVec2(u0, v0),
             ImVec2(u1, v1));
+
+        drawScreenshotCropOverlay(
+            ImGui::GetItemRectMin(),
+            ImGui::GetItemRectMax());
     } else {
         ImGui::Image((ImTextureID)(uintptr_t)fallback, size);
     }
@@ -709,13 +769,44 @@ bool Camera::saveScreenshot() {
         flipBufferHorizontally(pixels, fboWidth, fboHeight, 4);
     }
 
+    int outputWidth = fboWidth;
+    int outputHeight = fboHeight;
+    std::vector<uint8_t> outputPixels = std::move(pixels);
+
+    if (screenshotCropEnabled) {
+        std::vector<uint8_t> croppedPixels;
+        int croppedWidth = 0;
+        int croppedHeight = 0;
+
+        const bool cropOk = cropRgbaBuffer(
+            outputPixels,
+            outputWidth,
+            outputHeight,
+            screenshotCropLeft,
+            screenshotCropRight,
+            screenshotCropTop,
+            screenshotCropBottom,
+            croppedPixels,
+            croppedWidth,
+            croppedHeight);
+
+        if (cropOk) {
+            outputPixels = std::move(croppedPixels);
+            outputWidth = croppedWidth;
+            outputHeight = croppedHeight;
+        } else {
+            std::cerr << "Invalid screenshot crop; saving uncropped screenshot"
+                    << std::endl;
+        }
+    }
+
     const std::string filePath = file.string();
-    const int width = fboWidth;
-    const int height = fboHeight;
+    const int width = outputWidth;
+    const int height = outputHeight;
 
     screenshotWrites.emplace_back(std::async(
         std::launch::async,
-        [filePath, width, height, pixels = std::move(pixels)]() mutable {
+        [filePath, width, height, pixels = std::move(outputPixels)]() mutable {
             return stbi_write_png(
                     filePath.c_str(),
                     width,
@@ -760,6 +851,102 @@ void Camera::drainScreenshotWrites(bool wait) {
 
 void Camera::setScreenshotSuffix(const std::string& suffix) {
     screenshotSuffix = suffix;
+}
+
+void Camera::setScreenshotCrop(
+    bool enabled,
+    float left,
+    float right,
+    float top,
+    float bottom)
+{
+    screenshotCropEnabled = enabled;
+
+    screenshotCropLeft = std::clamp(left, 0.0f, 0.95f);
+    screenshotCropRight = std::clamp(right, 0.0f, 0.95f);
+    screenshotCropTop = std::clamp(top, 0.0f, 0.95f);
+    screenshotCropBottom = std::clamp(bottom, 0.0f, 0.95f);
+}
+
+void Camera::drawScreenshotCropOverlay(
+    const ImVec2& imageMin,
+    const ImVec2& imageMax) const
+{
+    if (!screenshotCropEnabled) {
+        return;
+    }
+
+    const float imageWidth = imageMax.x - imageMin.x;
+    const float imageHeight = imageMax.y - imageMin.y;
+
+    if (imageWidth <= 0.0f || imageHeight <= 0.0f) {
+        return;
+    }
+
+    float left = std::clamp(screenshotCropLeft, 0.0f, 0.95f);
+    float right = std::clamp(screenshotCropRight, 0.0f, 0.95f);
+    float top = std::clamp(screenshotCropTop, 0.0f, 0.95f);
+    float bottom = std::clamp(screenshotCropBottom, 0.0f, 0.95f);
+
+    const float horizontalCrop = left + right;
+    const float verticalCrop = top + bottom;
+
+    if (horizontalCrop >= 0.99f || verticalCrop >= 0.99f) {
+        return;
+    }
+
+    const ImVec2 cropMin(
+        imageMin.x + imageWidth * left,
+        imageMin.y + imageHeight * top);
+
+    const ImVec2 cropMax(
+        imageMax.x - imageWidth * right,
+        imageMax.y - imageHeight * bottom);
+
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+    const ImU32 borderColor = IM_COL32(255, 0, 0, 255);
+    const ImU32 shadowColor = IM_COL32(0, 0, 0, 180);
+    const ImU32 shadeColor = IM_COL32(0, 0, 0, 90);
+
+    // Shade cropped-out regions.
+    drawList->AddRectFilled(
+        imageMin,
+        ImVec2(imageMax.x, cropMin.y),
+        shadeColor);
+
+    drawList->AddRectFilled(
+        ImVec2(imageMin.x, cropMax.y),
+        imageMax,
+        shadeColor);
+
+    drawList->AddRectFilled(
+        ImVec2(imageMin.x, cropMin.y),
+        ImVec2(cropMin.x, cropMax.y),
+        shadeColor);
+
+    drawList->AddRectFilled(
+        ImVec2(cropMax.x, cropMin.y),
+        ImVec2(imageMax.x, cropMax.y),
+        shadeColor);
+
+    // Black shadow outline for visibility.
+    drawList->AddRect(
+        ImVec2(cropMin.x - 1.0f, cropMin.y - 1.0f),
+        ImVec2(cropMax.x + 1.0f, cropMax.y + 1.0f),
+        shadowColor,
+        0.0f,
+        0,
+        3.0f);
+
+    // Main green crop outline.
+    drawList->AddRect(
+        cropMin,
+        cropMax,
+        borderColor,
+        0.0f,
+        0,
+        2.0f);
 }
 
 void Camera::destroyGlResources() {

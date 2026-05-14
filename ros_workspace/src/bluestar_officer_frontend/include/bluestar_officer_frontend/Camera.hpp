@@ -32,6 +32,12 @@ public:
     void flip_horizontally();
     bool screenshot();
     void setScreenshotSuffix(const std::string& suffix);
+    void setScreenshotCrop(
+        bool enabled,
+        float left,
+        float right,
+        float top,
+        float bottom);
 
 private:
     void syncStream();
@@ -40,6 +46,7 @@ private:
     void destroyGlResources();
     bool saveScreenshot();
     void drainScreenshotWrites(bool wait);
+    void drawScreenshotCropOverlay(const ImVec2& imageMin, const ImVec2& imageMax) const;
 
     char (&urlPtr)[512];
     char (&videoCapsPtr)[1024];
@@ -68,6 +75,12 @@ private:
     int frameHeight = 0;
     int fboWidth = 0;
     int fboHeight = 0;
+
+    bool screenshotCropEnabled = false;
+    float screenshotCropLeft = 0.0f;
+    float screenshotCropRight = 0.0f;
+    float screenshotCropTop = 0.0f;
+    float screenshotCropBottom = 0.0f;
 
     bool hasReceivedFrame = false;
     std::chrono::steady_clock::time_point lastFrameTime;
