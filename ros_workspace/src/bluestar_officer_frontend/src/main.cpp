@@ -278,20 +278,16 @@ int main(int argc, char **argv) {
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("Cameras")) {
+            if (ImGui::BeginMenu("Windows")) {
                 if (ImGui::MenuItem("Open Camera Window")) {
                     showCameraWindow = true;
                 }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Info")) {
-                if (ImGui::MenuItem("Open Info Window")) {
+                if (ImGui::MenuItem("Open Config Window")) {
                     showConfigWindow = true;
-                }           
+                }          
                 ImGui::EndMenu();
             }
-
-            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f); // Offset 
             if (ImGui::Button("Cam1 Screenshot")) {
                 cam1ScreenshotButtonPressed = true;
             }
@@ -308,9 +304,13 @@ int main(int argc, char **argv) {
                 cam4ScreenshotButtonPressed = true;
             }
             ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
             if (ImGui::Button("Increment Section")) {                
                 camIncrementSectionPressed = true;
             }
+
+            ImGui::SameLine();
+            ImGui::Text("Section: %d", camScreenshotSection);
             
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
