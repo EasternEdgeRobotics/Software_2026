@@ -351,6 +351,8 @@ Camera::Camera(char (&urlRef)[512], char (&videoCapsRef)[1024], char (&audioCaps
 Camera::~Camera() {
     stop();
 
+    drainScreenshotWrites(true);
+
     if (glfwGetCurrentContext()) {
         destroyGlResources();
     }
@@ -608,6 +610,7 @@ void Camera::uploadFrame() {
 }
 
 void Camera::render(const ImVec2& size) {
+    drainScreenshotWrites(false);
     syncStream();
     uploadFrame();
 
@@ -663,14 +666,14 @@ bool Camera::saveScreenshot() {
     fs::path dir = fs::path(home) / "Pictures";
     if (!fs::exists(dir)) return false;
 
+    const auto now = std::chrono::system_clock::now();
+    const auto timestamp =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch())
+            .count();
+
     fs::path file =
-        dir /
-        ("screenshot_" +
-         std::to_string(
-             std::chrono::duration_cast<std::chrono::seconds>(
-                 std::chrono::system_clock::now().time_since_epoch())
-                 .count()) +
-         ".png");
+        dir / ("screenshot_" + std::to_string(timestamp) + ".png");
 
     std::vector<uint8_t> pixels(
         static_cast<size_t>(fboWidth) * fboHeight * 4);
@@ -696,13 +699,53 @@ bool Camera::saveScreenshot() {
         flipBufferHorizontally(pixels, fboWidth, fboHeight, 4);
     }
 
-    return stbi_write_png(
-               file.string().c_str(),
-               fboWidth,
-               fboHeight,
-               4,
-               pixels.data(),
-               fboWidth * 4) != 0;
+    const std::string filePath = file.string();
+    const int width = fboWidth;
+    const int height = fboHeight;
+
+    screenshotWrites.emplace_back(std::async(
+        std::launch::async,
+        [filePath, width, height, pixels = std::move(pixels)]() mutable {
+            return stbi_write_png(
+                    filePath.c_str(),
+                    width,
+                    height,
+                    4,
+                    pixels.data(),
+                    width * 4) != 0;
+        }));
+
+    return true;
+}
+
+void Camera::drainScreenshotWrites(bool wait) {
+    for (auto it = screenshotWrites.begin(); it != screenshotWrites.end();) {
+        const bool ready =
+            it->wait_for(std::chrono::milliseconds(0)) ==
+            std::future_status::ready;
+
+        if (wait || ready) {
+            bool ok = false;
+
+            try {
+                ok = it->get();
+            } catch (const std::exception& e) {
+                std::cerr << "Screenshot writer failed: " << e.what()
+                          << std::endl;
+            } catch (...) {
+                std::cerr << "Screenshot writer failed with unknown exception"
+                          << std::endl;
+            }
+
+            if (!ok) {
+                std::cerr << "Failed to save screenshot" << std::endl;
+            }
+
+            it = screenshotWrites.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void Camera::destroyGlResources() {

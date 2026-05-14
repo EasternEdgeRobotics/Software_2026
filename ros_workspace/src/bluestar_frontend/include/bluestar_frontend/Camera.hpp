@@ -7,6 +7,8 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <future>
+#include <vector>
 
 class CameraStream;
 
@@ -34,6 +36,7 @@ private:
     void ensureFbo(int width, int height);
     void destroyGlResources();
     bool saveScreenshot();
+    void drainScreenshotWrites(bool wait);
 
     char (&urlPtr)[512];
     char (&videoCapsPtr)[1024];
@@ -64,7 +67,8 @@ private:
     bool hasReceivedFrame = false;
     std::chrono::steady_clock::time_point lastFrameTime;
     std::chrono::steady_clock::time_point streamStartTime;
-    std::chrono::steady_clock::time_point lastReconnectAttempt;
+    std::chrono::steady_clock::time_point lastReconnectAttempt; 
+    std::vector<std::future<bool>> screenshotWrites;
 };
 
 #endif
