@@ -14,6 +14,8 @@
 #include "images/logo.h"
 #include "images/nosignal.h"
 #include "streaming/CameraStreamFactory.hpp"
+#include <optional>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
@@ -40,10 +42,16 @@ bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
 bool flipCam3VerticallyButtonPressedLatch = false;
 bool flipCam4VerticallyButtonPressedLatch = false;
+
 bool flipCam1HorizontallyButtonPressedLatch = false;
 bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
 bool flipCam4HorizontallyButtonPressedLatch = false;
+
+bool cam1ScreenshotButtonPressedLatch = false;
+bool cam2ScreenshotButtonPressedLatch = false;
+bool cam3ScreenshotButtonPressedLatch = false;
+bool cam4ScreenshotButtonPressedLatch = false;
 
 bool servo_1_cw_latch = false;
 bool servo_2_cw_latch = false;
@@ -64,12 +72,182 @@ bool invert_controls_latch = false;
 int LED_BRIGHTNESS_INCREMENT = 51; // 5 levels
 int SERVO_FREQ_INCREMENT = 17; // 15 levels
 
+const char* app_id = "EasternEdge.BlueStar.Frontend";
+
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const BlueStarConfig& bluestar_config);
+
+
+struct CliOptions {
+    std::optional<std::string> userConfigName;
+};
+
+CliOptions parseCliOptions(int argc, char** argv) {
+    CliOptions options;
+
+    auto args = rclcpp::remove_ros_arguments(argc, argv);
+
+    for (size_t i = 1; i < args.size(); ++i) {
+        const std::string arg = args[i];
+
+        if (arg == "--user-config") {
+            if (i + 1 >= args.size()) {
+                throw std::runtime_error("--user-config requires a value");
+            }
+
+            options.userConfigName = args[++i];
+        } else if (arg == "--help") {
+            std::cout
+                << "BlueStar GUI options:\n"
+                << "  --user-config NAME    Load user config from CLI\n";
+
+            std::exit(0);
+        }
+    }
+
+    return options;
+}
+
+
+// Userconfig loading
+bool loadUserConfigFromJson(
+    UserConfig& output,
+    const std::string& configName,
+    const std::string& configString
+) {
+    try {
+        json configData = json::parse(configString);
+
+        std::snprintf(
+            output.name,
+            sizeof(output.name),
+            "%s",
+            configData.value("name", configName).c_str()
+        );
+
+        output.deadzone = configData.value("deadzone", 0.1f);
+        output.controllerName = configData.value("controller1", "");
+        output.controllerGuid = configData.value("controller1_guid", "");
+
+        output.show_co_pilot_window = configData.value("show_co_pilot_window", false);
+        output.show_camera_window = configData.value("show_camera_window", false);
+
+        showPilotWindow = output.show_co_pilot_window;
+        showCameraWindow = output.show_camera_window;
+
+        output.buttonActions.clear();
+        output.axisActions.clear();
+
+        if (configData.contains("mappings") &&
+            configData["mappings"].contains("0")) {
+            const auto& mappings = configData["mappings"]["0"];
+
+            if (mappings.contains("buttons")) {
+                for (auto& mapping : mappings["buttons"].items()) {
+                    output.buttonActions.push_back(
+                        stringToButtonAction(mapping.value())
+                    );
+                }
+            }
+
+            if (mappings.contains("axes")) {
+                for (auto& mapping : mappings["axes"].items()) {
+                    output.axisActions.push_back(
+                        stringToAxisAction(mapping.value())
+                    );
+                }
+            }
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to load user config '" << configName
+                  << "': " << e.what() << std::endl;
+        return false;
+    }
+}
+
+bool loadUserConfigByName(
+    UserConfig& output,
+    const std::string& configName,
+    const std::vector<std::string>& names,
+    const std::vector<std::string>& configs
+) {
+    for (size_t i = 0; i < names.size(); ++i) {
+        if (names[i] == configName) {
+            return loadUserConfigFromJson(output, names[i], configs[i]);
+        }
+    }
+
+    std::cerr << "User config not found: " << configName << std::endl;
+    return false;
+}
+
+bool validateUserConfig(
+    const UserConfig& config,
+    std::string& error
+) {
+    if (!glfwJoystickPresent(GLFW_JOYSTICK_1)) {
+        error = "No controller connected as GLFW_JOYSTICK_1";
+        return false;
+    }
+
+    const char* joystickName = glfwGetJoystickName(GLFW_JOYSTICK_1);
+    const char* joystickGuid = glfwGetJoystickGUID(GLFW_JOYSTICK_1);
+
+    if (!config.controllerGuid.empty()) {
+        if (!joystickGuid || config.controllerGuid != joystickGuid) {
+            error = "Controller GUID does not match config";
+            return false;
+        }
+    } else if (!config.controllerName.empty()) {
+        if (!joystickName || config.controllerName != joystickName) {
+            error = "Controller name does not match config";
+            return false;
+        }
+    } else {
+        error = "Config does not contain controller identity metadata";
+        return false;
+    }
+
+    int buttonCount = 0;
+    int axisCount = 0;
+
+    glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+    glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+
+    if (config.buttonActions.size() > static_cast<size_t>(buttonCount)) {
+        error = "Config expects more buttons than GLFW_JOYSTICK_1 has";
+        return false;
+    }
+
+    if (config.axisActions.size() > static_cast<size_t>(axisCount)) {
+        error = "Config expects more axes than GLFW_JOYSTICK_1 has";
+        return false;
+    }
+
+    error.clear();
+    return true;
+}
+
 
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
     if (!glfwInit()) return -1;
+
+    // Gnome wont respect the icon or name of apps without an app id
+    #if defined(GLFW_WAYLAND_APP_ID)
+        glfwWindowHintString(GLFW_WAYLAND_APP_ID, app_id);
+    #endif
+
+    #if defined(GLFW_X11_CLASS_NAME)
+        glfwWindowHintString(GLFW_X11_CLASS_NAME, app_id);
+    #endif
+
+    #if defined(GLFW_X11_INSTANCE_NAME)
+        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "easternedge_bluestar_frontend");
+    #endif 
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -109,6 +287,15 @@ int main(int argc, char **argv) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     rclcpp::init(argc, argv);
+
+    CliOptions cliOptions;
+
+    try {
+        cliOptions = parseCliOptions(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "CLI error: " << e.what() << std::endl;
+        return 1;
+    }
     
     //create images
     unsigned int noSignal = loadEmbeddedTexture(nosignal_jpg, nosignal_jpg_len);
@@ -122,6 +309,34 @@ int main(int argc, char **argv) {
     names = configRes[0];
     configs = configRes[1];
 
+    if (cliOptions.userConfigName.has_value()) {
+        UserConfig cliUserConfig;
+
+        if (loadUserConfigByName(
+                cliUserConfig,
+                *cliOptions.userConfigName,
+                names,
+                configs
+            )) {
+            std::string validationError;
+
+            if (validateUserConfig(
+                    cliUserConfig,
+                    validationError
+                )) {
+                user_config = cliUserConfig;
+
+                std::cout << "Loaded CLI user config: "
+                        << *cliOptions.userConfigName << std::endl;
+            } else {
+                std::cerr << "Refusing to load CLI user config '"
+                        << *cliOptions.userConfigName
+                        << "': "
+                        << validationError
+                        << std::endl;
+            }
+        }
+    }
     // Set the default fast mode settings
     fast_mode_settings.power = 75;
     fast_mode_settings.surge = 75;
@@ -218,6 +433,10 @@ int main(int argc, char **argv) {
         bool flipCam2HorizontallyButtonPressed = false;
         bool flipCam3HorizontallyButtonPressed = false;
         bool flipCam4HorizontallyButtonPressed = false;
+        bool cam1ScreenshotButtonPressed = false;
+        bool cam2ScreenshotButtonPressed = false;
+        bool cam3ScreenshotButtonPressed = false;
+        bool cam4ScreenshotButtonPressed = false;
         bool Servo_1_CW_Pressed = false;
         bool Servo_1_CCW_Pressed = false;
         bool Servo_2_CW_Pressed = false;
@@ -228,6 +447,93 @@ int main(int argc, char **argv) {
         bool Servo_4_CCW_Pressed = false;
         bool fast_mode_toggle = false;
         bool invert_controls_toggle = false;
+
+        //top menu bar
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Cameras")) {
+                if (ImGui::MenuItem("Open Camera Window")) {
+                    showCameraWindow = true;
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Config")) {
+                if (ImGui::MenuItem("Open Config Editor")) {
+                    showConfigWindow = true;
+                }
+                if (ImGui::BeginMenu("Load UserConfig")) {
+                    for (size_t i = 0; i < names.size(); i++) {
+                        if (names[i] == "bluestar_config")
+                        {
+                            continue;
+                        }
+                        if (ImGui::MenuItem(names[i].c_str())) {
+                            loadUserConfigFromJson(user_config, names[i], configs[i]);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();                
+            }
+            if (ImGui::BeginMenu("Pilot")) {
+                if (ImGui::MenuItem("Open Piloting Menu")) {
+                    showPilotWindow = true;
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, fast_mode ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(fast_mode ? " FAST MODE ON" : "FAST MODE OFF");
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, invert_controls ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(invert_controls ?  "INVERT CONTROLS ON" : "INVERT CONTROLS OFF");
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cam1 Screenshot")) {
+                cam1ScreenshotButtonPressed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam2 Screenshot")) {                
+                cam2ScreenshotButtonPressed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam3 Screenshot")) {                
+                cam3ScreenshotButtonPressed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam4 Screenshot")) {                
+                cam4ScreenshotButtonPressed = true;
+            }
+            
+            // Servo debug
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 1: %.1d", Servo1Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 2: %.1d", Servo2Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 3: %.1d", Servo3Angle);
+            // ImGui::SameLine();
+            // ImGui::Text("Servo 4: %.1d", Servo4Angle);
+            
+            // LED debug
+            // ImGui::SameLine();
+            // ImGui::Text("LED 1: %.1d", LED1Brightness);
+            // ImGui::SameLine();
+            // ImGui::Text("LED 2: %.1d", LED2Brightness);
+            // ImGui::SameLine();
+
+            //fps counter
+            ImGui::SameLine(ImGui::GetWindowWidth() - 100);
+            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+
+            ImGui::EndMainMenuBar();
+        }
 
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
@@ -399,6 +705,19 @@ int main(int argc, char **argv) {
                             flipCam4HorizontallyButtonPressed = true;
                             break;
 
+                        case ButtonAction::CAMERA_1_SCREENSHOT:
+                            cam1ScreenshotButtonPressed = true;
+                            break;
+                        case ButtonAction::CAMERA_2_SCREENSHOT:
+                            cam2ScreenshotButtonPressed = true;
+                            break;
+                        case ButtonAction::CAMERA_3_SCREENSHOT:
+                            cam3ScreenshotButtonPressed = true;
+                            break;
+                        case ButtonAction::CAMERA_4_SCREENSHOT:
+                            cam4ScreenshotButtonPressed = true;
+                            break;
+
                         case ButtonAction::FAST_MODE:
                             fast_mode_toggle = true;
                             break;  
@@ -499,6 +818,34 @@ int main(int argc, char **argv) {
                 flipCam4HorizontallyButtonPressedLatch = false;
             }
 
+            if (cam1ScreenshotButtonPressed) {
+                if (!cam1ScreenshotButtonPressedLatch) if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");;
+                cam1ScreenshotButtonPressedLatch = true;
+            } else {
+                cam1ScreenshotButtonPressedLatch = false;
+            }
+
+            if (cam2ScreenshotButtonPressed) {
+                if (!cam2ScreenshotButtonPressedLatch) if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");;
+                cam2ScreenshotButtonPressedLatch = true;
+            } else {
+                cam2ScreenshotButtonPressedLatch = false;
+            }
+
+            if (cam3ScreenshotButtonPressed) {
+                if (!cam3ScreenshotButtonPressedLatch) if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");;
+                cam3ScreenshotButtonPressedLatch = true;
+            } else {
+                cam3ScreenshotButtonPressedLatch = false;
+            }
+
+            if (cam4ScreenshotButtonPressed) {
+                if (!cam4ScreenshotButtonPressedLatch) if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");;
+                cam4ScreenshotButtonPressedLatch = true;
+            } else {
+                cam4ScreenshotButtonPressedLatch = false;
+            }
+
             // These have to be pointers, for anyone looking at this in the future, i spent so many commits trying to figure out why i couldnt change the values, it looked like a 2010s minecraft letsplay series. -PC
             bool* servo_latches_cw[]  = {&servo_1_cw_latch,  &servo_2_cw_latch,  &servo_3_cw_latch,  &servo_4_cw_latch};
             bool* servo_latches_ccw[] = {&servo_1_ccw_latch, &servo_2_ccw_latch, &servo_3_ccw_latch, &servo_4_ccw_latch};
@@ -586,103 +933,6 @@ int main(int argc, char **argv) {
             dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
             Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
             configuration_mode, configuration_mode_thruster_number);
-        
-
-        //top menu bar
-        if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("Cameras")) {
-                if (ImGui::MenuItem("Open Camera Window")) {
-                    showCameraWindow = true;
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Config")) {
-                if (ImGui::MenuItem("Open Config Editor")) {
-                    showConfigWindow = true;
-                }
-                if (ImGui::BeginMenu("Load UserConfig")) {
-                    for (size_t i = 0; i < names.size(); i++) {
-                        if (names[i] == "bluestar_config")
-                        {
-                            continue;
-                        }
-                        if (ImGui::MenuItem(names[i].c_str())) {
-                            json configData = json::parse(configs[i]);
-                            user_config.deadzone = configData.value("deadzone", 0.1f);
-                            user_config.buttonActions.clear();
-                            for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {
-                                user_config.buttonActions.push_back(stringToButtonAction(mapping.value()));
-                            }
-                            user_config.axisActions.clear();
-                            for (auto& mapping : configData["mappings"]["0"]["axes"].items()) {
-                                user_config.axisActions.push_back(stringToAxisAction(mapping.value()));
-                            }
-                        }
-                    }
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMenu();                
-            }
-            if (ImGui::BeginMenu("Pilot")) {
-                if (ImGui::MenuItem("Open Piloting Menu")) {
-                    showPilotWindow = true;
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Text, fast_mode ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
-            ImGui::Text(fast_mode ? " FAST MODE ON" : "FAST MODE OFF");
-            ImGui::PopStyleColor();
-
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Text, invert_controls ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
-            ImGui::Text(invert_controls ?  "INVERT CONTROLS ON" : "INVERT CONTROLS OFF");
-            ImGui::PopStyleColor();
-
-            ImGui::SameLine();
-            ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
-
-            ImGui::SameLine();
-            if (ImGui::Button("Cam1 Screenshot")) {
-                if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cam2 Screenshot")) {                
-                if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cam3 Screenshot")) {                
-                if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cam4 Screenshot")) {                
-                if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");
-            }
-            
-            // Servo debug
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 1: %.1d", Servo1Angle);
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 2: %.1d", Servo2Angle);
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 3: %.1d", Servo3Angle);
-            // ImGui::SameLine();
-            // ImGui::Text("Servo 4: %.1d", Servo4Angle);
-            
-            // LED debug
-            // ImGui::SameLine();
-            // ImGui::Text("LED 1: %.1d", LED1Brightness);
-            // ImGui::SameLine();
-            // ImGui::Text("LED 2: %.1d", LED2Brightness);
-            // ImGui::SameLine();
-
-            //fps counter
-            ImGui::SameLine(ImGui::GetWindowWidth() - 100);
-            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-
-            ImGui::EndMainMenuBar();
-        }
 
         //user_config window
         if (showConfigWindow) {
@@ -1025,13 +1275,44 @@ int main(int argc, char **argv) {
                     ImGui::Text("User Config Name");
                     ImGui::SameLine(); 
                     ImGui::InputText("##configName", user_config.name, 64);
+
+                    if (ImGui::BeginTable("Windows", 2, ImGuiTableFlags_Borders |
+                                ImGuiTableFlags_RowBg |
+                                ImGuiTableFlags_Resizable)) {
+                        ImGui::TableSetupColumn("Window");
+                        ImGui::TableSetupColumn("Show");
+                        ImGui::TableHeadersRow();
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Camera Window");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Checkbox("##config_window_show_camera", &user_config.show_camera_window);
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Co-Pilot Window");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Checkbox("##config_window_show_co_pilot", &user_config.show_co_pilot_window);
+                        
+                        ImGui::EndTable();
+                    }
+
                     if (!glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         ImGui::Text("Controller must be connected");
                     } else if (ImGui::Button("Save")) {
                         json configJson;
                         configJson["name"] = user_config.name;
-                        configJson["controller1"] = glfwGetJoystickName(GLFW_JOYSTICK_1);
-                        configJson["controller2"] = "null";
+
+                        const char* controllerName = glfwGetJoystickName(GLFW_JOYSTICK_1);
+                        const char* controllerGuid = glfwGetJoystickGUID(GLFW_JOYSTICK_1);
+
+                        configJson["controller1"] = controllerName ? controllerName : "";
+                        configJson["controller1_guid"] = controllerGuid ? controllerGuid : "";
+                        
+                        configJson["show_co_pilot_window"] = user_config.show_co_pilot_window;
+                        configJson["show_camera_window"] = user_config.show_camera_window;
+
                         configJson["deadzone"] = user_config.deadzone;
                         for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                             configJson["mappings"]["0"]["deadzones"][std::to_string(i)] = user_config.deadzone; //for compatability with react gui
@@ -1042,6 +1323,7 @@ int main(int argc, char **argv) {
                         for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                             configJson["mappings"]["0"]["axes"][i] = axisActionCodes[static_cast<int>(user_config.axisActions[i])];
                         }
+
                         saveConfigNode->saveConfig(string(user_config.name), configJson.dump());
                     }
                     ImGui::EndTabItem();
