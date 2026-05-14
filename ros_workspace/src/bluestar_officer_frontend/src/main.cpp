@@ -42,6 +42,9 @@ bool cam2ScreenshotButtonPressedLatch = false;
 bool cam3ScreenshotButtonPressedLatch = false;
 bool cam4ScreenshotButtonPressedLatch = false;
 
+bool camIncrementSectionPressedLatch = false;
+int camScreenshotSection = 0;
+
 const char* app_id = "EasternEdge.BlueStar.OfficerFrontend";
 
 int main(int argc, char **argv) {
@@ -139,6 +142,20 @@ int main(int argc, char **argv) {
     Camera cam3(bluestar_config.cam3ip, bluestar_config.cam3_video_caps, bluestar_config.cam3_audio_caps, noSignal, 3);
     Camera cam4(bluestar_config.cam4ip, bluestar_config.cam4_video_caps, bluestar_config.cam4_audio_caps, noSignal, 4);
 
+    auto updateScreenshotSuffix = [&]() {
+        const std::string suffix =
+            "section_" + std::to_string(camScreenshotSection);
+
+        cam1.setScreenshotSuffix(suffix);
+        cam2.setScreenshotSuffix(suffix);
+        cam3.setScreenshotSuffix(suffix);
+        cam4.setScreenshotSuffix(suffix);
+
+        std::cout << "Screenshot suffix set to: " << suffix << std::endl;
+    };
+
+    updateScreenshotSuffix();
+
     cam1.start();
     cam2.start();
     cam3.start();
@@ -164,6 +181,7 @@ int main(int argc, char **argv) {
         bool cam2ScreenshotButtonPressed = false;
         bool cam3ScreenshotButtonPressed = false;
         bool cam4ScreenshotButtonPressed = false;
+        bool camIncrementSectionPressed = false;
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
@@ -196,6 +214,10 @@ int main(int argc, char **argv) {
             if (ImGui::Button("Cam4 Screenshot")) {                
                 cam4ScreenshotButtonPressed = true;
             }
+            ImGui::SameLine();
+            if (ImGui::Button("Increment Section")) {                
+                camIncrementSectionPressed = true;
+            }
             
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
@@ -217,6 +239,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam2ScreenshotButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam3ScreenshotButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) cam4ScreenshotButtonPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) camIncrementSectionPressed = true;
         
         // We only want this input to be registered once per button hit 
         // rather than toggling every frame as long as button is pressed
@@ -295,6 +318,16 @@ int main(int argc, char **argv) {
             cam4ScreenshotButtonPressedLatch = true;
         } else {
             cam4ScreenshotButtonPressedLatch = false;
+        }
+
+        if (camIncrementSectionPressed) {
+            if (!camIncrementSectionPressedLatch) {
+                ++camScreenshotSection;
+                updateScreenshotSuffix();
+            }
+            camIncrementSectionPressedLatch = true;
+        } else {
+            camIncrementSectionPressedLatch = false;
         }
         
         // config window
@@ -409,6 +442,8 @@ int main(int argc, char **argv) {
                     ImGui::Text("S - Screenshot Camera 2");
                     ImGui::Text("D - Screenshot Camera 3");
                     ImGui::Text("F - Screenshot Camera 4");
+                    ImGui::SeparatorText("Other");
+                    ImGui::Text("T - Increment Section");
                     
                     ImGui::EndTabItem();
                 }

@@ -672,8 +672,18 @@ bool Camera::saveScreenshot() {
             now.time_since_epoch())
             .count();
 
+    std::string safeLabel = label;
+    for (char& c : safeLabel) {
+        if (c == ' ') {
+            c = '_';
+        }
+    }
+
+    const std::string suffixPart =
+    screenshotSuffix.empty() ? "" : "_" + screenshotSuffix;
+
     fs::path file =
-        dir / ("screenshot_" + std::to_string(timestamp) + ".png");
+        dir / ("screenshot_" + std::to_string(timestamp) + suffixPart + "_" + safeLabel + ".png");
 
     std::vector<uint8_t> pixels(
         static_cast<size_t>(fboWidth) * fboHeight * 4);
@@ -746,6 +756,10 @@ void Camera::drainScreenshotWrites(bool wait) {
             ++it;
         }
     }
+}
+
+void Camera::setScreenshotSuffix(const std::string& suffix) {
+    screenshotSuffix = suffix;
 }
 
 void Camera::destroyGlResources() {

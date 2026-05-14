@@ -9,6 +9,8 @@
 #include <string>
 #include <future>
 #include <vector>
+#include <deque>
+#include <cstdint>
 
 class CameraStream;
 
@@ -29,6 +31,7 @@ public:
     void flip_vertically();
     void flip_horizontally();
     bool screenshot();
+    void setScreenshotSuffix(const std::string& suffix);
 
 private:
     void syncStream();
@@ -53,6 +56,8 @@ private:
     bool flip_frame_vertically = false;
     bool flip_frame_horizontally = false;
     bool take_screenshot = false;
+
+    std::string screenshotSuffix = "section_0";
     
     GLuint texY = 0;
     GLuint texUV = 0;

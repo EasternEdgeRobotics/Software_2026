@@ -672,8 +672,15 @@ bool Camera::saveScreenshot() {
             now.time_since_epoch())
             .count();
 
+    std::string safeLabel = label;
+    for (char& c : safeLabel) {
+        if (c == ' ') {
+            c = '_';
+        }
+    }
+
     fs::path file =
-        dir / ("screenshot_" + std::to_string(timestamp) + ".png");
+        dir / ("screenshot_" + std::to_string(timestamp) + "_" + safeLabel + ".png");
 
     std::vector<uint8_t> pixels(
         static_cast<size_t>(fboWidth) * fboHeight * 4);
