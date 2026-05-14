@@ -1,0 +1,8 @@
+network:
+  version: 2
+  renderer: NetworkManager
+  vlans:
+    eth0.240:
+      id: 240
+      link: eth0
+      dhcp4: false
