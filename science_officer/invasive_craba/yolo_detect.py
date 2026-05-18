@@ -11,13 +11,12 @@ from ultralytics import YOLO
 
 # Parse user inputs
 model_path = "Standard_Model.pt"
-img_source = "usb0" # Use this for USB CAM
-# img_source = "rtsp://" # Use this for RTSP
-min_thresh = 0.50
+img_source = "rtsp://192.168.137.200:8889/cam"
+min_thresh = 0.65
 user_res = "1260x720"
 record = False
-source_type = "usb" # Use this for USB CAM
-# source_type = "video" # Use this for RTSP
+#source_type = "usb" # Use this for USB
+source_type = "video" # Use this for RTSP
 
 # Check if model file exists and is valid
 if (not os.path.exists(model_path)):
@@ -28,7 +27,8 @@ if (not os.path.exists(model_path)):
 model = YOLO(model_path, task='detect')
 labels = model.names
 
-usb_idx = int(img_source[3:])
+if source_type == "usb":
+    usb_idx = int(img_source[3:])
 
 # Parse user-specified display resolution
 resize = False
