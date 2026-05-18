@@ -1,5 +1,49 @@
 import cv2
 from math import sqrt
+import os
+import argparse
+
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Measure iceburgs with BlueStar")
+
+    parser.add_argument(
+        "--source-type",
+        default="video",
+        help="video or usb"
+    )
+
+    parser.add_argument(
+        "--source",
+        default="rtsp://192.168.137.200:8889/cam2",
+        help="Video source (ie usb0, rtsp://192.168.137.200:8889/cam2)"
+    )
+
+    parser.add_argument(
+        "--resolution",
+        default="1260x720",
+        help="Source resolution"
+    )
+
+    return parser.parse_args()
+
+args = parse_args()
+
+if args.resolution:
+    resize = True
+    resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
+
+if args.source_type == 'video' or args.source_type == 'usb':
+    if args.source_type == 'video': cap_arg = args.source_type
+    elif args.source_type == 'usb': cap_arg = int(args.source[3:])
+
+    cap = cv2.VideoCapture(cap_arg)
+
+    # Set camera or video resolution if specified by user
+    if args.resolution:
+        ret = cap.set(3, resW)
+        ret = cap.set(4, resH)
 
 def points(event,x,y,flags,param):
         clicked_points = param
@@ -24,15 +68,10 @@ def line_distance(p1,p2):
 
 
 def cam_mode(cap):
-
         #check if opened
         if not cap.isOpened():
             print("Error: Could not open video device.")
             return
-
-        #Resolution
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
         heights = []
         clicked_points = []
@@ -49,7 +88,6 @@ def cam_mode(cap):
             #Renaming variable
             global img1
             img1 = frame[:]
-            cv2.imshow("image", img1 )
             #Honestly forget what this does
             #i think it checks for the last two bytes to indicate letter "q" so press q
             #if in loop it would probably be useful for screenshotting if wanted
@@ -76,19 +114,12 @@ def cam_mode(cap):
                 draw_mode(photo,heights,clicked_points)
             
         return heights
-
-            
-            
-          
-            
     
 def draw_mode(picture,heights, clicked_points):
 
         imgconst = picture.copy()
         global rheight
         rheight = 0
-        
-        
         
         img2 = imgconst.copy()
         
@@ -117,20 +148,15 @@ def draw_mode(picture,heights, clicked_points):
             else:
                  print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
             
-        cv2.imshow("snap", img2 )
-        cv2.setMouseCallback('snap', points, param = clicked_points)
+        cv2.imshow("Iceburg Measurement", img2 )
+        cv2.setMouseCallback('Iceburg Measurement', points, param = clicked_points)
 
         if key & 0xFF == ord('1'):
             if rheight not in heights and rheight != 0:
                 heights.append(rheight)
                 print("New Height: ", rheight)
 
-
-                
-
 def main():
-    #open default camera
-    cap = cv2.VideoCapture("rtsp://192.168.137.200:8554/cam2")
     global mouse_x,mouse_y
     mouse_x,mouse_y = -1,-1
 
@@ -139,7 +165,6 @@ def main():
     clicked_points = []
     
     while True:
-
         if mode == 3:
             #quit
             cap.release()
