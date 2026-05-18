@@ -1,0 +1,10 @@
+# The pi foundation's implementation of netplan + NM seems to be kinda broken for setups without DHCP, or im just missing something, either way using netplan directly works - PC
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    eth0:
+      dhcp4: false
+      dhcp6: true # Keeping this as a lifeline, because it seems like it always can get a ipv6 address, somehow? - PC
+      addresses:
+          - 192.168.137.201/24

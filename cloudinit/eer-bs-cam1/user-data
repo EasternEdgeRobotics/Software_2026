@@ -1,0 +1,31 @@
+#cloud-config
+manage_resolv_conf: false
+hostname: eer-bs-cam-1
+manage_etc_hosts: true
+packages:
+- avahi-daemon
+apt:
+  preserve_sources_list: true
+  conf: |
+    Acquire {
+      Check-Date "false";
+    };
+timezone: America/St_Johns
+keyboard:
+  model: pc105
+  layout: "us"
+users:
+- name: easternedge
+  groups: users,adm,dialout,audio,netdev,video,plugdev,cdrom,games,input,gpio,spi,i2c,render,sudo
+  shell: /bin/bash
+  lock_passwd: false
+  passwd: "$y$jB5$/R5GtEIQhNJArFJClsm9q/$4aQHT03uy.Mc4Iy/cmg2Eqa4Sw.vUB1dEm.x4tLvFV."
+enable_ssh: true
+ssh_pwauth: true
+rpi:
+  interfaces:
+    serial: true
+    i2c: true
+runcmd:
+  - [ rfkill, unblock, wifi ]
+  - [ sh, -c, "for f in /var/lib/systemd/rfkill/*:wlan; do echo 0 > \"$f\"; done" ]
