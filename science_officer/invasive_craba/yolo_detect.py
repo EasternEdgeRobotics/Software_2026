@@ -9,50 +9,69 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-# Parse user inputs
-model_path = "Standard_Model.pt"
-img_source = "rtsp://192.168.137.200:8889/cam"
-min_thresh = 0.65
-user_res = "1260x720"
-record = False
-#source_type = "usb" # Use this for USB
-source_type = "video" # Use this for RTSP
+def parse_args():
+    parser = argparse.ArgumentParser(description="Scan for invasive crabs with BlueStar")
+
+    parser.add_argument(
+        "--model-path",
+        default="Standard_Model.pt",
+        help="Path to the Yolo model used"
+    )
+
+    parser.add_argument(
+        "--source-type",
+        default="video",
+        help="video or usb"
+    )
+
+    parser.add_argument(
+        "--source",
+        default="rtsp://192.168.137.200:8889/cam",
+        help="Video source (ie usb0, rtsp://192.168.137.200:8889/cam)"
+    )
+
+    parser.add_argument(
+        "--min-thresh",
+        default=0.65,
+        help="Minimum threshhold for marking as detected",
+        type=float
+    )
+
+    parser.add_argument(
+        "--resolution",
+        default="1260x720",
+        help="Source resolution"
+    )
+
+    return parser.parse_args()
+
+args = parse_args()
 
 # Check if model file exists and is valid
-if (not os.path.exists(model_path)):
+if (not os.path.exists(args.model_path)):
     print('ERROR: Model path is invalid or model was not found. Make sure the model filename was entered correctly.')
     sys.exit(0)
 
 # Load the model into memory and get labemap
-model = YOLO(model_path, task='detect')
+model = YOLO(args.model_path, task='detect')
 labels = model.names
-
-if source_type == "usb":
-    usb_idx = int(img_source[3:])
 
 # Parse user-specified display resolution
 resize = False
-if user_res:
+if args.resolution:
     resize = True
-    resW, resH = int(user_res.split('x')[0]), int(user_res.split('x')[1])
-
-# Check if recording is valid and set up recording
-if record:
-    # Set up recording
-    record_name = 'demo1.avi'
-    record_fps = 30
-    recorder = cv2.VideoWriter(record_name, cv2.VideoWriter_fourcc(*'MJPG'), record_fps, (resW,resH))
+    resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
 # Load or initialize image source
-if source_type == 'video' or source_type == 'usb':
+if args.source_type == 'video' or args.source_type == 'usb':
 
-    if source_type == 'video': cap_arg = img_source
-    elif source_type == 'usb': cap_arg = usb_idx
+    if args.source_type == 'video': cap_arg = args.source_type
+    elif args.source_type == 'usb': cap_arg = int(args.source[3:])
 
     cap = cv2.VideoCapture(cap_arg)
 
     # Set camera or video resolution if specified by user
-    if user_res:
+    if args.resolution:
         ret = cap.set(3, resW)
         ret = cap.set(4, resH)
 
@@ -68,34 +87,19 @@ img_count = 0
 
 # Begin inference loop
 while True:
-
     t_start = time.perf_counter()
 
     # Load frame from image source
-    if source_type == 'image' or source_type == 'folder': # If source is image or image folder, load the image using its filename
-        if img_count >= len(imgs_list):
-            print('All images have been processed. Exiting program.')
-            sys.exit(0)
-        img_filename = imgs_list[img_count]
-        frame = cv2.imread(img_filename)
-        img_count = img_count + 1
-    
-    elif source_type == 'video': # If source is a video, load next frame from video file
+    if args.source_type == 'video': # If source is a video, load next frame from video file
         ret, frame = cap.read()
         if not ret:
             print('Reached end of the video file. Exiting program.')
             break
     
-    elif source_type == 'usb': # If source is a USB camera, grab frame from camera
+    elif args.source_type == 'usb': # If source is a USB camera, grab frame from camera
         ret, frame = cap.read()
         if (frame is None) or (not ret):
             print('Unable to read frames from the camera. This indicates the camera is disconnected or not working. Exiting program.')
-            break
-
-    elif source_type == 'picamera': # If source is a Picamera, grab frames using picamera interface
-        frame = cap.capture_array()
-        if (frame is None):
-            print('Unable to read frames from the Picamera. This indicates the camera is disconnected or not working. Exiting program.')
             break
 
     # Resize frame to desired display resolution
@@ -128,7 +132,7 @@ while True:
         conf = detections[i].conf.item()
 
         # Draw box if confidence threshold is high enough
-        if conf > min_thresh:
+        if conf > args.min_thresh:
 
             color = bbox_colors[classidx % 10]
             cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), color, 2)
@@ -143,16 +147,15 @@ while True:
             object_count = object_count + 1
 
     # Calculate and draw framerate (if using video, USB, or Picamera source)
-    if source_type == 'video' or source_type == 'usb':
+    if args.source_type == 'video' or args.source_type == 'usb':
         cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     
     # Display detection results
     cv2.putText(frame, f'Number of objects: {object_count}', (10,40), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw total number of detected objects
     cv2.imshow('YOLO detection results',frame) # Display image
-    if record: recorder.write(frame)
 
-    # If inferencing on individual images, wait for user keypress before moving to next image. Otherwise, wait 5ms before moving to next frame.
-    if source_type == 'video' or source_type == 'usb':
+    # Wait 5ms before moving to next frame.
+    if args.source_type == 'video' or args.source_type == 'usb':
         key = cv2.waitKey(5)
     
     if key == ord('q') or key == ord('Q'): # Press 'q' to quit
@@ -178,7 +181,6 @@ while True:
 
 # Clean up
 print(f'Average pipeline FPS: {avg_frame_rate:.2f}')
-if source_type == 'video' or source_type == 'usb':
+if args.source_type == 'video' or args.source_type == 'usb':
     cap.release()
-if record: recorder.release()
 cv2.destroyAllWindows()
