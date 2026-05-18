@@ -3,8 +3,7 @@
 #include "streaming/CameraStream.hpp"
 #include "streaming/CameraStreamFactory.hpp"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+#include <tiffio.h>
 
 #include <gst/gst.h>
 #include <GLFW/glfw3.h>
@@ -12,12 +11,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <sstream>
 #include <thread>
 #include <vector>
 #include <future>
 #include <algorithm>
+#include <cmath>
 
 namespace fs = std::filesystem;
 
@@ -367,6 +370,451 @@ bool cropRgbaBuffer(
     return true;
 }
 
+struct ScreenshotMetadata {
+    std::string make;
+    std::string model;
+    std::string lensModel;
+    std::string artist;
+    std::string software;
+
+    std::string label;
+    std::string suffix;
+    std::string cameraPosition;
+
+    std::string dateTime;
+    std::string subSecondTime;
+    std::string description;
+    std::string userComment;
+
+    double fNumber = 2.2;
+    double physicalFocalLengthMm = 2.75;
+    double waterRefractionFactor = 1.333;
+    double effectiveFocalLengthMm = 2.75 * 1.333;
+
+    double sensorWidthMm = 6.4512;
+    double sensorHeightMm = 3.6288;
+
+    double effectivePixelSizeXmm = 0.0;
+    double effectivePixelSizeYmm = 0.0;
+
+    double focalPlaneXResolution = 0.0;
+    double focalPlaneYResolution = 0.0;
+
+    uint16_t focalLength35mm = 0;
+
+    int streamWidth = 0;
+    int streamHeight = 0;
+    int outputWidth = 0;
+    int outputHeight = 0;
+};
+
+std::string makeExifDateTime(std::chrono::system_clock::time_point timePoint) {
+    const std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
+
+    std::tm localTime {};
+#if defined(_WIN32)
+    localtime_s(&localTime, &time);
+#else
+    localtime_r(&time, &localTime);
+#endif
+
+    std::ostringstream stream;
+    stream << std::put_time(&localTime, "%Y:%m:%d %H:%M:%S");
+    return stream.str();
+}
+
+std::string makeExifSubSecondTime(
+    std::chrono::system_clock::time_point timePoint)
+{
+    const auto milliseconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            timePoint.time_since_epoch()) %
+        1000;
+
+    std::ostringstream stream;
+    stream << std::setw(3) << std::setfill('0') << milliseconds.count();
+    return stream.str();
+}
+
+bool writeTiffWithExif(
+    const std::string& filePath,
+    int width,
+    int height,
+    const std::vector<uint8_t>& rgbaPixels,
+    const ScreenshotMetadata& metadata)
+{
+    if (width <= 0 || height <= 0 || rgbaPixels.empty()) {
+        return false;
+    }
+
+    TIFF* tif = TIFFOpen(filePath.c_str(), "w");
+    if (!tif) {
+        return false;
+    }
+
+    constexpr uint16_t samplesPerPixel = 3;
+    constexpr uint16_t bitsPerSample = 8;
+
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, static_cast<uint32_t>(width));
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, static_cast<uint32_t>(height));
+    TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, samplesPerPixel);
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bitsPerSample);
+    TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+
+    // Fully uncompressed TIFF.
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+
+    // Do not set TIFFTAG_PREDICTOR when using COMPRESSION_NONE.
+
+    TIFFSetField(
+        tif,
+        TIFFTAG_ROWSPERSTRIP,
+        TIFFDefaultStripSize(tif, static_cast<uint32_t>(height)));
+
+    TIFFSetField(tif, TIFFTAG_MAKE, metadata.make.c_str());
+    TIFFSetField(tif, TIFFTAG_MODEL, metadata.model.c_str());
+    TIFFSetField(tif, TIFFTAG_SOFTWARE, metadata.software.c_str());
+    TIFFSetField(tif, TIFFTAG_ARTIST, metadata.artist.c_str());
+    TIFFSetField(tif, TIFFTAG_DATETIME, metadata.dateTime.c_str());
+    TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, metadata.description.c_str());
+
+    std::vector<uint8_t> rgbRow(static_cast<size_t>(width) * 3);
+
+    for (int row = 0; row < height; ++row) {
+        const uint8_t* rgbaRow =
+            rgbaPixels.data() + static_cast<size_t>(row) * width * 4;
+
+        for (int x = 0; x < width; ++x) {
+            rgbRow[static_cast<size_t>(x) * 3 + 0] =
+                rgbaRow[static_cast<size_t>(x) * 4 + 0];
+
+            rgbRow[static_cast<size_t>(x) * 3 + 1] =
+                rgbaRow[static_cast<size_t>(x) * 4 + 1];
+
+            rgbRow[static_cast<size_t>(x) * 3 + 2] =
+                rgbaRow[static_cast<size_t>(x) * 4 + 2];
+        }
+
+        if (TIFFWriteScanline(
+                tif,
+                rgbRow.data(),
+                static_cast<uint32_t>(row),
+                0) < 0) {
+            TIFFClose(tif);
+            return false;
+        }
+    }
+
+    if (!TIFFWriteDirectory(tif)) {
+        TIFFClose(tif);
+        return false;
+    }
+
+    toff_t exifDirectoryOffset = 0;
+
+    if (!TIFFCreateEXIFDirectory(tif)) {
+        TIFFClose(tif);
+        return false;
+    }
+
+    TIFFSetField(tif, EXIFTAG_DATETIMEORIGINAL, metadata.dateTime.c_str());
+    TIFFSetField(tif, EXIFTAG_DATETIMEDIGITIZED, metadata.dateTime.c_str());
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_SUBSECTIMEORIGINAL,
+        metadata.subSecondTime.c_str());
+
+    TIFFSetField(tif, EXIFTAG_FNUMBER, metadata.fNumber);
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_FOCALLENGTH,
+        metadata.effectiveFocalLengthMm);
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_FOCALLENGTHIN35MMFILM,
+        metadata.focalLength35mm);
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_FOCALPLANEXRESOLUTION,
+        metadata.focalPlaneXResolution);
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_FOCALPLANEYRESOLUTION,
+        metadata.focalPlaneYResolution);
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_FOCALPLANERESOLUTIONUNIT,
+        static_cast<uint16_t>(RESUNIT_INCH));
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_SENSINGMETHOD,
+        static_cast<uint16_t>(2));
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_COLORSPACE,
+        static_cast<uint16_t>(1));
+
+#ifdef EXIFTAG_LENSMODEL
+    TIFFSetField(tif, EXIFTAG_LENSMODEL, metadata.lensModel.c_str());
+#endif
+
+    std::string userComment("ASCII\0\0\0", 8);
+    userComment += metadata.userComment;
+
+    TIFFSetField(
+        tif,
+        EXIFTAG_USERCOMMENT,
+        static_cast<uint32_t>(userComment.size()),
+        reinterpret_cast<const unsigned char*>(userComment.data()));
+
+    if (!TIFFWriteCustomDirectory(tif, &exifDirectoryOffset)) {
+        TIFFClose(tif);
+        return false;
+    }
+
+    if (!TIFFSetDirectory(tif, 0)) {
+        TIFFClose(tif);
+        return false;
+    }
+
+    TIFFSetField(tif, TIFFTAG_EXIFIFD, exifDirectoryOffset);
+
+    if (!TIFFRewriteDirectory(tif)) {
+        TIFFClose(tif);
+        return false;
+    }
+
+    TIFFClose(tif);
+    return true;
+}
+
+struct CameraIdentity {
+    std::string model;
+    std::string position;
+};
+
+CameraIdentity cameraIdentityForNumber(int cameraNumber) {
+    switch (cameraNumber) {
+        case 1:
+            return {
+                "BlueStar Front Camera",
+                "front camera",
+            };
+
+        case 2:
+            return {
+                "BlueStar Back Camera",
+                "back camera",
+            };
+
+        case 3:
+            return {
+                "BlueStar Camera 3",
+                "camera 3",
+            };
+
+        case 4:
+            return {
+                "BlueStar Camera 4",
+                "camera 4",
+            };
+
+        default:
+            return {
+                "IMX708 Underwater Unknown Camera",
+                "unknown position",
+            };
+    }
+}
+
+uint16_t calculateFocalLength35mm(
+    double focalLengthMm,
+    int outputWidth,
+    int outputHeight,
+    double pixelSizeXmm,
+    double pixelSizeYmm)
+{
+    if (outputWidth <= 0 ||
+        outputHeight <= 0 ||
+        pixelSizeXmm <= 0.0 ||
+        pixelSizeYmm <= 0.0) {
+        return 0;
+    }
+
+    constexpr double fullFrameDiagonalMm = 43.2666;
+
+    const double usedWidthMm = static_cast<double>(outputWidth) * pixelSizeXmm;
+    const double usedHeightMm =
+        static_cast<double>(outputHeight) * pixelSizeYmm;
+
+    const double usedDiagonalMm =
+        std::sqrt((usedWidthMm * usedWidthMm) + (usedHeightMm * usedHeightMm));
+
+    if (usedDiagonalMm <= 0.0) {
+        return 0;
+    }
+
+    const double equivalent = focalLengthMm * fullFrameDiagonalMm /
+                              usedDiagonalMm;
+
+    return static_cast<uint16_t>(std::lround(equivalent));
+}
+
+ScreenshotMetadata makeScreenshotMetadata(
+    int cameraNumber,
+    const std::string& label,
+    const std::string& screenshotSuffix,
+    std::chrono::system_clock::time_point now,
+    int streamWidth,
+    int streamHeight,
+    int outputWidth,
+    int outputHeight,
+    bool flipVertically,
+    bool flipHorizontally,
+    bool cropEnabled,
+    float cropLeft,
+    float cropRight,
+    float cropTop,
+    float cropBottom)
+{
+    ScreenshotMetadata metadata;
+
+    const CameraIdentity identity = cameraIdentityForNumber(cameraNumber);
+
+    metadata.make = "Eastern Edge";
+    metadata.artist = "Eastern Edge";
+    metadata.software = "Eastern Edge BlueStar Science Officer GUI";
+
+    metadata.label = label;
+    metadata.suffix = screenshotSuffix;
+    metadata.cameraPosition = identity.position;
+
+    metadata.lensModel = "Fixed-focus 2.75mm F2.2 lens";
+
+    metadata.physicalFocalLengthMm = 2.75;
+    metadata.waterRefractionFactor = 1.333;
+    metadata.effectiveFocalLengthMm =
+        metadata.physicalFocalLengthMm * metadata.waterRefractionFactor;
+
+    metadata.fNumber = 2.2;
+
+    // IMX708 full active sensor:
+    // 4608 x 2592 pixels, 1.4 um pixels.
+    metadata.sensorWidthMm = 4608.0 * 0.0014;
+    metadata.sensorHeightMm = 2592.0 * 0.0014;
+
+    metadata.streamWidth = streamWidth;
+    metadata.streamHeight = streamHeight;
+    metadata.outputWidth = outputWidth;
+    metadata.outputHeight = outputHeight;
+
+    // Effective pixel size is calculated from the actual stream resolution.
+    if (streamWidth > 0) {
+        metadata.effectivePixelSizeXmm =
+            metadata.sensorWidthMm / static_cast<double>(streamWidth);
+    }
+
+    if (streamHeight > 0) {
+        metadata.effectivePixelSizeYmm =
+            metadata.sensorHeightMm / static_cast<double>(streamHeight);
+    }
+
+    if (metadata.effectivePixelSizeXmm > 0.0) {
+        metadata.focalPlaneXResolution =
+            25.4 / metadata.effectivePixelSizeXmm;
+    }
+
+    if (metadata.effectivePixelSizeYmm > 0.0) {
+        metadata.focalPlaneYResolution =
+            25.4 / metadata.effectivePixelSizeYmm;
+    }
+
+    metadata.focalLength35mm = calculateFocalLength35mm(
+        metadata.effectiveFocalLengthMm,
+        outputWidth,
+        outputHeight,
+        metadata.effectivePixelSizeXmm,
+        metadata.effectivePixelSizeYmm);
+
+    metadata.dateTime = makeExifDateTime(now);
+    metadata.subSecondTime = makeExifSubSecondTime(now);
+
+    std::ostringstream model;
+    model << identity.model << " stream " << streamWidth << "x" << streamHeight;
+
+    if (outputWidth != streamWidth || outputHeight != streamHeight) {
+        model << " crop " << outputWidth << "x" << outputHeight;
+    }
+
+    metadata.model = model.str();
+
+    std::ostringstream description;
+    description << "IMX708 USB camera " << cameraNumber << ", "
+                << identity.position
+                << "; stream " << streamWidth << "x" << streamHeight
+                << "; final image " << outputWidth << "x" << outputHeight
+                << "; physical lens " << metadata.physicalFocalLengthMm
+                << "mm F" << metadata.fNumber
+                << "; effective underwater focal length "
+                << metadata.effectiveFocalLengthMm << "mm";
+
+    metadata.description = description.str();
+
+    std::ostringstream comment;
+    comment << "sensor=IMX708"
+            << "; camera_id=" << cameraNumber
+            << "; camera_position=" << identity.position
+            << "; environment=underwater"
+            << "; physical_focal_length="
+            << metadata.physicalFocalLengthMm << "mm"
+            << "; effective_focal_length="
+            << metadata.effectiveFocalLengthMm << "mm"
+            << "; refraction_factor=" << metadata.waterRefractionFactor
+            << "; native_active_area=4608x2592"
+            << "; native_pixel_size=1.4um"
+            << "; stream_size=" << streamWidth << "x" << streamHeight
+            << "; final_size=" << outputWidth << "x" << outputHeight
+            << "; effective_pixel_size_x="
+            << metadata.effectivePixelSizeXmm * 1000.0 << "um"
+            << "; effective_pixel_size_y="
+            << metadata.effectivePixelSizeYmm * 1000.0 << "um"
+            << "; focal_plane_x_resolution="
+            << metadata.focalPlaneXResolution << "ppi"
+            << "; focal_plane_y_resolution="
+            << metadata.focalPlaneYResolution << "ppi"
+            << "; focal_length_35mm_equivalent="
+            << metadata.focalLength35mm << "mm"
+            << "; shutter=rolling"
+            << "; focus=fixed"
+            << "; focus_range=1.5m-infinity"
+            << "; ir_cut=true"
+            << "; flip_vertical=" << (flipVertically ? "true" : "false")
+            << "; flip_horizontal=" << (flipHorizontally ? "true" : "false")
+            << "; crop_enabled=" << (cropEnabled ? "true" : "false")
+            << "; crop_left=" << cropLeft
+            << "; crop_right=" << cropRight
+            << "; crop_top=" << cropTop
+            << "; crop_bottom=" << cropBottom;
+
+    if (!screenshotSuffix.empty()) {
+        comment << "; section=" << screenshotSuffix;
+    }
+
+    metadata.userComment = comment.str();
+
+    return metadata;
+}
+
 } // namespace
 
 template <typename F>
@@ -398,6 +846,7 @@ Camera::Camera(char (&urlRef)[512], char (&videoCapsRef)[1024], char (&audioCaps
       videoCapsPtr(videoCapsRef),
       audioCapsPtr(audioCapsRef),
       fallback(fallback),
+      cameraNumber(cameraNumber),
       label("Camera " + std::to_string(cameraNumber)),
       lastFrameTime(std::chrono::steady_clock::now()),
       streamStartTime(std::chrono::steady_clock::now()),
@@ -743,7 +1192,7 @@ bool Camera::saveScreenshot() {
     screenshotSuffix.empty() ? "" : "_" + screenshotSuffix;
 
     fs::path file =
-        dir / ("screenshot_" + std::to_string(timestamp) + suffixPart + "_" + safeLabel + ".png");
+        dir / ("screenshot_" + std::to_string(timestamp) + suffixPart + "_" + safeLabel + ".tiff");
 
     std::vector<uint8_t> pixels(
         static_cast<size_t>(fboWidth) * fboHeight * 4);
@@ -800,20 +1249,37 @@ bool Camera::saveScreenshot() {
         }
     }
 
+    ScreenshotMetadata metadata = makeScreenshotMetadata(
+        cameraNumber,
+        label,
+        screenshotSuffix,
+        now,
+        fboWidth,
+        fboHeight,
+        outputWidth,
+        outputHeight,
+        flip_frame_vertically,
+        flip_frame_horizontally,
+        screenshotCropEnabled,
+        screenshotCropLeft,
+        screenshotCropRight,
+        screenshotCropTop,
+        screenshotCropBottom);
+
     const std::string filePath = file.string();
     const int width = outputWidth;
     const int height = outputHeight;
 
     screenshotWrites.emplace_back(std::async(
         std::launch::async,
-        [filePath, width, height, pixels = std::move(outputPixels)]() mutable {
-            return stbi_write_png(
-                    filePath.c_str(),
-                    width,
-                    height,
-                    4,
-                    pixels.data(),
-                    width * 4) != 0;
+        [
+            filePath,
+            width,
+            height,
+            pixels = std::move(outputPixels),
+            metadata = std::move(metadata)
+        ]() mutable {
+            return writeTiffWithExif(filePath, width, height, pixels, metadata);
         }));
 
     return true;

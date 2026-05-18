@@ -52,6 +52,7 @@ private:
     char (&videoCapsPtr)[1024];
     char (&audioCapsPtr)[1024];
     unsigned int fallback;
+    int cameraNumber = 0;
     std::string label;
 
     std::unique_ptr<CameraStream> stream;

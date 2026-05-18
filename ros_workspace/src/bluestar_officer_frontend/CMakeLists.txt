@@ -20,6 +20,10 @@ pkg_check_modules(GST REQUIRED IMPORTED_TARGET
   gstreamer-video-1.0
 )
 
+pkg_check_modules(TIFF REQUIRED IMPORTED_TARGET
+  libtiff-4
+)
+
 set(BLUESTAR_CAMERA_BACKEND "webrtcbin" CACHE STRING
   "Camera backend: whepclientsrc or webrtcbin"
 )
@@ -116,12 +120,15 @@ target_link_libraries(
   nlohmann_json::nlohmann_json
   rclcpp::rclcpp
   PkgConfig::GST
+  PkgConfig::TIFF
   CURL::libcurl
 )
 
 target_compile_options(
   bluestar_officer_frontend
-  PRIVATE ${GST_CFLAGS_OTHER}
+  PRIVATE 
+    ${GST_CFLAGS_OTHER}
+    ${TIFF_CFLAGS_OTHER}
 )
 
 set_target_properties(
