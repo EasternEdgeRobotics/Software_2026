@@ -26,6 +26,10 @@ namespace fs = std::filesystem;
 
 namespace {
 
+#ifndef EXIFTAG_LENSMODEL
+#define EXIFTAG_LENSMODEL 0xA434
+#endif
+
 constexpr auto kInitialFrameTimeout = std::chrono::seconds(8);
 constexpr auto kFrameTimeout = std::chrono::seconds(3);
 constexpr auto kReconnectCooldown = std::chrono::seconds(2);
@@ -447,7 +451,7 @@ bool writeTiffWithExif(
         return false;
     }
 
-    TIFF* tif = TIFFOpen(filePath.c_str(), "w");
+    TIFF* tif = TIFFOpen(filePath.c_str(), "w+");
     if (!tif) {
         return false;
     }
@@ -462,11 +466,7 @@ bool writeTiffWithExif(
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-
-    // Fully uncompressed TIFF.
     TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-
-    // Do not set TIFFTAG_PREDICTOR when using COMPRESSION_NONE.
 
     TIFFSetField(
         tif,
@@ -512,9 +512,11 @@ bool writeTiffWithExif(
         return false;
     }
 
-    toff_t exifDirectoryOffset = 0;
+    uint64_t exifDirectoryOffset = 0;
 
-    if (!TIFFCreateEXIFDirectory(tif)) {
+    // Important:
+    // TIFFCreateEXIFDirectory returns 0 on success in libtiff's own examples.
+    if (TIFFCreateEXIFDirectory(tif) != 0) {
         TIFFClose(tif);
         return false;
     }
@@ -588,11 +590,6 @@ bool writeTiffWithExif(
     }
 
     TIFFSetField(tif, TIFFTAG_EXIFIFD, exifDirectoryOffset);
-
-    if (!TIFFRewriteDirectory(tif)) {
-        TIFFClose(tif);
-        return false;
-    }
 
     TIFFClose(tif);
     return true;
