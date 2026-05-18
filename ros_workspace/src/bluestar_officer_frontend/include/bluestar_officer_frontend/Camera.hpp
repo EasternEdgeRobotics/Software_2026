@@ -31,6 +31,7 @@ public:
     void flip_vertically();
     void flip_horizontally();
     bool screenshot();
+    void waitForScreenshotWrites();
     void setScreenshotSuffix(const std::string& suffix);
     void setScreenshotDirectory(const std::string& directory);
     void setScreenshotCrop(

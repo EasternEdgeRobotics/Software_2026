@@ -1343,6 +1343,10 @@ void Camera::drainScreenshotWrites(bool wait) {
     }
 }
 
+void Camera::waitForScreenshotWrites() {
+    drainScreenshotWrites(true);
+}
+
 void Camera::setScreenshotSuffix(const std::string& suffix) {
     screenshotSuffix = suffix;
 }

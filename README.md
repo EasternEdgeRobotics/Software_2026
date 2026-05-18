@@ -10,6 +10,7 @@ This code repository contains code for maintaining EER's current ROV, BlueStar.
     - [ros_workspace](#ros_workspace) 
     - [Tools](#Tools) 
     - [Assets](#Assets) 
+    - [science_officer](#science_officer)
 
 ## Repository Structure
 
@@ -32,6 +33,9 @@ Assorted tools useful for BlueStar, or developing for BlueStar.
 
 ### Assets
 Assets used in BlueStar.
+
+### science_officer
+Tools related to the science officer tasks in the MATE 2026 mission.
 
 ### Firmware
 The firmware running on BlueStar's onboard RP2040 microcontroller, which communicates with the onboard Raspberry Pi 4B via I2c, along with the PCB schematics can be found in the [Electrical_2026 Repository](https://github.com/EasternEdgeRobotics/Electrical_2026).

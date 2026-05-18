@@ -1,19 +1,26 @@
 #include "Image.hpp"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+
 #include <nlohmann/json.hpp>
+
 #include "Config.hpp"
 #include "ROS.hpp"
 #include "Camera.hpp"
+
 #include <iostream>
 #include <cstdint>
 #include <memory>
+
 #include "images/logo.h"
 #include "images/nosignal.h"
+
 #include "streaming/CameraStreamFactory.hpp"
+
 #include <optional>
 #include <stdexcept>
 #include <algorithm>
@@ -23,6 +30,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cstdlib>
+#include <future>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
@@ -82,7 +90,13 @@ float cam4ScreenshotCropRight = 0.0f;
 float cam4ScreenshotCropTop = 0.0f;
 float cam4ScreenshotCropBottom = 0.0f;
 
+bool camWebODMUploadPressedLatch = false;
+int camSectionTotalPhotos = 0;
+
 const char* app_id = "EasternEdge.BlueStar.OfficerFrontend";
+
+std::string currentScreenshotSectionName;
+fs::path currentScreenshotSectionDir;
 
 void normalizeScreenshotCrop(
     float& left,
@@ -139,6 +153,37 @@ fs::path defaultCaptureRoot() {
 
 std::string makeSectionName(int section) {
     return "section_" + std::to_string(section);
+}
+
+std::string shellQuote(const std::string& value) {
+    std::string quoted = "'";
+
+    for (char c : value) {
+        if (c == '\'') {
+            quoted += "'\\''";
+        } else {
+            quoted += c;
+        }
+    }
+
+    quoted += "'";
+    return quoted;
+}
+
+std::string defaultWebodmUploadScript() {
+    const char* script = std::getenv("BLUESTAR_WEBODM_SCRIPT");
+
+    if (script && script[0] != '\0') {
+        return script;
+    }
+
+    const char* home = std::getenv("HOME");
+
+    if (!home || home[0] == '\0') {
+        return "webodm_upload.py";
+    }
+
+    return (fs::path(home) / "Software_2026" / "science_officer" / "coral_garden" / "webodm_upload.py" ).string();
 }
 
 int main(int argc, char **argv) {
@@ -256,6 +301,9 @@ int main(int argc, char **argv) {
         const std::string sectionName = makeSectionName(camScreenshotSection);
         const fs::path sectionDir = captureSessionDir / sectionName;
 
+        currentScreenshotSectionName = sectionName;
+        currentScreenshotSectionDir = sectionDir;
+
         std::error_code sectionDirError;
         fs::create_directories(sectionDir, sectionDirError);
 
@@ -312,6 +360,75 @@ int main(int argc, char **argv) {
 
     updateScreenshotCrop();
 
+    std::future<int> webodmUploadFuture;
+    std::string webodmUploadStatus = "WebODM: idle";
+
+    auto pollWebodmUpload = [&]() {
+        if (!webodmUploadFuture.valid()) {
+            return false;
+        }
+
+        const auto status =
+            webodmUploadFuture.wait_for(std::chrono::milliseconds(0));
+
+        if (status != std::future_status::ready) {
+            return true;
+        }
+
+        try {
+            const int exitCode = webodmUploadFuture.get();
+
+            if (exitCode == 0) {
+                webodmUploadStatus = "WebODM: upload complete";
+            } else {
+                webodmUploadStatus =
+                    "WebODM: upload failed, exit code " +
+                    std::to_string(exitCode);
+            }
+        } catch (const std::exception& e) {
+            webodmUploadStatus =
+                std::string("WebODM: upload failed: ") + e.what();
+        } catch (...) {
+            webodmUploadStatus = "WebODM: upload failed with unknown error";
+        }
+
+        return false;
+    };
+
+    auto launchWebodmUpload = [&](const fs::path& sectionDir,
+                                const std::string& sectionName) {
+        if (webodmUploadFuture.valid() &&
+            webodmUploadFuture.wait_for(std::chrono::milliseconds(0)) !=
+                std::future_status::ready) {
+            webodmUploadStatus = "WebODM: upload already running";
+            return;
+        }
+
+        if (!fs::exists(sectionDir)) {
+            webodmUploadStatus =
+                "WebODM: section directory does not exist: " +
+                sectionDir.string();
+            return;
+        }
+
+        const std::string scriptPath = defaultWebodmUploadScript();
+
+        const std::string command =
+            "python3 " + shellQuote(scriptPath) +
+            " --section " + shellQuote(sectionName) +
+            " --image-dir " + shellQuote(sectionDir.string());
+
+        std::cout << "Launching WebODM upload: " << command << std::endl;
+
+        webodmUploadStatus = "WebODM: uploading " + sectionName;
+
+        webodmUploadFuture = std::async(
+            std::launch::async,
+            [command]() {
+                return std::system(command.c_str());
+            });
+    };
+
     cam1.start();
     cam2.start();
     cam3.start();
@@ -324,6 +441,8 @@ int main(int argc, char **argv) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        const bool webodmUploadRunning = pollWebodmUpload();
 
         bool flipCam1VerticallyButtonPressed = false;
         bool flipCam2VerticallyButtonPressed = false;
@@ -342,6 +461,7 @@ int main(int argc, char **argv) {
         bool cam3ScreenshotCropButtonPressed = false;
         bool cam4ScreenshotCropButtonPressed = false;
         bool camIncrementSectionPressed = false;
+        bool camWebODMUploadPressed = false;
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
@@ -354,7 +474,7 @@ int main(int argc, char **argv) {
                 }          
                 ImGui::EndMenu();
             }
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f); // Offset 
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.0f); // Offset 
             if (ImGui::Button("Cam1 Screenshot")) {
                 cam1ScreenshotButtonPressed = true;
             }
@@ -371,16 +491,37 @@ int main(int argc, char **argv) {
                 cam4ScreenshotButtonPressed = true;
             }
             ImGui::SameLine();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.0f);
             if (ImGui::Button("Increment Section")) {                
                 camIncrementSectionPressed = true;
             }
 
             ImGui::SameLine();
             ImGui::Text("Section: %d", camScreenshotSection);
+
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.0f);
+            if (webodmUploadRunning) {
+                ImGui::BeginDisabled();
+            }
+
+            if (ImGui::Button("Upload")) {
+                camWebODMUploadPressed = true;
+            }
+
+            if (webodmUploadRunning) {
+                ImGui::EndDisabled();
+            }
+
+            ImGui::SameLine();
+            ImGui::TextUnformatted(webodmUploadStatus.c_str());
+
+            ImGui::SameLine(ImGui::GetWindowWidth() - 180);
+            ImGui::Text("Photos: %d", camSectionTotalPhotos);
             
             //fps counter
-            ImGui::SameLine(ImGui::GetWindowWidth() - 100);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
             ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 
             ImGui::EndMainMenuBar();
@@ -405,6 +546,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) cam3ScreenshotCropButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) cam4ScreenshotCropButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) camIncrementSectionPressed = true;
+        if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) camWebODMUploadPressed = true;
         
         // We only want this input to be registered once per button hit 
         // rather than toggling every frame as long as button is pressed
@@ -458,28 +600,52 @@ int main(int argc, char **argv) {
         }
 
         if (cam1ScreenshotButtonPressed) {
-            if (!cam1ScreenshotButtonPressedLatch) if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");;
+            if (!cam1ScreenshotButtonPressedLatch) {
+                if (!cam1.screenshot()) {
+                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam1");
+                } else {
+                    ++camSectionTotalPhotos;
+                }
+            }
             cam1ScreenshotButtonPressedLatch = true;
         } else {
             cam1ScreenshotButtonPressedLatch = false;
         }
 
         if (cam2ScreenshotButtonPressed) {
-            if (!cam2ScreenshotButtonPressedLatch) if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");;
+            if (!cam2ScreenshotButtonPressedLatch) {
+                if (!cam2.screenshot()) {
+                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam2");
+                } else {
+                    ++camSectionTotalPhotos;
+                }
+            }
             cam2ScreenshotButtonPressedLatch = true;
         } else {
             cam2ScreenshotButtonPressedLatch = false;
         }
 
         if (cam3ScreenshotButtonPressed) {
-            if (!cam3ScreenshotButtonPressedLatch) if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");;
+            if (!cam3ScreenshotButtonPressedLatch) {
+                if (!cam3.screenshot()) {
+                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam3");
+                } else {
+                    ++camSectionTotalPhotos;
+                }
+            }
             cam3ScreenshotButtonPressedLatch = true;
         } else {
             cam3ScreenshotButtonPressedLatch = false;
         }
 
         if (cam4ScreenshotButtonPressed) {
-            if (!cam4ScreenshotButtonPressedLatch) if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");;
+            if (!cam4ScreenshotButtonPressedLatch) {
+                if (!cam4.screenshot()) {
+                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam4");
+                } else {
+                    ++camSectionTotalPhotos;
+                }
+            }
             cam4ScreenshotButtonPressedLatch = true;
         } else {
             cam4ScreenshotButtonPressedLatch = false;
@@ -524,11 +690,28 @@ int main(int argc, char **argv) {
         if (camIncrementSectionPressed) {
             if (!camIncrementSectionPressedLatch) {
                 ++camScreenshotSection;
+                camSectionTotalPhotos = 0;
                 updateScreenshotSection();
             }
             camIncrementSectionPressedLatch = true;
         } else {
             camIncrementSectionPressedLatch = false;
+        }
+
+        if (camWebODMUploadPressed) {
+            if (!camWebODMUploadPressedLatch) {
+                cam1.waitForScreenshotWrites();
+                cam2.waitForScreenshotWrites();
+                cam3.waitForScreenshotWrites();
+                cam4.waitForScreenshotWrites();
+
+                launchWebodmUpload(
+                    currentScreenshotSectionDir,
+                    currentScreenshotSectionName);
+            }
+            camWebODMUploadPressedLatch = true;
+        } else {
+            camWebODMUploadPressedLatch = false;
         }
         
         // config window
@@ -700,6 +883,7 @@ int main(int argc, char **argv) {
                     ImGui::Text("4 - Crop Camera 4");
                     ImGui::SeparatorText("Other");
                     ImGui::Text("T - Increment Section");
+                    ImGui::Text("U - Upload to WebODM");
                     
                     ImGui::EndTabItem();
                 }
