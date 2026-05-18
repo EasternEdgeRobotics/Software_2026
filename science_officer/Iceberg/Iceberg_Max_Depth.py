@@ -45,6 +45,19 @@ if args.source_type == 'video' or args.source_type == 'usb':
         ret = cap.set(3, resW)
         ret = cap.set(4, resH)
 
+def text_with_background(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1, text_color=(255, 255, 255), bg_color=(0, 0, 0), thickness=2, padding=5,):
+    x, y = position
+
+    text_size, baseline = cv2.getTextSize(text, font, font_scale, thickness)
+    text_width, text_height = text_size
+
+    top_left = (x - padding, y - text_height - padding)
+    bottom_right = (x + text_width + padding, y + baseline + padding)
+
+    cv2.rectangle(img, top_left, bottom_right, bg_color, cv2.FILLED)
+
+    cv2.putText(img, text, position, font, font_scale, text_color, thickness, cv2.LINE_AA,)
+
 def points(event,x,y,flags,param):
         clicked_points = param
         global mouse_x, mouse_y
@@ -140,11 +153,9 @@ def draw_mode(picture,heights, clicked_points):
             if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                 rheight = rwidth/width_pxdistance*height_pxdistance
                 rheight = round(rheight,2)
-        
-                cv2.putText(img2,f"{rwidth}cm",clicked_points[0],cv2.FONT_HERSHEY_SIMPLEX,
-                                    1,(0,0,255),2)
-                cv2.putText(img2,f"{rheight}cm",clicked_points[3],cv2.FONT_HERSHEY_SIMPLEX,
-                                    1,(0,0,255),2)
+                text_with_background(img2, f"{rwidth}cm", clicked_points[0])
+                text_with_background(img2, f"{rheight}cm", clicked_points[3])
+                
             else:
                  print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
             
