@@ -1,1 +1,1 @@
-# Science OFficer - Coral Garden
+# Science Officer - Coral Garden
