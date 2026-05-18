@@ -32,6 +32,7 @@ public:
     void flip_horizontally();
     bool screenshot();
     void setScreenshotSuffix(const std::string& suffix);
+    void setScreenshotDirectory(const std::string& directory);
     void setScreenshotCrop(
         bool enabled,
         float left,
@@ -66,6 +67,7 @@ private:
     bool take_screenshot = false;
 
     std::string screenshotSuffix = "section_0";
+    std::string screenshotDirectory;
     
     GLuint texY = 0;
     GLuint texUV = 0;

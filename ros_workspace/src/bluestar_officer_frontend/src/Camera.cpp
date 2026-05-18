@@ -1151,11 +1151,27 @@ void Camera::flip_horizontally() {
 }
 
 bool Camera::screenshot() {
-    const char* home = std::getenv("HOME");
-    if (!home) return false;
+    fs::path dir;
 
-    fs::path dir = fs::path(home) / "Pictures";
-    if (!fs::exists(dir)) return false;
+    if (!screenshotDirectory.empty()) {
+        dir = screenshotDirectory;
+    } else {
+        const char* home = std::getenv("HOME");
+        if (!home) {
+            return false;
+        }
+
+        dir = fs::path(home) / "Pictures";
+    }
+
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+
+    if (ec || !fs::exists(dir)) {
+        std::cerr << "Screenshot directory does not exist: " << dir
+                  << std::endl;
+        return false;
+    }
 
     take_screenshot = true;
     return true;
@@ -1166,11 +1182,26 @@ bool Camera::saveScreenshot() {
         return false;
     }
 
-    const char* home = std::getenv("HOME");
-    if (!home) return false;
+    fs::path dir;
 
-    fs::path dir = fs::path(home) / "Pictures";
-    if (!fs::exists(dir)) return false;
+    if (!screenshotDirectory.empty()) {
+        dir = screenshotDirectory;
+    } else {
+        const char* home = std::getenv("HOME");
+        if (!home) {
+            return false;
+        }
+
+        dir = fs::path(home) / "Pictures";
+    }
+
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+
+    if (ec || !fs::exists(dir)) {
+        std::cerr << "Screenshot directory does not exist: " << dir << std::endl;
+        return false;
+    }
 
     const auto now = std::chrono::system_clock::now();
     const auto timestamp =
@@ -1314,6 +1345,10 @@ void Camera::drainScreenshotWrites(bool wait) {
 
 void Camera::setScreenshotSuffix(const std::string& suffix) {
     screenshotSuffix = suffix;
+}
+
+void Camera::setScreenshotDirectory(const std::string& directory) {
+    screenshotDirectory = directory;
 }
 
 void Camera::setScreenshotCrop(

@@ -17,8 +17,15 @@
 #include <optional>
 #include <stdexcept>
 #include <algorithm>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <cstdlib>
 
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 BlueStarConfig bluestar_config;
 
@@ -102,6 +109,36 @@ void normalizeScreenshotCrop(
         top *= scale;
         bottom *= scale;
     }
+}
+
+std::string makeLocalTimestampForPath() {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
+
+    std::tm localTime {};
+#if defined(_WIN32)
+    localtime_s(&localTime, &nowTime);
+#else
+    localtime_r(&nowTime, &localTime);
+#endif
+
+    std::ostringstream stream;
+    stream << std::put_time(&localTime, "%Y-%m-%d_%H-%M-%S");
+    return stream.str();
+}
+
+fs::path defaultCaptureRoot() {
+    const char* home = std::getenv("HOME");
+
+    if (!home) {
+        return fs::path("bluestar_captures");
+    }
+
+    return fs::path(home) / "Pictures" / "bluestar_captures";
+}
+
+std::string makeSectionName(int section) {
+    return "section_" + std::to_string(section);
 }
 
 int main(int argc, char **argv) {
@@ -199,19 +236,49 @@ int main(int argc, char **argv) {
     Camera cam3(bluestar_config.cam3ip, bluestar_config.cam3_video_caps, bluestar_config.cam3_audio_caps, noSignal, 3);
     Camera cam4(bluestar_config.cam4ip, bluestar_config.cam4_video_caps, bluestar_config.cam4_audio_caps, noSignal, 4);
 
-    auto updateScreenshotSuffix = [&]() {
-        const std::string suffix =
-            "section_" + std::to_string(camScreenshotSection);
+    const std::string captureSessionId = makeLocalTimestampForPath();
 
-        cam1.setScreenshotSuffix(suffix);
-        cam2.setScreenshotSuffix(suffix);
-        cam3.setScreenshotSuffix(suffix);
-        cam4.setScreenshotSuffix(suffix);
+    const fs::path captureRoot = defaultCaptureRoot();
+    const fs::path captureSessionDir = captureRoot / captureSessionId;
 
-        std::cout << "Screenshot suffix set to: " << suffix << std::endl;
+    std::error_code captureDirError;
+    fs::create_directories(captureSessionDir, captureDirError);
+
+    if (captureDirError) {
+        std::cerr << "Failed to create capture session directory: "
+                << captureSessionDir << std::endl;
+    } else {
+        std::cout << "Capture session directory: " << captureSessionDir
+                << std::endl;
+    }
+
+    auto updateScreenshotSection = [&]() {
+        const std::string sectionName = makeSectionName(camScreenshotSection);
+        const fs::path sectionDir = captureSessionDir / sectionName;
+
+        std::error_code sectionDirError;
+        fs::create_directories(sectionDir, sectionDirError);
+
+        if (sectionDirError) {
+            std::cerr << "Failed to create section directory: " << sectionDir
+                    << std::endl;
+        }
+
+        cam1.setScreenshotSuffix(sectionName);
+        cam2.setScreenshotSuffix(sectionName);
+        cam3.setScreenshotSuffix(sectionName);
+        cam4.setScreenshotSuffix(sectionName);
+
+        cam1.setScreenshotDirectory(sectionDir.string());
+        cam2.setScreenshotDirectory(sectionDir.string());
+        cam3.setScreenshotDirectory(sectionDir.string());
+        cam4.setScreenshotDirectory(sectionDir.string());
+
+        std::cout << "Screenshot section set to: " << sectionName << std::endl;
+        std::cout << "Screenshot directory set to: " << sectionDir << std::endl;
     };
 
-    updateScreenshotSuffix();
+    updateScreenshotSection();
 
     auto updateScreenshotCrop = [&]() {
         cam1.setScreenshotCrop(
@@ -457,7 +524,7 @@ int main(int argc, char **argv) {
         if (camIncrementSectionPressed) {
             if (!camIncrementSectionPressedLatch) {
                 ++camScreenshotSection;
-                updateScreenshotSuffix();
+                updateScreenshotSection();
             }
             camIncrementSectionPressedLatch = true;
         } else {
