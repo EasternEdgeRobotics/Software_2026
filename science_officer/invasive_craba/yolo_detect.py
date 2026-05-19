@@ -1,13 +1,19 @@
 import os
+
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
+
 import sys
 import argparse
 import glob
 import time
+import platform
 
 import cv2
 import numpy as np
 from ultralytics import YOLO
+
+import subprocess
+import threading
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Scan for invasive crabs with BlueStar")
@@ -26,8 +32,8 @@ def parse_args():
 
     parser.add_argument(
         "--source",
-        default="rtsp://192.168.137.200:8889/cam",
-        help="Video source (ie usb0, rtsp://192.168.137.200:8889/cam)"
+        default="rtsp://192.168.137.200:8554/cam",
+        help="Video source (ie usb0, rtsp://192.168.137.200:8554/cam)"
     )
 
     parser.add_argument(
@@ -39,11 +45,180 @@ def parse_args():
 
     parser.add_argument(
         "--resolution",
-        default="1260x720",
-        help="Source resolution"
+        default="1280x720",
+        help="Source resolution (required for FFmpeg backend)"
+    )
+
+    parser.add_argument(
+        "--device",
+        default="mps",
+        help="Inference device: cpu, mps (macOS only), or auto"
+    )
+
+    parser.add_argument(
+        "--imgsz",
+        default=640,
+        type=int,
+        help="YOLO inference image size"
+    )
+
+    parser.add_argument(
+        "--capture-backend",
+        default="opencv",
+        choices=["opencv", "ffmpeg"],
+        help="Frame capture backend. Use ffmpeg for RTSP",
+    )
+
+    parser.add_argument(
+        "--ffmpeg-loglevel",
+        default="error",
+        help="FFmpeg loglevel: quiet, error, warning, info, debug",
     )
 
     return parser.parse_args()
+
+class OpenCVFrameSource:
+    def __init__(self, source, source_type, width=None, height=None):
+        if source_type == "usb":
+            cap_arg = int(source[3:])
+        else:
+            cap_arg = source
+
+        self.cap = cv2.VideoCapture(cap_arg)
+
+        if width is not None and height is not None:
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+    def read(self):
+        return self.cap.read()
+
+    def release(self):
+        self.cap.release()
+
+
+class FFmpegLatestFrameSource:
+    def __init__(
+        self,
+        url,
+        width,
+        height,
+        rtsp_transport="tcp",
+        loglevel="error",
+        use_videotoolbox=True,
+    ):
+        self.url = url
+        self.width = width
+        self.height = height
+        self.frame_size = width * height * 3
+        self.rtsp_transport = rtsp_transport
+        self.loglevel = loglevel
+        self.use_videotoolbox = use_videotoolbox
+
+        self.proc = None
+        self.thread = None
+        self.running = False
+        self.lock = threading.Lock()
+        self.frame = None
+
+    def start(self):
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            self.loglevel,
+        ]
+
+        if self.url.lower().startswith("rtsp://"):
+            cmd += [
+                "-rtsp_transport",
+                self.rtsp_transport,
+                "-fflags",
+                "nobuffer",
+                "-flags",
+                "low_delay",
+            ]
+
+        if self.use_videotoolbox:
+            cmd += [
+                "-hwaccel",
+                "videotoolbox",
+            ]
+
+        cmd += [
+            "-i",
+            self.url,
+            "-an",
+            "-vf",
+            f"scale={self.width}:{self.height}",
+            "-pix_fmt",
+            "bgr24",
+            "-f",
+            "rawvideo",
+            "pipe:1",
+        ]
+
+        self.proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            bufsize=self.frame_size * 4,
+        )
+
+        self.running = True
+        self.thread = threading.Thread(target=self._reader_loop, daemon=True)
+        self.thread.start()
+
+    def _read_exact(self, size):
+        chunks = []
+        remaining = size
+
+        while remaining > 0 and self.running:
+            chunk = self.proc.stdout.read(remaining)
+
+            if not chunk:
+                return None
+
+            chunks.append(chunk)
+            remaining -= len(chunk)
+
+        return b"".join(chunks)
+
+    def _reader_loop(self):
+        while self.running:
+            raw = self._read_exact(self.frame_size)
+
+            if raw is None:
+                self.running = False
+                break
+
+            frame = np.frombuffer(raw, dtype=np.uint8)
+            frame = frame.reshape((self.height, self.width, 3))
+
+            with self.lock:
+                self.frame = frame.copy()
+
+    def read(self):
+        while self.running:
+            with self.lock:
+                if self.frame is not None:
+                    return True, self.frame.copy()
+
+            time.sleep(0.005)
+
+        return False, None
+
+    def release(self):
+        self.running = False
+
+        if self.proc is not None:
+            self.proc.terminate()
+
+            try:
+                self.proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
 
 args = parse_args()
 
@@ -63,17 +238,35 @@ if args.resolution:
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
 # Load or initialize image source
-if args.source_type == 'video' or args.source_type == 'usb':
+frame_source = None
 
-    if args.source_type == 'video': cap_arg = args.source_type
-    elif args.source_type == 'usb': cap_arg = int(args.source[3:])
+if args.source_type in ["video", "usb"]:
+    if args.capture_backend == "ffmpeg":
+        if args.source_type == "usb":
+            print("ERROR: FFmpeg backend is intended for video/RTSP sources")
+            print("Use --capture-backend opencv for USB cameras.")
+            sys.exit(1)
 
-    cap = cv2.VideoCapture(cap_arg)
+        if not args.resolution:
+            print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
+            sys.exit(1)
 
-    # Set camera or video resolution if specified by user
-    if args.resolution:
-        ret = cap.set(3, resW)
-        ret = cap.set(4, resH)
+        frame_source = FFmpegLatestFrameSource(
+            url=args.source,
+            width=resW,
+            height=resH,
+            loglevel=args.ffmpeg_loglevel,
+            use_videotoolbox=platform.system() == "Darwin",
+        )
+        frame_source.start()
+
+    else:
+        frame_source = OpenCVFrameSource(
+            source=args.source,
+            source_type=args.source_type,
+            width=resW if args.resolution else None,
+            height=resH if args.resolution else None,
+        )
 
 # Set bounding box colors (using the Tableu 10 color scheme)
 bbox_colors = [(164,120,87), (68,148,228), (93,97,209), (178,182,133), (88,159,106), 
@@ -90,24 +283,30 @@ while True:
     t_start = time.perf_counter()
 
     # Load frame from image source
-    if args.source_type == 'video': # If source is a video, load next frame from video file
-        ret, frame = cap.read()
-        if not ret:
-            print('Reached end of the video file. Exiting program.')
-            break
-    
-    elif args.source_type == 'usb': # If source is a USB camera, grab frame from camera
-        ret, frame = cap.read()
-        if (frame is None) or (not ret):
-            print('Unable to read frames from the camera. This indicates the camera is disconnected or not working. Exiting program.')
-            break
+    ret, frame = frame_source.read()
+
+    if not ret or frame is None:
+        print("Unable to read frame from source. Exiting program.")
+        break
 
     # Resize frame to desired display resolution
-    if resize == True:
-        frame = cv2.resize(frame,(resW,resH))
+    if resize and args.capture_backend != "ffmpeg":
+        frame = cv2.resize(frame, (resW, resH))
 
     # Run inference on frame
-    results = model(frame, verbose=False)
+    is_coreml_model = args.model_path.endswith((".mlpackage", ".mlmodel"))
+
+    predict_kwargs = {
+        "source": frame,
+        "imgsz": args.imgsz,
+        "conf": args.min_thresh,
+        "verbose": False,
+    }
+
+    if not is_coreml_model:
+        predict_kwargs["device"] = args.device
+
+    results = model.predict(**predict_kwargs)
 
     # Extract results
     detections = results[0].boxes
@@ -181,6 +380,6 @@ while True:
 
 # Clean up
 print(f'Average pipeline FPS: {avg_frame_rate:.2f}')
-if args.source_type == 'video' or args.source_type == 'usb':
-    cap.release()
+if frame_source is not None:
+    frame_source.release()
 cv2.destroyAllWindows()
