@@ -1,5 +1,7 @@
 import os
+
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
+
 import sys
 import argparse
 import glob
@@ -120,13 +122,19 @@ while True:
         frame = cv2.resize(frame,(resW,resH))
 
     # Run inference on frame
-    results = model.predict(
-        frame,
-        device=args.device,
-        imgsz=args.imgsz,
-        conf=args.min_thresh,
-        verbose=False,
-    )
+    is_coreml_model = args.model_path.endswith((".mlpackage", ".mlmodel"))
+
+    predict_kwargs = {
+        "source": frame,
+        "imgsz": args.imgsz,
+        "conf": args.min_thresh,
+        "verbose": False,
+    }
+
+    if not is_coreml_model:
+        predict_kwargs["device"] = args.device
+
+    results = model.predict(**predict_kwargs)
 
     # Extract results
     detections = results[0].boxes
