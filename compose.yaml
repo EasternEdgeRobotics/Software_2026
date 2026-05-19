@@ -17,11 +17,24 @@ services:
       - ./ros_workspace/src/common_backend/common_backend/config:/app/src/common_backend/common_backend/config # Mount the config directory so that it persists between container restarts
       - ./configs:/app/configs
       - ~/.ssh/:/root/.ssh
-    network_mode: host
-#     networks:
-#       macvlan_net:
-#         ipv4_address: 192.168.137.210
+    networks:
+      lan_bridge:
+        ipv4_address: 192.168.137.211
 
-# networks:
-#   macvlan_net:
-#     external: true
+networks:
+  lan_bridge:
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.137.0/24
+          aux_addresses:
+            topside: 192.168.137.69
+            bs: 192.168.137.200
+            cam1: 192.168.137.201
+            cam2: 192.168.137.202
+            evokey: 192.168.137.67
+            peyton: 192.168.137.20
+            peyton2: 192.168.137.89
+        

@@ -13,3 +13,15 @@
 [submodule "ros_workspace/src/bluestar_frontend/include/stb"]
 	path = ros_workspace/src/bluestar_frontend/include/stb
 	url = https://github.com/nothings/stb
+[submodule "ros_workspace/src/bluestar_officer_frontend/include/json"]
+	path = ros_workspace/src/bluestar_officer_frontend/include/json
+	url = https://github.com/nlohmann/json
+[submodule "ros_workspace/src/bluestar_officer_frontend/include/imgui"]
+	path = ros_workspace/src/bluestar_officer_frontend/include/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "ros_workspace/src/bluestar_officer_frontend/include/glfw"]
+	path = ros_workspace/src/bluestar_officer_frontend/include/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "ros_workspace/src/bluestar_officer_frontend/include/stb"]
+	path = ros_workspace/src/bluestar_officer_frontend/include/stb
+	url = https://github.com/nothings/stb

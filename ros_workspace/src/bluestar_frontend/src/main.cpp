@@ -766,137 +766,137 @@ int main(int argc, char **argv) {
                     }
                 }
             }
+        }
                 
-            // We only want this input to be registered once per button hit 
-            // rather than toggling every frame as long as button is pressed
-            if (flipCam1VerticallyButtonPressed) {
-                if (!flipCam1VerticallyButtonPressedLatch) cam1.flip_vertically();
-                flipCam1VerticallyButtonPressedLatch = true;
-            } else {
-                flipCam1VerticallyButtonPressedLatch = false;
-            }
-            if (flipCam2VerticallyButtonPressed) {
-                if (!flipCam2VerticallyButtonPressedLatch) cam2.flip_vertically();
-                flipCam2VerticallyButtonPressedLatch = true;
-            } else {
-                flipCam2VerticallyButtonPressedLatch = false;
-            }
-            if (flipCam3VerticallyButtonPressed) {
-                if (!flipCam3VerticallyButtonPressedLatch) cam3.flip_vertically();
-                flipCam3VerticallyButtonPressedLatch = true;
-            } else {
-                flipCam3VerticallyButtonPressedLatch = false;
-            }
-            if (flipCam4VerticallyButtonPressed) {
-                if (!flipCam4VerticallyButtonPressedLatch) cam4.flip_vertically();
-                flipCam4VerticallyButtonPressedLatch = true;
-            } else {
-                flipCam4VerticallyButtonPressedLatch = false;
-            }
-            if (flipCam1HorizontallyButtonPressed) {
-                if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
-                flipCam1HorizontallyButtonPressedLatch = true;
-            } else {
-                flipCam1HorizontallyButtonPressedLatch = false;
-            }
-            if (flipCam2HorizontallyButtonPressed) {
-                if (!flipCam2HorizontallyButtonPressedLatch) cam2.flip_horizontally();
-                flipCam2HorizontallyButtonPressedLatch = true;
-            } else {
-                flipCam2HorizontallyButtonPressedLatch = false;
-            }
-            if (flipCam3HorizontallyButtonPressed) {
-                if (!flipCam3HorizontallyButtonPressedLatch) cam3.flip_horizontally();
-                flipCam3HorizontallyButtonPressedLatch = true;
-            } else {
-                flipCam3HorizontallyButtonPressedLatch = false;
-            }
-            if (flipCam4HorizontallyButtonPressed) {
-                if (!flipCam4HorizontallyButtonPressedLatch) cam4.flip_horizontally();
-                flipCam4HorizontallyButtonPressedLatch = true;
-            } else {
-                flipCam4HorizontallyButtonPressedLatch = false;
-            }
+        // We only want this input to be registered once per button hit 
+        // rather than toggling every frame as long as button is pressed
+        if (flipCam1VerticallyButtonPressed) {
+            if (!flipCam1VerticallyButtonPressedLatch) cam1.flip_vertically();
+            flipCam1VerticallyButtonPressedLatch = true;
+        } else {
+            flipCam1VerticallyButtonPressedLatch = false;
+        }
+        if (flipCam2VerticallyButtonPressed) {
+            if (!flipCam2VerticallyButtonPressedLatch) cam2.flip_vertically();
+            flipCam2VerticallyButtonPressedLatch = true;
+        } else {
+            flipCam2VerticallyButtonPressedLatch = false;
+        }
+        if (flipCam3VerticallyButtonPressed) {
+            if (!flipCam3VerticallyButtonPressedLatch) cam3.flip_vertically();
+            flipCam3VerticallyButtonPressedLatch = true;
+        } else {
+            flipCam3VerticallyButtonPressedLatch = false;
+        }
+        if (flipCam4VerticallyButtonPressed) {
+            if (!flipCam4VerticallyButtonPressedLatch) cam4.flip_vertically();
+            flipCam4VerticallyButtonPressedLatch = true;
+        } else {
+            flipCam4VerticallyButtonPressedLatch = false;
+        }
+        if (flipCam1HorizontallyButtonPressed) {
+            if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
+            flipCam1HorizontallyButtonPressedLatch = true;
+        } else {
+            flipCam1HorizontallyButtonPressedLatch = false;
+        }
+        if (flipCam2HorizontallyButtonPressed) {
+            if (!flipCam2HorizontallyButtonPressedLatch) cam2.flip_horizontally();
+            flipCam2HorizontallyButtonPressedLatch = true;
+        } else {
+            flipCam2HorizontallyButtonPressedLatch = false;
+        }
+        if (flipCam3HorizontallyButtonPressed) {
+            if (!flipCam3HorizontallyButtonPressedLatch) cam3.flip_horizontally();
+            flipCam3HorizontallyButtonPressedLatch = true;
+        } else {
+            flipCam3HorizontallyButtonPressedLatch = false;
+        }
+        if (flipCam4HorizontallyButtonPressed) {
+            if (!flipCam4HorizontallyButtonPressedLatch) cam4.flip_horizontally();
+            flipCam4HorizontallyButtonPressedLatch = true;
+        } else {
+            flipCam4HorizontallyButtonPressedLatch = false;
+        }
 
-            if (cam1ScreenshotButtonPressed) {
-                if (!cam1ScreenshotButtonPressedLatch) if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");;
-                cam1ScreenshotButtonPressedLatch = true;
-            } else {
-                cam1ScreenshotButtonPressedLatch = false;
-            }
+        if (cam1ScreenshotButtonPressed) {
+            if (!cam1ScreenshotButtonPressedLatch) if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");;
+            cam1ScreenshotButtonPressedLatch = true;
+        } else {
+            cam1ScreenshotButtonPressedLatch = false;
+        }
 
-            if (cam2ScreenshotButtonPressed) {
-                if (!cam2ScreenshotButtonPressedLatch) if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");;
-                cam2ScreenshotButtonPressedLatch = true;
-            } else {
-                cam2ScreenshotButtonPressedLatch = false;
-            }
+        if (cam2ScreenshotButtonPressed) {
+            if (!cam2ScreenshotButtonPressedLatch) if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");;
+            cam2ScreenshotButtonPressedLatch = true;
+        } else {
+            cam2ScreenshotButtonPressedLatch = false;
+        }
 
-            if (cam3ScreenshotButtonPressed) {
-                if (!cam3ScreenshotButtonPressedLatch) if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");;
-                cam3ScreenshotButtonPressedLatch = true;
-            } else {
-                cam3ScreenshotButtonPressedLatch = false;
-            }
+        if (cam3ScreenshotButtonPressed) {
+            if (!cam3ScreenshotButtonPressedLatch) if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");;
+            cam3ScreenshotButtonPressedLatch = true;
+        } else {
+            cam3ScreenshotButtonPressedLatch = false;
+        }
 
-            if (cam4ScreenshotButtonPressed) {
-                if (!cam4ScreenshotButtonPressedLatch) if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");;
-                cam4ScreenshotButtonPressedLatch = true;
-            } else {
-                cam4ScreenshotButtonPressedLatch = false;
-            }
+        if (cam4ScreenshotButtonPressed) {
+            if (!cam4ScreenshotButtonPressedLatch) if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");;
+            cam4ScreenshotButtonPressedLatch = true;
+        } else {
+            cam4ScreenshotButtonPressedLatch = false;
+        }
 
-            // These have to be pointers, for anyone looking at this in the future, i spent so many commits trying to figure out why i couldnt change the values, it looked like a 2010s minecraft letsplay series. -PC
-            bool* servo_latches_cw[]  = {&servo_1_cw_latch,  &servo_2_cw_latch,  &servo_3_cw_latch,  &servo_4_cw_latch};
-            bool* servo_latches_ccw[] = {&servo_1_ccw_latch, &servo_2_ccw_latch, &servo_3_ccw_latch, &servo_4_ccw_latch};
-            int*  servo_angle_val[]   = {&Servo1Angle, &Servo2Angle, &Servo3Angle, &Servo4Angle};
-            bool  servo_cw_state[]    = {Servo_1_CW_Pressed,  Servo_2_CW_Pressed,  Servo_3_CW_Pressed,  Servo_4_CW_Pressed};
-            bool  servo_ccw_state[]   = {Servo_1_CCW_Pressed, Servo_2_CCW_Pressed, Servo_3_CCW_Pressed, Servo_4_CCW_Pressed};
+        // These have to be pointers, for anyone looking at this in the future, i spent so many commits trying to figure out why i couldnt change the values, it looked like a 2010s minecraft letsplay series. -PC
+        bool* servo_latches_cw[]  = {&servo_1_cw_latch,  &servo_2_cw_latch,  &servo_3_cw_latch,  &servo_4_cw_latch};
+        bool* servo_latches_ccw[] = {&servo_1_ccw_latch, &servo_2_ccw_latch, &servo_3_ccw_latch, &servo_4_ccw_latch};
+        int*  servo_angle_val[]   = {&Servo1Angle, &Servo2Angle, &Servo3Angle, &Servo4Angle};
+        bool  servo_cw_state[]    = {Servo_1_CW_Pressed,  Servo_2_CW_Pressed,  Servo_3_CW_Pressed,  Servo_4_CW_Pressed};
+        bool  servo_ccw_state[]   = {Servo_1_CCW_Pressed, Servo_2_CCW_Pressed, Servo_3_CCW_Pressed, Servo_4_CCW_Pressed};
 
-            for (int i = 0; i < 4; i++) {
-                if (servo_cw_state[i]) {
-                    if (!*servo_latches_cw[i]) {
-                        *servo_angle_val[i] = (*servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : *servo_angle_val[i] + SERVO_FREQ_INCREMENT;
-                        *servo_latches_cw[i] = true;
-                    }
-                } else {
-                    *servo_latches_cw[i] = false;
+        for (int i = 0; i < 4; i++) {
+            if (servo_cw_state[i]) {
+                if (!*servo_latches_cw[i]) {
+                    *servo_angle_val[i] = (*servo_angle_val[i] + SERVO_FREQ_INCREMENT > 255) ? 255 : *servo_angle_val[i] + SERVO_FREQ_INCREMENT;
+                    *servo_latches_cw[i] = true;
                 }
-
-                if (servo_ccw_state[i]) {
-                    if (!*servo_latches_ccw[i]) {
-                        *servo_angle_val[i] = (*servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : *servo_angle_val[i] - SERVO_FREQ_INCREMENT;
-                        *servo_latches_ccw[i] = true;
-                    }
-                } else {
-                    *servo_latches_ccw[i] = false;
-                }
+            } else {
+                *servo_latches_cw[i] = false;
             }
 
-            bool* led_latch_bri[]  = {&brighten_led_latch_1,  &brighten_led_latch_2};
-            bool* led_latch_dim[] = {&dim_led_latch_1, &dim_led_latch_2};
-            int*  led_brightness_val[]   = {&LED1Brightness, &LED2Brightness};
-            bool  led_bri_state[]    = {LED_1_brighten_pressed,  LED_2_brighten_pressed};
-            bool  led_dim_state[]   = {LED_1_dim_pressed, LED_2_dim_pressed};
-
-            for (int i = 0; i < 2; i++) {
-                if (led_bri_state[i]) {
-                    if (!*led_latch_bri[i]) {
-                        *led_brightness_val[i] = (*led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : *led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT;
-                        *led_latch_bri[i] = true;
-                    }
-                } else {
-                    *led_latch_bri[i] = false;
+            if (servo_ccw_state[i]) {
+                if (!*servo_latches_ccw[i]) {
+                    *servo_angle_val[i] = (*servo_angle_val[i] < SERVO_FREQ_INCREMENT) ? 0 : *servo_angle_val[i] - SERVO_FREQ_INCREMENT;
+                    *servo_latches_ccw[i] = true;
                 }
+            } else {
+                *servo_latches_ccw[i] = false;
+            }
+        }
 
-                if (led_dim_state[i]) {
-                    if (!*led_latch_dim[i]) {
-                        *led_brightness_val[i] = (*led_brightness_val[i] < LED_BRIGHTNESS_INCREMENT) ? 0 : *led_brightness_val[i] - LED_BRIGHTNESS_INCREMENT;
-                        *led_latch_dim[i] = true;
-                    }
-                } else {
-                    *led_latch_dim[i] = false;
+        bool* led_latch_bri[]  = {&brighten_led_latch_1,  &brighten_led_latch_2};
+        bool* led_latch_dim[] = {&dim_led_latch_1, &dim_led_latch_2};
+        int*  led_brightness_val[]   = {&LED1Brightness, &LED2Brightness};
+        bool  led_bri_state[]    = {LED_1_brighten_pressed,  LED_2_brighten_pressed};
+        bool  led_dim_state[]   = {LED_1_dim_pressed, LED_2_dim_pressed};
+
+        for (int i = 0; i < 2; i++) {
+            if (led_bri_state[i]) {
+                if (!*led_latch_bri[i]) {
+                    *led_brightness_val[i] = (*led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT > 255) ? 255 : *led_brightness_val[i] + LED_BRIGHTNESS_INCREMENT;
+                    *led_latch_bri[i] = true;
                 }
+            } else {
+                *led_latch_bri[i] = false;
+            }
+
+            if (led_dim_state[i]) {
+                if (!*led_latch_dim[i]) {
+                    *led_brightness_val[i] = (*led_brightness_val[i] < LED_BRIGHTNESS_INCREMENT) ? 0 : *led_brightness_val[i] - LED_BRIGHTNESS_INCREMENT;
+                    *led_latch_dim[i] = true;
+                }
+            } else {
+                *led_latch_dim[i] = false;
             }
             
             if (invert_controls_toggle) {

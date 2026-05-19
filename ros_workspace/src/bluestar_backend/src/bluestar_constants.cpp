@@ -41,6 +41,6 @@ const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS = 2000;
 
 const int LED_REGISTERS[2] = {7, 6}; // Flipped to match current config on BlueStar -PC
 
-const int DC_MOTOR_REGISTERS[2] = {8, 9};
+const int DC_MOTOR_REGISTERS[2] = {9, 8};
 
 const int SERVO_REGISTERS[4] = {10, 11, 12, 13};
