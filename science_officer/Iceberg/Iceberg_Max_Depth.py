@@ -2,6 +2,12 @@ import cv2
 from math import sqrt
 import os
 import argparse
+import subprocess
+import threading
+import numpy as np
+import time
+import platform
+import sys
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
 
@@ -26,24 +32,201 @@ def parse_args():
         help="Source resolution"
     )
 
+    parser.add_argument(
+        "--capture-backend",
+        default="opencv",
+        choices=["opencv", "ffmpeg"],
+        help="Frame capture backend. Use ffmpeg for RTSP",
+    )
+
+    parser.add_argument(
+        "--ffmpeg-loglevel",
+        default="error",
+        help="FFmpeg loglevel: quiet, error, warning, info, debug",
+    )
+
     return parser.parse_args()
+
+class OpenCVFrameSource:
+    def __init__(self, source, source_type, width=None, height=None):
+        if source_type == "usb":
+            cap_arg = int(source[3:])
+        else:
+            cap_arg = source
+
+        self.cap = cv2.VideoCapture(cap_arg)
+
+        if width is not None and height is not None:
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+    def read(self):
+        return self.cap.read()
+
+    def release(self):
+        self.cap.release()
+
+class FFmpegLatestFrameSource:
+    def __init__(
+        self,
+        url,
+        width,
+        height,
+        rtsp_transport="tcp",
+        loglevel="error",
+        use_videotoolbox=True,
+    ):
+        self.url = url
+        self.width = width
+        self.height = height
+        self.frame_size = width * height * 3
+        self.rtsp_transport = rtsp_transport
+        self.loglevel = loglevel
+        self.use_videotoolbox = use_videotoolbox
+
+        self.proc = None
+        self.thread = None
+        self.running = False
+        self.lock = threading.Lock()
+        self.frame = None
+
+    def start(self):
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            self.loglevel,
+        ]
+
+        if self.url.lower().startswith("rtsp://"):
+            cmd += [
+                "-rtsp_transport",
+                self.rtsp_transport,
+                "-fflags",
+                "nobuffer",
+                "-flags",
+                "low_delay",
+            ]
+
+        if self.use_videotoolbox:
+            cmd += [
+                "-hwaccel",
+                "videotoolbox",
+            ]
+
+        cmd += [
+            "-i",
+            self.url,
+            "-an",
+            "-vf",
+            f"scale={self.width}:{self.height}",
+            "-pix_fmt",
+            "bgr24",
+            "-f",
+            "rawvideo",
+            "pipe:1",
+        ]
+
+        self.proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            bufsize=self.frame_size * 4,
+        )
+
+        self.running = True
+        self.thread = threading.Thread(target=self._reader_loop, daemon=True)
+        self.thread.start()
+
+    def _read_exact(self, size):
+        chunks = []
+        remaining = size
+
+        while remaining > 0 and self.running:
+            chunk = self.proc.stdout.read(remaining)
+
+            if not chunk:
+                return None
+
+            chunks.append(chunk)
+            remaining -= len(chunk)
+
+        return b"".join(chunks)
+
+    def _reader_loop(self):
+        while self.running:
+            raw = self._read_exact(self.frame_size)
+
+            if raw is None:
+                self.running = False
+                break
+
+            frame = np.frombuffer(raw, dtype=np.uint8)
+            frame = frame.reshape((self.height, self.width, 3))
+
+            with self.lock:
+                self.frame = frame.copy()
+
+    def read(self):
+        while self.running:
+            with self.lock:
+                if self.frame is not None:
+                    return True, self.frame.copy()
+
+            time.sleep(0.005)
+
+        return False, None
+
+    def release(self):
+        self.running = False
+
+        if self.proc is not None:
+            self.proc.terminate()
+
+            try:
+                self.proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
 
 args = parse_args()
 
+# Parse user-specified display resolution
+resize = False
 if args.resolution:
     resize = True
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
-if args.source_type == 'video' or args.source_type == 'usb':
-    if args.source_type == 'video': cap_arg = args.source
-    elif args.source_type == 'usb': cap_arg = int(args.source[3:])
+# Load or initialize image source
+frame_source = None
 
-    cap = cv2.VideoCapture(cap_arg)
+if args.source_type in ["video", "usb"]:
+    if args.capture_backend == "ffmpeg":
+        if args.source_type == "usb":
+            print("ERROR: FFmpeg backend is intended for video/RTSP sources")
+            print("Use --capture-backend opencv for USB cameras.")
+            sys.exit(1)
 
-    # Set camera or video resolution if specified by user
-    if args.resolution:
-        ret = cap.set(3, resW)
-        ret = cap.set(4, resH)
+        if not args.resolution:
+            print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
+            sys.exit(1)
+
+        frame_source = FFmpegLatestFrameSource(
+            url=args.source,
+            width=resW,
+            height=resH,
+            loglevel=args.ffmpeg_loglevel,
+            use_videotoolbox=platform.system() == "Darwin",
+        )
+        frame_source.start()
+
+    else:
+        frame_source = OpenCVFrameSource(
+            source=args.source,
+            source_type=args.source_type,
+            width=resW if args.resolution else None,
+            height=resH if args.resolution else None,
+        )
 
 def text_with_background(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1, text_color=(255, 255, 255), bg_color=(0, 0, 0), thickness=2, padding=5,):
     x, y = position
@@ -80,18 +263,13 @@ def line_distance(p1,p2):
         return distance
 
 
-def cam_mode(cap):
-        #check if opened
-        if not cap.isOpened():
-            print("Error: Could not open video device.")
-            return
-
+def cam_mode():
         heights = []
         clicked_points = []
         auto = True
         while True:
             # Capture frame-by-frame
-            ret, frame = cap.read()
+            ret, frame = frame_source.read()
 
             #Nothing was returned
             if not ret:
@@ -178,7 +356,8 @@ def main():
     while True:
         if mode == 3:
             #quit
-            cap.release()
+            if frame_source is not None:
+                frame_source.release()
             cv2.destroyAllWindows()
             N = len(heights)
             avg = sum(heights)/N
@@ -186,7 +365,7 @@ def main():
             print(f"Average Depth {avg}")
             break
         elif mode == 1:
-            heights = cam_mode(cap)
+            heights = cam_mode()
             print(heights)
 
 main()
