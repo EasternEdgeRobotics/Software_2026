@@ -43,6 +43,19 @@ def parse_args():
         help="Source resolution"
     )
 
+    parser.add_argument(
+        "--device",
+        default="mps",
+        help="Inference device: cpu, mps, or auto"
+    )
+
+    parser.add_argument(
+        "--imgsz",
+        default=640,
+        type=int,
+        help="YOLO inference image size"
+    )
+
     return parser.parse_args()
 
 args = parse_args()
@@ -65,7 +78,7 @@ if args.resolution:
 # Load or initialize image source
 if args.source_type == 'video' or args.source_type == 'usb':
 
-    if args.source_type == 'video': cap_arg = args.source_type
+    if args.source_type == 'video': cap_arg = args.source
     elif args.source_type == 'usb': cap_arg = int(args.source[3:])
 
     cap = cv2.VideoCapture(cap_arg)
@@ -107,7 +120,13 @@ while True:
         frame = cv2.resize(frame,(resW,resH))
 
     # Run inference on frame
-    results = model(frame, verbose=False)
+    results = model.predict(
+        frame,
+        device=args.device,
+        imgsz=args.imgsz,
+        conf=args.min_thresh,
+        verbose=False,
+    )
 
     # Extract results
     detections = results[0].boxes
