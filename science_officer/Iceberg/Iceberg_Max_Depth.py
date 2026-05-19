@@ -35,7 +35,7 @@ if args.resolution:
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
 if args.source_type == 'video' or args.source_type == 'usb':
-    if args.source_type == 'video': cap_arg = args.source_type
+    if args.source_type == 'video': cap_arg = args.source
     elif args.source_type == 'usb': cap_arg = int(args.source[3:])
 
     cap = cv2.VideoCapture(cap_arg)
