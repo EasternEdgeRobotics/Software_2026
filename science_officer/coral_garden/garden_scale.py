@@ -12,7 +12,7 @@ import sys
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Measure icebergs with BlueStar")
+    parser = argparse.ArgumentParser(description="Measure the coral garden scale with BlueStar")
 
     parser.add_argument(
         "--source-type",
@@ -327,7 +327,7 @@ def draw_mode(picture,heights, clicked_points):
             width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
             height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
             
-            rwidth = 60
+            rwidth = 45
             if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                 rheight = rwidth/width_pxdistance*height_pxdistance
                 rheight = round(rheight,2)
@@ -337,8 +337,8 @@ def draw_mode(picture,heights, clicked_points):
             else:
                  print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
             
-        cv2.imshow("Iceberg Measurement", img2 )
-        cv2.setMouseCallback('Iceberg Measurement', points, param = clicked_points)
+        cv2.imshow("Coral Garden Measurement", img2 )
+        cv2.setMouseCallback('Coral Garden Measurement', points, param = clicked_points)
 
         if key & 0xFF == ord('1'):
             if rheight not in heights and rheight != 0:
