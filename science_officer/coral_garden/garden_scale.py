@@ -249,7 +249,7 @@ def points(event,x,y,flags,param):
             #print(f"Mouse Position: ({mouse_x},{mouse_y})")
 
         if event == cv2.EVENT_LBUTTONDOWN:
-            if len(clicked_points) == 4:
+            if len(clicked_points) == 6:
                 clicked_points.clear()
             #cv2.circle(img2,(x,y),5,(255,255,0),-1)
             clicked_points.append((x,y))
@@ -322,20 +322,27 @@ def draw_mode(picture,heights, clicked_points):
             cv2.circle(img2,point,10,(50,0,255),-1)
         if len(clicked_points) > 1:
             cv2.line(img2, clicked_points[0], clicked_points[1],(255,0,0),5)
-        if len(clicked_points) == 4:
-            cv2.line(img2, clicked_points[2], clicked_points[3],(0,0,255),5)
-            width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
+        if len(clicked_points) == 6:
+            cv2.line(img2, clicked_points[2], clicked_points[3],(0,255,0),5)
+            cv2.line(img2, clicked_points[4], clicked_points[5],(0,0,255),5)
+            ref_width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
             height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
+            width_pxdistance = line_distance(clicked_points[4],clicked_points[5])
             
-            rwidth = 45
-            if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
-                rheight = rwidth/width_pxdistance*height_pxdistance
+            ref_width = 45
+            if ref_width != 0 and ref_width_pxdistance != 0 and width_pxdistance != 0 and height_pxdistance != 0:
+                rheight = ref_width/ref_width_pxdistance*height_pxdistance
+                rheight = ref_width/ref_width_pxdistance*height_pxdistance
+                rwidth = ref_width/ref_width_pxdistance*width_pxdistance
+                rwidth = ref_width/ref_width_pxdistance*width_pxdistance
                 rheight = round(rheight,2)
-                text_with_background(img2, f"{rwidth}cm", clicked_points[0])
+                rwidth = round(rwidth,2)
+                text_with_background(img2, f"{ref_width}cm", clicked_points[0])
                 text_with_background(img2, f"{rheight}cm", clicked_points[3])
+                text_with_background(img2, f"{rwidth}cm", clicked_points[5])
                 
             else:
-                 print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
+                 print(f"Invalid Points!!! {ref_width} {width_pxdistance} {height_pxdistance}")
             
         cv2.imshow("Coral Garden Measurement", img2 )
         cv2.setMouseCallback('Coral Garden Measurement', points, param = clicked_points)
