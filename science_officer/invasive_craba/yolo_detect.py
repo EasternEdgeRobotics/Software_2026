@@ -350,7 +350,9 @@ while True:
         cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     
     # Display detection results
-    cv2.putText(frame, f'Number of objects: {object_count}', (10,40), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw total number of detected objects
+    cv2.putText(frame, f'Number of objects: {object_count}', (10,45), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw total number of detected objects
+
+    cv2.putText(frame, f'Threshold: {args.min_thresh:.2f}', (10,70), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw current detection threshold
     cv2.imshow('YOLO detection results',frame) # Display image
 
     # Wait 5ms before moving to next frame.
@@ -361,6 +363,12 @@ while True:
         break
     elif key == ord('s') or key == ord('S'): # Press 's' to pause inference
         cv2.waitKey()
+    elif key == ord('-') or key == ord('_'): # Press '-/_' to lower the detection threshold
+        if args.min_thresh > 0.1:
+            args.min_thresh -= 0.05
+    elif key == ord('=') or key == ord('+'): # Press '=/+' to increase the detection threshold
+        if args.min_thresh < 0.90:
+            args.min_thresh += 0.05
     elif key == ord('p') or key == ord('P'): # Press 'p' to save a picture of results on this frame
         cv2.imwrite('capture.png',frame)
     
