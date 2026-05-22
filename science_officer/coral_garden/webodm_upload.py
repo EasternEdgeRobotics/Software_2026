@@ -97,7 +97,19 @@ options = [
     },
     {
         "name": "mesh-octree-depth",
-        "value": 12,
+        "value": 14,
+    },
+    {
+        "name": "matcher-order",
+        "value": 75,
+    },
+    {
+        "name": "matcher-type",
+        "value": "bruteforce",
+    },
+    {
+        "name": "min-num-features",
+        "value": 20000,
     },
 ]
 
