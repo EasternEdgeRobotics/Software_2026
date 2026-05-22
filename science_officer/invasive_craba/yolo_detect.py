@@ -361,7 +361,7 @@ while True:
     
     if key == ord('q') or key == ord('Q'): # Press 'q' to quit
         break
-    elif key == ord('s') or key == ord('S'): # Press 's' to pause inference
+    elif key == ord('1'): # Press '1' to pause inference
         cv2.waitKey()
     elif key == ord('-') or key == ord('_'): # Press '-/_' to lower the detection threshold
         if args.min_thresh > 0.1:
@@ -369,7 +369,7 @@ while True:
     elif key == ord('=') or key == ord('+'): # Press '=/+' to increase the detection threshold
         if args.min_thresh < 0.90:
             args.min_thresh += 0.05
-    elif key == ord('p') or key == ord('P'): # Press 'p' to save a picture of results on this frame
+    elif key == ord('2'): # Press '2' to save a picture of results on this frame
         cv2.imwrite('capture.png',frame)
     
     # Calculate FPS for this frame

@@ -292,7 +292,7 @@ def cam_mode():
                 print("auto is false")
                 photo = img1.copy()
             
-            if key & 0xFF == ord('3'):
+            if key == ord('q') or key == ord('Q'):
                 mode = 3
                 break
 
@@ -359,13 +359,16 @@ def main():
             if frame_source is not None:
                 frame_source.release()
             cv2.destroyAllWindows()
-            N = len(heights)
-            avg = sum(heights)/N
-            avg = round(avg,2)
-            print(f"Average Depth {avg}")
+
+            if len(heights) != 0:
+                avg = sum(heights)/len(heights)
+                avg = round(avg,2)
+                print(f"Average Depth {avg}")
+
             break
         elif mode == 1:
             heights = cam_mode()
-            print(heights)
+            if len(heights) != 0:
+                print(heights)
 
 main()

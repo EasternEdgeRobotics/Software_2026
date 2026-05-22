@@ -6,7 +6,13 @@ Used by the [BlueStar Science Officer GUI](/ros_workspace/src/bluestar_officer_f
 ## garden_scale.py
 Get the actual scale of the coral garden using a known measurement.
 
-Examples:
+### Keys:
+| Key | Action                |
+|-----|-----------------------|
+| Q   | Quit                  |
+| 2   | Capture Frame / Pause |
+
+### Examples:
 RTSP w/ ffmpeg backend
 ```
 python3 garden_scale.py --source-type video --capture-backend ffmpeg --resolution 1280x720 --source rtsp://192.168.137.200:8554/cam2

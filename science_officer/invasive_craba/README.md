@@ -4,6 +4,16 @@ Generic: `pip install opencv-python ultralytics numpy`
 
 macOS (Python 3.13 and lower): `pip install opencv-python ultralytics numpy coremltools`
 
+## Keys:
+| Key | Action             |
+|-----|--------------------|
+| Q   | Quit               |
+| 1   | Pause Inference    |
+| 2   | Take Photo         |
+| -/_ | Lower Threshold    |
+| +/= | Increase Threshold |
+
+
 ## Examples:
 ### RTSP w/ CPU Inference & ffmpeg backend
 ```
