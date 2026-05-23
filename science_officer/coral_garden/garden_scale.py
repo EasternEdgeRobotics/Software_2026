@@ -43,7 +43,7 @@ if args.resolution:
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
 # Load certain fisheye correction profiles based off the source
-K, D = fisheye_list.get_correction(args.source, resW, resH)
+K, D, _ = fisheye_list.get_correction(args.source, resW, resH)
 
 # Load or initialize image source
 frame_source = None

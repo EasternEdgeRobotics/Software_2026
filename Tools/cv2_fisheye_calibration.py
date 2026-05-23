@@ -58,6 +58,10 @@ def parse_args():
     return parser.parse_args()
 
 def print_calibration_results(K, D, rms, image_size):
+    D_flat = D.ravel()
+    D4 = D_flat[:4]
+    D5 = D_flat[:5]
+
     print("\n================ CAMERA CALIBRATION RESULT ================")
     print(f"RMS reprojection error: {rms}")
     print(f"Image size: {image_size[0]} x {image_size[1]}")
@@ -66,23 +70,18 @@ def print_calibration_results(K, D, rms, image_size):
     print(np.array2string(K, separator=", ", precision=12))
     print(", dtype=np.float64)")
 
-    print("\nD = np.array(")
-    print(np.array2string(D, separator=", ", precision=12))
+    print("\n# Full OpenCV pinhole distortion model:")
+    print("# D5 = [k1, k2, p1, p2, k3]")
+    print("D5 = np.array(")
+    print(np.array2string(D5, separator=", ", precision=12))
     print(", dtype=np.float64)")
 
-    print("\nFlattened D, if your config wants a simple list:")
-    print(np.array2string(D.ravel(), separator=", ", precision=12))
-
-    print("\nYAML-ish format:")
-    print("camera_matrix:")
-    print(f"  rows: {K.shape[0]}")
-    print(f"  cols: {K.shape[1]}")
-    print(f"  data: {K.ravel().tolist()}")
-    print("distortion_coefficients:")
-    print(f"  rows: {D.shape[0]}")
-    print(f"  cols: {D.shape[1] if len(D.shape) > 1 else 1}")
-    print(f"  data: {D.ravel().tolist()}")
-    print("===========================================================\n")
+    print("\n# Trimmed 4-value pinhole distortion model:")
+    print("# D4 = [k1, k2, p1, p2]")
+    print("# Note: this simply drops k3 after calibration.")
+    print("D4 = np.array(")
+    print(np.array2string(D4, separator=", ", precision=12))
+    print(", dtype=np.float64)")
 
 
 def main():
