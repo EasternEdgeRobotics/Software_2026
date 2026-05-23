@@ -21,3 +21,11 @@ USB w/ OpenCV backend
 ```
 python3 garden_scale.py --source-type usb --capture-backend opencv --resolution 1280x720 --source usb0
 ```
+RTSP w/ ffmpeg backend and fisheye correction
+```
+python3 garden_scale.py --source-type video --capture-backend ffmpeg --resolution 1280x720 --source rtsp://192.168.137.200:8554/cam2
+```
+USB w/ OpenCV backend and fisheye correction
+```
+python3 garden_scale.py --source-type usb --capture-backend opencv --resolution 1280x720 --source usb0
+```

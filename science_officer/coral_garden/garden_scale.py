@@ -45,6 +45,13 @@ def parse_args():
         help="FFmpeg loglevel: quiet, error, warning, info, debug",
     )
 
+    parser.add_argument(
+        "--fisheye-correction",
+        default=False,
+        action="store_true",
+        help="Enable Fisheye correction",
+    )
+
     return parser.parse_args()
 
 class OpenCVFrameSource:
@@ -197,6 +204,41 @@ if args.resolution:
     resize = True
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
+# Load certain fisheye correction profiles based off the source and camera
+if args.source == "rtsp://192.168.137.200:8554/cam": # BlueStar USB Cam 1
+    K = np.array(
+        [
+            [700.0, 0.0, resW / 2.0],
+            [0.0, 700.0, resH / 2.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+
+    D = np.array([[-0.05], [0.01], [0.0], [0.0]])
+elif args.source == "rtsp://192.168.137.200:8554/cam2": # BlueStar USB Cam 1
+    K = np.array(
+        [
+            [700.0, 0.0, resW / 2.0],
+            [0.0, 700.0, resH / 2.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+
+    D = np.array([[-0.05], [0.01], [0.0], [0.0]])
+else: # Other Cameras / other sources
+    K = np.array(
+        [
+            [700.0, 0.0, resW / 2.0],
+            [0.0, 700.0, resH / 2.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+
+    D = np.array([[-0.05], [0.01], [0.0], [0.0]])
+
 # Load or initialize image source
 frame_source = None
 
@@ -267,6 +309,27 @@ def cam_mode():
         heights = []
         clicked_points = []
         auto = True
+
+        if args.fisheye_correction == True:
+            balance = 0.3
+
+            new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
+                K,
+                D,
+                (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])),
+                np.eye(3),
+                balance=balance,
+            )
+
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+                K,
+                D,
+                np.eye(3),
+                new_K,
+                (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])),
+                cv2.CV_16SC2,
+            )
+
         while True:
             # Capture frame-by-frame
             ret, frame = frame_source.read()
@@ -279,6 +342,16 @@ def cam_mode():
             #Renaming variable
             global img1
             img1 = frame[:]
+
+            if args.fisheye_correction == True:
+                img1 = cv2.remap(
+                    img1,
+                    map1,
+                    map2,
+                    interpolation=cv2.INTER_LINEAR,
+                    borderMode=cv2.BORDER_CONSTANT,
+                )
+
             #Honestly forget what this does
             #i think it checks for the last two bytes to indicate letter "q" so press q
             #if in loop it would probably be useful for screenshotting if wanted
