@@ -8,42 +8,22 @@ import numpy as np
 import time
 import platform
 import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
+
+from shared import frame_capture
+from shared import opencv_helpers
+from shared import fisheye_list
+from shared import common_args
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Measure icebergs with BlueStar")
 
-    parser.add_argument(
-        "--source-type",
-        default="video",
-        help="video or usb"
-    )
-
-    parser.add_argument(
-        "--source",
-        default="rtsp://192.168.137.200:8889/cam2",
-        help="Video source (ie usb0, rtsp://192.168.137.200:8889/cam2)"
-    )
-
-    parser.add_argument(
-        "--resolution",
-        default="1260x720",
-        help="Source resolution"
-    )
-
-    parser.add_argument(
-        "--capture-backend",
-        default="opencv",
-        choices=["opencv", "ffmpeg"],
-        help="Frame capture backend. Use ffmpeg for RTSP",
-    )
-
-    parser.add_argument(
-        "--ffmpeg-loglevel",
-        default="error",
-        help="FFmpeg loglevel: quiet, error, warning, info, debug",
-    )
+    common_args.video_args(parser)
 
     parser.add_argument(
         "--fisheye-correction",
@@ -54,148 +34,6 @@ def parse_args():
 
     return parser.parse_args()
 
-class OpenCVFrameSource:
-    def __init__(self, source, source_type, width=None, height=None):
-        if source_type == "usb":
-            cap_arg = int(source[3:])
-        else:
-            cap_arg = source
-
-        self.cap = cv2.VideoCapture(cap_arg)
-
-        if width is not None and height is not None:
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
-    def read(self):
-        return self.cap.read()
-
-    def release(self):
-        self.cap.release()
-
-class FFmpegLatestFrameSource:
-    def __init__(
-        self,
-        url,
-        width,
-        height,
-        rtsp_transport="tcp",
-        loglevel="error",
-        use_videotoolbox=True,
-    ):
-        self.url = url
-        self.width = width
-        self.height = height
-        self.frame_size = width * height * 3
-        self.rtsp_transport = rtsp_transport
-        self.loglevel = loglevel
-        self.use_videotoolbox = use_videotoolbox
-
-        self.proc = None
-        self.thread = None
-        self.running = False
-        self.lock = threading.Lock()
-        self.frame = None
-
-    def start(self):
-        cmd = [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            self.loglevel,
-        ]
-
-        if self.url.lower().startswith("rtsp://"):
-            cmd += [
-                "-rtsp_transport",
-                self.rtsp_transport,
-                "-fflags",
-                "nobuffer",
-                "-flags",
-                "low_delay",
-            ]
-
-        if self.use_videotoolbox:
-            cmd += [
-                "-hwaccel",
-                "videotoolbox",
-            ]
-
-        cmd += [
-            "-i",
-            self.url,
-            "-an",
-            "-vf",
-            f"scale={self.width}:{self.height}",
-            "-pix_fmt",
-            "bgr24",
-            "-f",
-            "rawvideo",
-            "pipe:1",
-        ]
-
-        self.proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            bufsize=self.frame_size * 4,
-        )
-
-        self.running = True
-        self.thread = threading.Thread(target=self._reader_loop, daemon=True)
-        self.thread.start()
-
-    def _read_exact(self, size):
-        chunks = []
-        remaining = size
-
-        while remaining > 0 and self.running:
-            chunk = self.proc.stdout.read(remaining)
-
-            if not chunk:
-                return None
-
-            chunks.append(chunk)
-            remaining -= len(chunk)
-
-        return b"".join(chunks)
-
-    def _reader_loop(self):
-        while self.running:
-            raw = self._read_exact(self.frame_size)
-
-            if raw is None:
-                self.running = False
-                break
-
-            frame = np.frombuffer(raw, dtype=np.uint8)
-            frame = frame.reshape((self.height, self.width, 3))
-
-            with self.lock:
-                self.frame = frame.copy()
-
-    def read(self):
-        while self.running:
-            with self.lock:
-                if self.frame is not None:
-                    return True, self.frame.copy()
-
-            time.sleep(0.005)
-
-        return False, None
-
-    def release(self):
-        self.running = False
-
-        if self.proc is not None:
-            self.proc.terminate()
-
-            try:
-                self.proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.proc.kill()
-                self.proc.wait()
-
 args = parse_args()
 
 # Parse user-specified display resolution
@@ -205,39 +43,7 @@ if args.resolution:
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
 # Load certain fisheye correction profiles based off the source and camera
-if args.source == "rtsp://192.168.137.200:8554/cam": # BlueStar USB Cam 1
-    K = np.array(
-        [
-            [700.0, 0.0, resW / 2.0],
-            [0.0, 700.0, resH / 2.0],
-            [0.0, 0.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-
-    D = np.array([[-0.05], [0.01], [0.0], [0.0]])
-elif args.source == "rtsp://192.168.137.200:8554/cam2": # BlueStar USB Cam 1
-    K = np.array(
-        [
-            [700.0, 0.0, resW / 2.0],
-            [0.0, 700.0, resH / 2.0],
-            [0.0, 0.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-
-    D = np.array([[-0.05], [0.01], [0.0], [0.0]])
-else: # Other Cameras / other sources
-    K = np.array(
-        [
-            [700.0, 0.0, resW / 2.0],
-            [0.0, 700.0, resH / 2.0],
-            [0.0, 0.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-
-    D = np.array([[-0.05], [0.01], [0.0], [0.0]])
+K, D = fisheye_list.get_correction(args.source, resW, resH)
 
 # Load or initialize image source
 frame_source = None
@@ -253,35 +59,21 @@ if args.source_type in ["video", "usb"]:
             print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
             sys.exit(1)
 
-        frame_source = FFmpegLatestFrameSource(
+        frame_source = frame_capture.FFmpegFrameSource(
             url=args.source,
             width=resW,
             height=resH,
-            loglevel=args.ffmpeg_loglevel,
-            use_videotoolbox=platform.system() == "Darwin",
+            loglevel=args.ffmpeg_loglevel
         )
         frame_source.start()
 
     else:
-        frame_source = OpenCVFrameSource(
+        frame_source = frame_capture.OpenCVFrameSource(
             source=args.source,
             source_type=args.source_type,
             width=resW if args.resolution else None,
             height=resH if args.resolution else None,
         )
-
-def text_with_background(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1, text_color=(255, 255, 255), bg_color=(0, 0, 0), thickness=2, padding=5,):
-    x, y = position
-
-    text_size, baseline = cv2.getTextSize(text, font, font_scale, thickness)
-    text_width, text_height = text_size
-
-    top_left = (x - padding, y - text_height - padding)
-    bottom_right = (x + text_width + padding, y + baseline + padding)
-
-    cv2.rectangle(img, top_left, bottom_right, bg_color, cv2.FILLED)
-
-    cv2.putText(img, text, position, font, font_scale, text_color, thickness, cv2.LINE_AA,)
 
 def points(event,x,y,flags,param):
         clicked_points = param
@@ -379,66 +171,7 @@ def cam_mode():
             
         return heights
 
-def draw_zoom_cursor(display_img, source_img, center, zoom=2.5, lens_radius=90, border_color=(0, 255, 255), crosshair_color=(0, 0, 255)):
-    x, y = center
-    h, w = display_img.shape[:2]
-
-    if x < 0 or y < 0 or x >= w or y >= h:
-        return
-
-    diameter = lens_radius * 2
-    crop_size = max(2, int(diameter / zoom))
-
-    pad = crop_size + 4
-
-    padded = cv2.copyMakeBorder(source_img, pad, pad, pad, pad, cv2.BORDER_REPLICATE)
-
-    patch = cv2.getRectSubPix(padded, (crop_size, crop_size), (x + pad, y + pad))
-
-    zoomed = cv2.resize(patch, (diameter, diameter), interpolation=cv2.INTER_LINEAR)
-
-    mask = np.zeros((diameter, diameter), dtype=np.uint8)
-    cv2.circle(mask, (lens_radius, lens_radius), lens_radius, 255, -1)
-
-    dst_x1 = x - lens_radius
-    dst_y1 = y - lens_radius
-    dst_x2 = x + lens_radius
-    dst_y2 = y + lens_radius
-
-    src_x1 = 0
-    src_y1 = 0
-    src_x2 = diameter
-    src_y2 = diameter
-
-    if dst_x1 < 0:
-        src_x1 = -dst_x1
-        dst_x1 = 0
-
-    if dst_y1 < 0:
-        src_y1 = -dst_y1
-        dst_y1 = 0
-
-    if dst_x2 > w:
-        src_x2 -= dst_x2 - w
-        dst_x2 = w
-
-    if dst_y2 > h:
-        src_y2 -= dst_y2 - h
-        dst_y2 = h
-
-    zoom_crop = zoomed[src_y1:src_y2, src_x1:src_x2]
-    mask_crop = mask[src_y1:src_y2, src_x1:src_x2]
-
-    roi = display_img[dst_y1:dst_y2, dst_x1:dst_x2]
-
-    np.copyto(roi, zoom_crop, where=mask_crop[:, :, None].astype(bool))
-
-    cv2.circle(display_img, (x, y), lens_radius, border_color, 3, cv2.LINE_AA)
-    cv2.line(display_img, (x - 12, y), (x + 12, y), crosshair_color, 2, cv2.LINE_AA)
-    cv2.line(display_img, (x, y - 12), (x, y + 12), crosshair_color, 2, cv2.LINE_AA)
-
 def draw_mode(picture,heights, clicked_points):
-
         imgconst = picture.copy()
         global rheight
         rheight = 0
@@ -448,7 +181,7 @@ def draw_mode(picture,heights, clicked_points):
         #print(f"Mouse Position: ({mouse_x},{mouse_y})")
     
         if mouse_x != -1:
-            draw_zoom_cursor(img2, imgconst, (mouse_x, mouse_y), zoom=2.5, lens_radius=90)
+            opencv_helpers.draw_zoom_cursor(img2, imgconst, (mouse_x, mouse_y), zoom=2.5, lens_radius=90)
         for point in clicked_points:
             cv2.circle(img2,point,10,(50,0,255),-1)
         if len(clicked_points) > 1:
@@ -462,8 +195,8 @@ def draw_mode(picture,heights, clicked_points):
             if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                 rheight = rwidth/width_pxdistance*height_pxdistance
                 rheight = round(rheight,2)
-                text_with_background(img2, f"{rwidth}cm", clicked_points[0])
-                text_with_background(img2, f"{rheight}cm", clicked_points[3])
+                opencv_helpers.text_with_background(img2, f"{rwidth}cm", clicked_points[0])
+                opencv_helpers.text_with_background(img2, f"{rheight}cm", clicked_points[3])
                 
             else:
                  print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
