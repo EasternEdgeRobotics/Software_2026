@@ -104,23 +104,7 @@ def cam_mode():
 
         if args.fisheye_correction == True:
             balance = 0.3
-
-            new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
-                K,
-                D,
-                (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])),
-                np.eye(3),
-                balance=balance,
-            )
-
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-                K,
-                D,
-                np.eye(3),
-                new_K,
-                (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])),
-                cv2.CV_16SC2,
-            )
+            map1, map2 = opencv_helpers.prepare_fisheye(K, D, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])), balance)
 
         while True:
             # Capture frame-by-frame
@@ -136,13 +120,7 @@ def cam_mode():
             img1 = frame[:]
 
             if args.fisheye_correction == True:
-                img1 = cv2.remap(
-                    img1,
-                    map1,
-                    map2,
-                    interpolation=cv2.INTER_LINEAR,
-                    borderMode=cv2.BORDER_CONSTANT,
-                )
+                img1 = cv2.remap(img1, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
             #Honestly forget what this does
             #i think it checks for the last two bytes to indicate letter "q" so press q
