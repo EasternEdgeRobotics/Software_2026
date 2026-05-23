@@ -305,6 +305,64 @@ def cam_mode():
                 draw_mode(photo,heights,clicked_points)
             
         return heights
+
+def draw_zoom_cursor(display_img, source_img, center, zoom=2.5, lens_radius=90, border_color=(0, 255, 255), crosshair_color=(0, 0, 255)):
+    x, y = center
+    h, w = display_img.shape[:2]
+
+    if x < 0 or y < 0 or x >= w or y >= h:
+        return
+
+    diameter = lens_radius * 2
+    crop_size = max(2, int(diameter / zoom))
+
+    pad = crop_size + 4
+
+    padded = cv2.copyMakeBorder(source_img, pad, pad, pad, pad, cv2.BORDER_REPLICATE)
+
+    patch = cv2.getRectSubPix(padded, (crop_size, crop_size), (x + pad, y + pad))
+
+    zoomed = cv2.resize(patch, (diameter, diameter), interpolation=cv2.INTER_LINEAR)
+
+    mask = np.zeros((diameter, diameter), dtype=np.uint8)
+    cv2.circle(mask, (lens_radius, lens_radius), lens_radius, 255, -1)
+
+    dst_x1 = x - lens_radius
+    dst_y1 = y - lens_radius
+    dst_x2 = x + lens_radius
+    dst_y2 = y + lens_radius
+
+    src_x1 = 0
+    src_y1 = 0
+    src_x2 = diameter
+    src_y2 = diameter
+
+    if dst_x1 < 0:
+        src_x1 = -dst_x1
+        dst_x1 = 0
+
+    if dst_y1 < 0:
+        src_y1 = -dst_y1
+        dst_y1 = 0
+
+    if dst_x2 > w:
+        src_x2 -= dst_x2 - w
+        dst_x2 = w
+
+    if dst_y2 > h:
+        src_y2 -= dst_y2 - h
+        dst_y2 = h
+
+    zoom_crop = zoomed[src_y1:src_y2, src_x1:src_x2]
+    mask_crop = mask[src_y1:src_y2, src_x1:src_x2]
+
+    roi = display_img[dst_y1:dst_y2, dst_x1:dst_x2]
+
+    np.copyto(roi, zoom_crop, where=mask_crop[:, :, None].astype(bool))
+
+    cv2.circle(display_img, (x, y), lens_radius, border_color, 3, cv2.LINE_AA)
+    cv2.line(display_img, (x - 12, y), (x + 12, y), crosshair_color, 2, cv2.LINE_AA)
+    cv2.line(display_img, (x, y - 12), (x, y + 12), crosshair_color, 2, cv2.LINE_AA)
     
 def draw_mode(picture,heights, clicked_points):
 
@@ -317,7 +375,7 @@ def draw_mode(picture,heights, clicked_points):
         #print(f"Mouse Position: ({mouse_x},{mouse_y})")
     
         if mouse_x != -1:
-            cv2.circle(img2,(mouse_x,mouse_y),10,(50,50,255),-1)
+            draw_zoom_cursor(img2, imgconst, (mouse_x, mouse_y), zoom=2.5, lens_radius=90)
         for point in clicked_points:
             cv2.circle(img2,point,10,(50,0,255),-1)
         if len(clicked_points) > 1:
