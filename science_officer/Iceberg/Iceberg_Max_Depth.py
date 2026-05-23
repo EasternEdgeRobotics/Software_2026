@@ -158,8 +158,6 @@ def draw_mode(picture,heights, clicked_points):
         
         #print(f"Mouse Position: ({mouse_x},{mouse_y})")
     
-        if mouse_x != -1:
-            opencv_helpers.draw_zoom_cursor(img2, imgconst, (mouse_x, mouse_y), zoom=2.5, lens_radius=90)
         for point in clicked_points:
             cv2.circle(img2,point,10,(50,0,255),-1)
         if len(clicked_points) > 1:
@@ -178,6 +176,9 @@ def draw_mode(picture,heights, clicked_points):
                 
             else:
                  print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
+        
+        if mouse_x != -1:
+            opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
             
         cv2.imshow("Iceberg Measurement", img2 )
         cv2.setMouseCallback('Iceberg Measurement', points, param = clicked_points)
