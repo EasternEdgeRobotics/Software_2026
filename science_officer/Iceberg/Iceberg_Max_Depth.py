@@ -157,13 +157,17 @@ def draw_mode(picture,heights, clicked_points):
         img2 = imgconst.copy()
         
         #print(f"Mouse Position: ({mouse_x},{mouse_y})")
-    
-        for point in clicked_points:
-            cv2.circle(img2,point,10,(50,0,255),-1)
+        for i in range(len(clicked_points)):
+            if i == 0 or i == 1:
+                colour = (0,0,255)
+            elif i == 2 or i == 3:
+                colour = (255,0,0)
+
+            cv2.circle(img2,clicked_points[i],10,colour,-1)
         if len(clicked_points) > 1:
-            cv2.line(img2, clicked_points[0], clicked_points[1],(255,0,0),5)
+            cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
         if len(clicked_points) == 4:
-            cv2.line(img2, clicked_points[2], clicked_points[3],(0,0,255),5)
+            cv2.line(img2, clicked_points[2], clicked_points[3],(255,0,0),5)
             width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
             height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
             
@@ -171,8 +175,8 @@ def draw_mode(picture,heights, clicked_points):
             if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                 rheight = rwidth/width_pxdistance*height_pxdistance
                 rheight = round(rheight,2)
-                opencv_helpers.text_with_background(img2, f"{rwidth}cm", clicked_points[0])
-                opencv_helpers.text_with_background(img2, f"{rheight}cm", clicked_points[3])
+                opencv_helpers.text_with_background(img2, f"Ref: {rwidth}cm", (10,30))
+                opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
                 
             else:
                  print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")

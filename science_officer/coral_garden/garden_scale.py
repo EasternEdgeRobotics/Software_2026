@@ -157,14 +157,20 @@ def draw_mode(picture,heights, clicked_points):
         img2 = imgconst.copy()
         
         #print(f"Mouse Position: ({mouse_x},{mouse_y})")
-    
-        for point in clicked_points:
-            cv2.circle(img2,point,10,(50,0,255),-1)
+        for i in range(len(clicked_points)):
+            if i == 0 or i == 1:
+                colour = (0,0,255)
+            elif i == 2 or i == 3:
+                colour = (0,255,0)
+            elif i == 4 or i == 5:
+                colour = (255,0,0)
+
+            cv2.circle(img2,clicked_points[i],10,colour,-1)
         if len(clicked_points) > 1:
-            cv2.line(img2, clicked_points[0], clicked_points[1],(255,0,0),5)
+            cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
         if len(clicked_points) == 6:
             cv2.line(img2, clicked_points[2], clicked_points[3],(0,255,0),5)
-            cv2.line(img2, clicked_points[4], clicked_points[5],(0,0,255),5)
+            cv2.line(img2, clicked_points[4], clicked_points[5],(255,0,0),5)
             ref_width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
             height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
             width_pxdistance = line_distance(clicked_points[4],clicked_points[5])
@@ -177,9 +183,9 @@ def draw_mode(picture,heights, clicked_points):
                 rwidth = ref_width/ref_width_pxdistance*width_pxdistance
                 rheight = round(rheight,2)
                 rwidth = round(rwidth,2)
-                opencv_helpers.text_with_background(img2, f"{ref_width}cm", clicked_points[0])
-                opencv_helpers.text_with_background(img2, f"{rheight}cm", clicked_points[3])
-                opencv_helpers.text_with_background(img2, f"{rwidth}cm", clicked_points[5])
+                opencv_helpers.text_with_background(img2, f"Ref: {ref_width}cm", (10,30))
+                opencv_helpers.text_with_background(img2, f"G: {rheight}cm", (10,70))
+                opencv_helpers.text_with_background(img2, f"B: {rwidth}cm", (10,110))
                 
             else:
                  print(f"Invalid Points!!! {ref_width} {width_pxdistance} {height_pxdistance}")
