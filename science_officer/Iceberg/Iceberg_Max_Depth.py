@@ -100,7 +100,7 @@ def line_distance(p1,p2):
 def cam_mode():
         heights = []
         clicked_points = []
-        auto = True
+        freeze = False
 
         if args.fisheye_correction == True:
             balance = 0.3
@@ -130,21 +130,21 @@ def cam_mode():
         
             key = cv2.waitKey(1)
             if key & 0xFF == ord('2'):
-                
-                auto = False
-                print("auto is false")
-                photo = img1.copy()
+                freeze = not freeze
+                if freeze:
+                    print("Frozen")
+                    photo = img1.copy()
             
             if key == ord('q') or key == ord('Q'):
                 mode = 3
                 break
 
-            if auto:
-            
+            if key == ord('3'): # Reset points
+                clicked_points = []
+
+            if not freeze:
                 draw_mode(img1,heights,clicked_points)
-            
             else: 
-                
                 draw_mode(photo,heights,clicked_points)
             
         return heights

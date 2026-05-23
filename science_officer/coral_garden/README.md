@@ -11,6 +11,7 @@ Get the actual scale of the coral garden using a known measurement.
 |-----|-----------------------|
 | Q   | Quit                  |
 | 2   | Capture Frame / Pause |
+| 3   | Reset Points          |
 
 ### Examples:
 RTSP w/ ffmpeg backend
