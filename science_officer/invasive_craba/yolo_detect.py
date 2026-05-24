@@ -14,6 +14,7 @@ from ultralytics import YOLO
 
 import subprocess
 import threading
+import datetime
 
 from pathlib import Path
 
@@ -71,37 +72,16 @@ labels = model.names
 resize = False
 if args.resolution:
     resize = True
-    resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
+    resW, resH = frame_capture.parse_resolution(args.resolution)
 
 # Load or initialize image source
-frame_source = None
-
-if args.source_type in ["video", "usb"]:
-    if args.capture_backend == "ffmpeg":
-        if args.source_type == "usb":
-            print("ERROR: FFmpeg backend is intended for video/RTSP sources")
-            print("Use --capture-backend opencv for USB cameras.")
-            sys.exit(1)
-
-        if not args.resolution:
-            print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
-            sys.exit(1)
-
-        frame_source = frame_capture.FFmpegFrameSource(
-            url=args.source,
-            width=resW,
-            height=resH,
-            loglevel=args.ffmpeg_loglevel
-        )
-        frame_source.start()
-
-    else:
-        frame_source = frame_capture.OpenCVFrameSource(
-            source=args.source,
-            source_type=args.source_type,
-            width=resW if args.resolution else None,
-            height=resH if args.resolution else None,
-        )
+try:
+    config = frame_capture.FrameSourceConfig.from_args(args)
+    frame_source = frame_capture.create_frame_source(config)
+    frame_source.start()
+except ValueError as exc:
+    print(f"ERROR: {exc}")
+    sys.exit(1)
 
 # Set bounding box colors (using the Tableu 10 color scheme)
 bbox_colors = [(164,120,87), (68,148,228), (93,97,209), (178,182,133), (88,159,106), 
@@ -205,7 +185,8 @@ while True:
         if args.min_thresh < 0.90:
             args.min_thresh += 0.05
     elif key == ord('2'): # Press '2' to save a picture of results on this frame
-        cv2.imwrite('capture.png',frame)
+        Path("crab-captures").mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(f'crab-captures/{datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H:%M:%S")}.png',frame)
     
     # Calculate FPS for this frame
     t_stop = time.perf_counter()

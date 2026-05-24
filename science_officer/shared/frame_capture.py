@@ -7,6 +7,92 @@ import numpy as np
 import time
 import platform
 
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass(frozen=True)
+class FrameSourceConfig:
+    source: str
+    source_type: str
+    capture_backend: str = "opencv"
+    width: Optional[int] = None
+    height: Optional[int] = None
+    ffmpeg_loglevel: str = "warning"
+
+    @classmethod
+    def from_args(cls, args):
+        width = None
+        height = None
+
+        if getattr(args, "resolution", None):
+            width, height = parse_resolution(args.resolution)
+
+        return cls(
+            source=args.source,
+            source_type=args.source_type,
+            capture_backend=args.capture_backend,
+            width=width,
+            height=height,
+            ffmpeg_loglevel=getattr(args, "ffmpeg_loglevel", "warning"),
+        )
+
+
+def parse_resolution(resolution: str) -> tuple[int, int]:
+    try:
+        width_str, height_str = resolution.lower().split("x", 1)
+        return int(width_str), int(height_str)
+    except ValueError as exc:
+        raise ValueError(
+            "Resolution must be in WIDTHxHEIGHT format, for example 1920x1080."
+        ) from exc
+    
+def create_frame_source(config: FrameSourceConfig):
+    if config.source_type not in {"video", "usb"}:
+        raise ValueError(
+            f"Unsupported source type: {config.source_type!r}. "
+            "Expected 'video' or 'usb'."
+        )
+
+    if config.capture_backend == "ffmpeg":
+        return _create_ffmpeg_frame_source(config)
+
+    if config.capture_backend == "opencv":
+        return _create_opencv_frame_source(config)
+
+    raise ValueError(
+        f"Unsupported capture backend: {config.capture_backend!r}. "
+        "Expected 'opencv' or 'ffmpeg'."
+    )
+
+
+def _create_ffmpeg_frame_source(config: FrameSourceConfig):
+    if config.source_type == "usb":
+        raise ValueError(
+            "FFmpeg backend is intended for video/RTSP sources. "
+            "Use capture_backend='opencv' for USB cameras."
+        )
+
+    if config.width is None or config.height is None:
+        raise ValueError(
+            "FFmpeg backend requires a resolution in WIDTHxHEIGHT format."
+        )
+
+    return FFmpegFrameSource(
+        url=config.source,
+        width=config.width,
+        height=config.height,
+        loglevel=config.ffmpeg_loglevel,
+    )
+
+
+def _create_opencv_frame_source(config: FrameSourceConfig):
+    return OpenCVFrameSource(
+        source=config.source,
+        source_type=config.source_type,
+        width=config.width,
+        height=config.height,
+    )
+
 class FFmpegFrameSource:
     def __init__(
         self,
@@ -147,3 +233,6 @@ class OpenCVFrameSource:
 
     def release(self):
         self.cap.release()
+
+    def start(self): # I want to keep parity between backends
+        return 

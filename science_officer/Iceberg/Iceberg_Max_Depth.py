@@ -33,49 +33,28 @@ def parse_args():
 
 args = parse_args()
 
-# Parse user-specified display resolution
-resize = False
-if args.resolution:
-    resize = True
-    resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
+# Initialize image source
+try:
+    config = frame_capture.FrameSourceConfig.from_args(args)
+    frame_source = frame_capture.create_frame_source(config)
+    frame_source.start()
+except ValueError as exc:
+    print(f"ERROR: {exc}")
+    sys.exit(1)
 
-# Load certain fisheye correction profiles based off the source and camera
+# Parse user-specified display resolution
+if args.resolution:
+    resW, resH = frame_capture.parse_resolution(args.resolution)
+
+# Load certain fisheye correction profiles based off the source
 K_FISHEYE, D_FISHEYE, K_PINHOLE, D_PINHOLE = fisheye_list.get_correction(args.source, resW, resH)
 
-if K_PINHOLE.all() == None and D_PINHOLE.all() == None:
+if K_PINHOLE is None and D_PINHOLE is None:
     PINHOLE_INVALID = True
-if K_FISHEYE.all() == None and D_FISHEYE.all() == None:
+    print(f"No pinhole correction maps availble for: {args.source}")
+if K_FISHEYE is None and D_FISHEYE is None:
     FISHEYE_INVALID = True
-
-# Load or initialize image source
-frame_source = None
-
-if args.source_type in ["video", "usb"]:
-    if args.capture_backend == "ffmpeg":
-        if args.source_type == "usb":
-            print("ERROR: FFmpeg backend is intended for video/RTSP sources")
-            print("Use --capture-backend opencv for USB cameras.")
-            sys.exit(1)
-
-        if not args.resolution:
-            print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
-            sys.exit(1)
-
-        frame_source = frame_capture.FFmpegFrameSource(
-            url=args.source,
-            width=resW,
-            height=resH,
-            loglevel=args.ffmpeg_loglevel
-        )
-        frame_source.start()
-
-    else:
-        frame_source = frame_capture.OpenCVFrameSource(
-            source=args.source,
-            source_type=args.source_type,
-            width=resW if args.resolution else None,
-            height=resH if args.resolution else None,
-        )
+    print(f"No fisheye correction maps availble for: {args.source}")
 
 def points(event,x,y,flags,param):
         clicked_points = param
@@ -104,12 +83,11 @@ def cam_mode():
         clicked_points = []
         freeze = False
 
-        if (K_PINHOLE.all() != None and D_PINHOLE.all() != None) or (K_FISHEYE.all() != None and D_FISHEYE.all() != None):
-            if args.fisheye_type == "pinhole" and PINHOLE_INVALID == False:
-                map1, map2 = opencv_helpers.prepare_pinhole(K_PINHOLE, D_PINHOLE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])))
-            elif args.fisheye_type == "fisheye" and FISHEYE_INVALID == False:
-                balance = 0.3
-                map1, map2 = opencv_helpers.prepare_fisheye(K_FISHEYE, D_FISHEYE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])), balance)
+        if args.fisheye_type == "pinhole" and PINHOLE_INVALID == False:
+            map1, map2 = opencv_helpers.prepare_pinhole(K_PINHOLE, D_PINHOLE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])))
+        elif args.fisheye_type == "fisheye" and FISHEYE_INVALID == False:
+            balance = 0.3
+            map1, map2 = opencv_helpers.prepare_fisheye(K_FISHEYE, D_FISHEYE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])), balance)
 
         while True:
             # Capture frame-by-frame
