@@ -10,3 +10,4 @@ venv/
 Tools/gst-plugins-rs/
 Tools/webodm_bruteforce_manifest.jsonl
 __pycache__
+calibration_tests/

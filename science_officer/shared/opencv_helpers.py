@@ -75,8 +75,6 @@ def draw_zoom_cursor(display_img, source_img, center, zoom=2.5, lens_radius=90, 
     cv2.line(display_img, (x, y - 12), (x, y + 12), crosshair_color, 2, cv2.LINE_AA)
 
 def prepare_fisheye(K, D, resolution, balance):
-    balance = 0.3
-
     new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
         K,
         D,
@@ -89,6 +87,26 @@ def prepare_fisheye(K, D, resolution, balance):
         K,
         D,
         np.eye(3),
+        new_K,
+        resolution,
+        cv2.CV_16SC2,
+    )
+
+    return map1, map2
+
+def prepare_pinhole(K, D, resolution):
+    new_K, roi = cv2.getOptimalNewCameraMatrix(
+        K,
+        D,
+        resolution,
+        alpha=1,
+        newImgSize=resolution,
+    )
+
+    map1, map2 = cv2.initUndistortRectifyMap(
+        K,
+        D,
+        None,
         new_K,
         resolution,
         cv2.CV_16SC2,

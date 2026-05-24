@@ -7,11 +7,12 @@ Used by the [BlueStar Science Officer GUI](/ros_workspace/src/bluestar_officer_f
 Get the actual scale of the coral garden using a known measurement.
 
 ### Keys:
-| Key | Action                |
-|-----|-----------------------|
-| Q   | Quit                  |
-| 2   | Capture Frame / Pause |
-| 3   | Reset Points          |
+| Key | Action                    |
+|-----|---------------------------|
+| Q   | Quit                      |
+| 2   | Capture Frame / Pause     |
+| 3   | Reset Points              |
+| 4   | Toggle Fisheye correction |
 
 ### Examples:
 RTSP w/ ffmpeg backend

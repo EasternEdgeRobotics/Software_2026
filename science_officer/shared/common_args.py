@@ -33,3 +33,20 @@ def video_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
     return parser
+
+def fisheye_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--fisheye-correction",
+        default=False,
+        action="store_true",
+        help="Enable Fisheye correction",
+    )
+
+    parser.add_argument(
+        "--fisheye-type",
+        default="pinhole",
+        choices=["pinhole", "fisheye"],
+        help="Select fisheye type",
+    )
+
+    return parser

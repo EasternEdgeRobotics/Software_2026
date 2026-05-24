@@ -20,17 +20,14 @@ from shared import opencv_helpers
 from shared import fisheye_list
 from shared import common_args
 
+FISHEYE_INVALID = False
+PINHOLE_INVALID = False
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Measure the coral garden scale with BlueStar")
 
     common_args.video_args(parser)
-
-    parser.add_argument(
-        "--fisheye-correction",
-        default=False,
-        action="store_true",
-        help="Enable Fisheye correction",
-    )
+    common_args.fisheye_args(parser)
 
     return parser.parse_args()
 
@@ -43,7 +40,12 @@ if args.resolution:
     resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
 
 # Load certain fisheye correction profiles based off the source
-K, D, _ = fisheye_list.get_correction(args.source, resW, resH)
+K_FISHEYE, D_FISHEYE, K_PINHOLE, D_PINHOLE = fisheye_list.get_correction(args.source, resW, resH)
+
+if K_PINHOLE.all() == None and D_PINHOLE.all() == None:
+    PINHOLE_INVALID = True
+if K_FISHEYE.all() == None and D_FISHEYE.all() == None:
+    FISHEYE_INVALID = True
 
 # Load or initialize image source
 frame_source = None
@@ -101,9 +103,12 @@ def cam_mode():
         clicked_points = []
         freeze = False
 
-        if args.fisheye_correction == True:
-            balance = 0.3
-            map1, map2 = opencv_helpers.prepare_fisheye(K, D, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])), balance)
+        if (K_PINHOLE.all() != None and D_PINHOLE.all() != None) or (K_FISHEYE.all() != None and D_FISHEYE.all() != None):
+            if args.fisheye_type == "pinhole" and PINHOLE_INVALID == False:
+                map1, map2 = opencv_helpers.prepare_pinhole(K_PINHOLE, D_PINHOLE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])))
+            elif args.fisheye_type == "fisheye" and FISHEYE_INVALID == False:
+                balance = 0.3
+                map1, map2 = opencv_helpers.prepare_fisheye(K_FISHEYE, D_FISHEYE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])), balance)
 
         while True:
             # Capture frame-by-frame
@@ -119,7 +124,10 @@ def cam_mode():
             img1 = frame[:]
 
             if args.fisheye_correction == True:
-                img1 = cv2.remap(img1, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+                if args.fisheye_type == "pinhole" and PINHOLE_INVALID == False: # I dont think this is actually needed, but i cant test it so im not risking it. -PC
+                    img1 = cv2.remap(img1, map1, map2, interpolation=cv2.INTER_LINEAR)
+                elif args.fisheye_type == "fisheye" and FISHEYE_INVALID == False:
+                    img1 = cv2.remap(img1, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
             #Honestly forget what this does
             #i think it checks for the last two bytes to indicate letter "q" so press q
@@ -140,6 +148,9 @@ def cam_mode():
 
             if key == ord('3'): # Reset points
                 clicked_points = []
+
+            if key == ord('4'): # Toggle Fisheye correction
+                args.fisheye_correction = not args.fisheye_correction
 
             if not freeze:
                 draw_mode(img1,heights,clicked_points)
