@@ -205,6 +205,9 @@ def draw_mode(picture,heights, clicked_points):
                 known_length_bottom_px = line_distance(clicked_points[1], clicked_points[4])
 
                 coral_garden_legnth_px = line_distance(clicked_points[0], clicked_points[5])
+
+                coral_garden_legnth_alt_px = line_distance(clicked_points[0], clicked_points[1]) + line_distance(clicked_points[1], clicked_points[4]) + line_distance(clicked_points[4], clicked_points[5])
+
                 coral_garden_height_1_px = line_distance(clicked_points[1], clicked_points[2])
                 coral_garden_height_2_px = line_distance(clicked_points[3], clicked_points[4])
 
@@ -216,13 +219,16 @@ def draw_mode(picture,heights, clicked_points):
 
                     coral_garden_height_cm = coral_garden_height_avg_px * horizontal_cm_per_px
                     coral_garden_legnth_cm = coral_garden_legnth_px * horizontal_cm_per_px
+                    coral_garden_legnth_alt_cm = coral_garden_legnth_alt_px * horizontal_cm_per_px
 
                     real_height = round(coral_garden_height_cm, 2)
                     real_length = round(coral_garden_legnth_cm, 2)
+                    real_length_alt = round(coral_garden_legnth_alt_cm, 2)
 
                     opencv_helpers.text_with_background(img2, f"Ref: {HORI_REF}cm", (10,30))
                     opencv_helpers.text_with_background(img2, f"Height: {real_height}cm", (10,70))
                     opencv_helpers.text_with_background(img2, f"Length: {real_length}cm", (10,110))
+                    opencv_helpers.text_with_background(img2, f"Length Alt: {real_length_alt}cm", (10,150))
 
                 else:
                     print("Invalid points:")
