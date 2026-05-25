@@ -31,19 +31,13 @@ def parse_args():
 
     common_args.video_args(parser)
     common_args.fisheye_args(parser)
+    common_args.measurement_args(parser)
 
     parser.add_argument(
         "--disable-vertical-pole",
         default=False,
         action="store_true",
         help="Disable using the vertical pole for measurement refrence",
-    )
-
-    parser.add_argument(
-        "--follow-mouse",
-        default=True,
-        action="store_true",
-        help="Draw a line from the previous point to the cursor",
     )
 
     return parser.parse_args()

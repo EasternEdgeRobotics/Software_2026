@@ -23,11 +23,21 @@ from shared import common_args
 FISHEYE_INVALID = False
 PINHOLE_INVALID = False
 
+HORI_REF = 45.0
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Measure the coral garden scale with BlueStar")
 
     common_args.video_args(parser)
     common_args.fisheye_args(parser)
+    common_args.measurement_args(parser)
+
+    parser.add_argument(
+        "--disable-dual-ref",
+        default=False,
+        action="store_true",
+        help="Disable using the vertical pole for measurement refrence",
+    )
 
     return parser.parse_args()
 
@@ -131,9 +141,9 @@ def cam_mode():
                 args.fisheye_correction = not args.fisheye_correction
 
             if not freeze:
-                draw_mode(img1,heights,clicked_points)
+                clicked_points = draw_mode(img1,heights,clicked_points)
             else: 
-                draw_mode(photo,heights,clicked_points)
+                clicked_points = draw_mode(photo,heights,clicked_points)
             
         return heights
     
@@ -145,39 +155,104 @@ def draw_mode(picture,heights, clicked_points):
         
         img2 = imgconst.copy()
         
-        #print(f"Mouse Position: ({mouse_x},{mouse_y})")
-        for i in range(len(clicked_points)):
-            if i == 0 or i == 1:
-                colour = (0,0,255)
-            elif i == 2 or i == 3:
-                colour = (0,255,0)
-            elif i == 4 or i == 5:
-                colour = (255,0,0)
+        point_colours = [
+            (0, 255, 0),
+            (0, 255, 0),
+            (0, 0, 255),
+            (0, 0, 255),
+            (255, 0, 0),
+            (255, 0, 0),
+        ]
+        for i, point in enumerate(clicked_points):
+            cv2.circle(img2, point, 10, point_colours[i], -1)
 
-            cv2.circle(img2,clicked_points[i],10,colour,-1)
-        if len(clicked_points) > 1:
-            cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
-        if len(clicked_points) == 6:
-            cv2.line(img2, clicked_points[2], clicked_points[3],(0,255,0),5)
-            cv2.line(img2, clicked_points[4], clicked_points[5],(255,0,0),5)
-            ref_width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
-            height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
-            width_pxdistance = line_distance(clicked_points[4],clicked_points[5])
+        if args.follow_mouse == True:
+            overlay = img2.copy()
+
+            if len(clicked_points) == 1: 
+                cv2.line(overlay, clicked_points[0], (mouse_x, mouse_y), point_colours[0], 5,)
+            elif len(clicked_points) == 2 and args.disable_dual_ref == False:
+                cv2.line(overlay, clicked_points[1], (mouse_x, mouse_y), point_colours[1], 5,)
+            elif len(clicked_points) == 3: 
+                cv2.line(overlay, clicked_points[2], (mouse_x, mouse_y), point_colours[2], 5,)
+            elif len(clicked_points) == 4 and args.disable_dual_ref == False:
+                cv2.line(overlay, clicked_points[3], (mouse_x, mouse_y), point_colours[3], 5,)
+            elif len(clicked_points) == 5: 
+                cv2.line(overlay, clicked_points[4], (mouse_x, mouse_y), point_colours[4], 5,)
+            elif len(clicked_points) == 6 and args.disable_dual_ref == False:
+                cv2.line(overlay, clicked_points[5], (mouse_x, mouse_y), point_colours[5], 5,)
             
-            ref_width = 45
-            if ref_width != 0 and ref_width_pxdistance != 0 and width_pxdistance != 0 and height_pxdistance != 0:
-                rheight = ref_width/ref_width_pxdistance*height_pxdistance
-                rheight = ref_width/ref_width_pxdistance*height_pxdistance
-                rwidth = ref_width/ref_width_pxdistance*width_pxdistance
-                rwidth = ref_width/ref_width_pxdistance*width_pxdistance
-                rheight = round(rheight,2)
-                rwidth = round(rwidth,2)
-                opencv_helpers.text_with_background(img2, f"Ref: {ref_width}cm", (10,30))
-                opencv_helpers.text_with_background(img2, f"G: {rheight}cm", (10,70))
-                opencv_helpers.text_with_background(img2, f"B: {rwidth}cm", (10,110))
+            alpha = 0.4
+            img2 = cv2.addWeighted(overlay, alpha, img2, 1 - alpha, 0)
+        
+        if args.disable_dual_ref == False:
+            if len(clicked_points) >= 2: # Bottom left to mid left upright
+                cv2.line(img2, clicked_points[0], clicked_points[1], (0, 255, 0), 5,)
+
+            if len(clicked_points) >= 3: # mid left upright to top left
+                cv2.line(img2, clicked_points[1], clicked_points[2], (0, 0, 255), 5,)
+
+            if len(clicked_points) >= 4: # top left to top right
+                cv2.line(img2, clicked_points[2], clicked_points[3], (255, 0, 0), 5,)
+
+            if len(clicked_points) >= 5: # top right to mid right upright
+                cv2.line(img2, clicked_points[3], clicked_points[4], (255, 0, 0), 5,)
+                cv2.line(img2, clicked_points[1], clicked_points[4], (255, 0, 0), 5,) # mid left upright to mid right upright
+            
+            if len(clicked_points) >= 6: # mid right upright to bottom left
+                cv2.line(img2, clicked_points[4], clicked_points[5], (255, 0, 0), 5,)
+            
+                known_length_top_px = line_distance(clicked_points[2], clicked_points[3])
+                known_length_bottom_px = line_distance(clicked_points[1], clicked_points[4])
+
+                coral_garden_legnth_px = line_distance(clicked_points[0], clicked_points[5])
+                coral_garden_height_1_px = line_distance(clicked_points[1], clicked_points[2])
+                coral_garden_height_2_px = line_distance(clicked_points[3], clicked_points[4])
+
+                coral_garden_known_avg_px = sum((known_length_top_px, known_length_bottom_px)) / len((known_length_top_px, known_length_bottom_px))
+                coral_garden_height_avg_px = sum((coral_garden_height_1_px, coral_garden_height_2_px)) / len((coral_garden_height_1_px, coral_garden_height_2_px))
+
+                if coral_garden_height_avg_px != 0 and coral_garden_legnth_px != 0 and coral_garden_known_avg_px != 0:
+                    horizontal_cm_per_px = HORI_REF / coral_garden_known_avg_px
+
+                    coral_garden_height_cm = coral_garden_height_avg_px * horizontal_cm_per_px
+                    coral_garden_legnth_cm = coral_garden_legnth_px * horizontal_cm_per_px
+
+                    real_height = round(coral_garden_height_cm, 2)
+                    real_length = round(coral_garden_legnth_cm, 2)
+
+                    opencv_helpers.text_with_background(img2, f"Ref: {coral_garden_known_avg_px}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Height: {real_height}cm", (10,70))
+                    opencv_helpers.text_with_background(img2, f"Length: {real_length}cm", (10,110))
+
+                else:
+                    print("Invalid points:")
+                    clicked_points = []
+        else:
+            if len(clicked_points) > 1:
+                cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
+            if len(clicked_points) > 3:
+                cv2.line(img2, clicked_points[2], clicked_points[3],(0,255,0),5)
+            if len(clicked_points) == 6:
+                cv2.line(img2, clicked_points[4], clicked_points[5],(255,0,0),5)
+                ref_width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
+                height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
+                width_pxdistance = line_distance(clicked_points[4],clicked_points[5])
                 
-            else:
-                 print(f"Invalid Points!!! {ref_width} {width_pxdistance} {height_pxdistance}")
+                ref_width = 45
+                if ref_width != 0 and ref_width_pxdistance != 0 and width_pxdistance != 0 and height_pxdistance != 0:
+                    rheight = ref_width/ref_width_pxdistance*height_pxdistance
+                    rheight = ref_width/ref_width_pxdistance*height_pxdistance
+                    rwidth = ref_width/ref_width_pxdistance*width_pxdistance
+                    rwidth = ref_width/ref_width_pxdistance*width_pxdistance
+                    rheight = round(rheight,2)
+                    rwidth = round(rwidth,2)
+                    opencv_helpers.text_with_background(img2, f"Ref: {ref_width}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"G: {rheight}cm", (10,70))
+                    opencv_helpers.text_with_background(img2, f"B: {rwidth}cm", (10,110))
+                    
+                else:
+                    print(f"Invalid Points!!! {ref_width} {width_pxdistance} {height_pxdistance}")
         
         if mouse_x != -1:
             opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
@@ -189,6 +264,8 @@ def draw_mode(picture,heights, clicked_points):
             if rheight not in heights and rheight != 0:
                 heights.append(rheight)
                 print("New Height: ", rheight)
+        
+        return clicked_points
 
 def main():
     global mouse_x,mouse_y

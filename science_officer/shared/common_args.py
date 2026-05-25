@@ -50,3 +50,13 @@ def fisheye_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
     return parser
+
+def measurement_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--follow-mouse",
+        default=True,
+        action="store_true",
+        help="Draw a line from the previous point to the cursor",
+    )
+
+    return parser
