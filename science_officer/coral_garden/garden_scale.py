@@ -177,10 +177,9 @@ def draw_mode(picture,heights, clicked_points):
                 cv2.line(overlay, clicked_points[2], (mouse_x, mouse_y), point_colours[2], 5,)
             elif len(clicked_points) == 4 and args.disable_dual_ref == False:
                 cv2.line(overlay, clicked_points[3], (mouse_x, mouse_y), point_colours[3], 5,)
+                cv2.line(overlay, clicked_points[1], (mouse_x, mouse_y), point_colours[3], 5,)
             elif len(clicked_points) == 5: 
-                cv2.line(overlay, clicked_points[4], (mouse_x, mouse_y), point_colours[4], 5,)
-            elif len(clicked_points) == 6 and args.disable_dual_ref == False:
-                cv2.line(overlay, clicked_points[5], (mouse_x, mouse_y), point_colours[5], 5,)
+                cv2.line(overlay, clicked_points[4], (mouse_x, mouse_y), point_colours[4], 5,)            
             
             alpha = 0.4
             img2 = cv2.addWeighted(overlay, alpha, img2, 1 - alpha, 0)
@@ -221,7 +220,7 @@ def draw_mode(picture,heights, clicked_points):
                     real_height = round(coral_garden_height_cm, 2)
                     real_length = round(coral_garden_legnth_cm, 2)
 
-                    opencv_helpers.text_with_background(img2, f"Ref: {coral_garden_known_avg_px}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Ref: {HORI_REF}cm", (10,30))
                     opencv_helpers.text_with_background(img2, f"Height: {real_height}cm", (10,70))
                     opencv_helpers.text_with_background(img2, f"Length: {real_length}cm", (10,110))
 
