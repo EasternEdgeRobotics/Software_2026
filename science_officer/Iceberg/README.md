@@ -1,11 +1,12 @@
 # Iceburg Measurement
 ## Keys:
-| Key | Action                    |
-|-----|---------------------------|
-| Q   | Quit                      |
-| 2   | Capture Frame / Pause     |
-| 3   | Reset Points              |
-| 4   | Toggle Fisheye Correction |
+| Key | Action                         |
+|-----|--------------------------------|
+| Q   | Quit                           |
+| 2   | Capture Frame / Pause          |
+| 3   | Reset Points                   |
+| 4   | Toggle Fisheye Correction      |
+| 5   | Toggle Vertical Pole refrence  |
 
 ## Examples:
 RTSP w/ ffmpeg backend

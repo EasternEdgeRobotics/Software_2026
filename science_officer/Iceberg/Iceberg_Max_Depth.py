@@ -23,11 +23,28 @@ from shared import common_args
 FISHEYE_INVALID = False
 PINHOLE_INVALID = False
 
+TOP_PIPE_REF_CM = 60.0
+KNOWN_VERTICAL_REF_CM = 15.0
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Measure icebergs with BlueStar")
 
     common_args.video_args(parser)
     common_args.fisheye_args(parser)
+
+    parser.add_argument(
+        "--disable-vertical-pole",
+        default=False,
+        action="store_true",
+        help="Disable using the vertical pole for measurement refrence",
+    )
+
+    parser.add_argument(
+        "--follow-mouse",
+        default=True,
+        action="store_true",
+        help="Draw a line from the previous point to the cursor",
+    )
 
     return parser.parse_args()
 
@@ -56,7 +73,7 @@ if K_FISHEYE is None and D_FISHEYE is None:
     FISHEYE_INVALID = True
     print(f"No fisheye correction maps availble for: {args.source}")
 
-def points(event,x,y,flags,param):
+def points(event, x, y, flags, param):
         clicked_points = param
         global mouse_x, mouse_y
         if event == cv2.EVENT_MOUSEMOVE:
@@ -131,45 +148,97 @@ def cam_mode():
             if key == ord('4'): # Toggle Fisheye correction
                 args.fisheye_correction = not args.fisheye_correction
 
+            if key == ord('5'): # Toggle vertical pole reference 
+                args.disable_vertical_pole = not args.disable_vertical_pole
+                clicked_points = []
+
             if not freeze:
-                draw_mode(img1,heights,clicked_points)
+                clicked_points = draw_mode(img1,heights,clicked_points)
             else: 
-                draw_mode(photo,heights,clicked_points)
+                clicked_points = draw_mode(photo,heights,clicked_points)
             
         return heights
 
 def draw_mode(picture,heights, clicked_points):
-        imgconst = picture.copy()
         global rheight
         rheight = 0
-        
-        img2 = imgconst.copy()
-        
-        #print(f"Mouse Position: ({mouse_x},{mouse_y})")
-        for i in range(len(clicked_points)):
-            if i == 0 or i == 1:
-                colour = (0,0,255)
-            elif i == 2 or i == 3:
-                colour = (255,0,0)
 
-            cv2.circle(img2,clicked_points[i],10,colour,-1)
-        if len(clicked_points) > 1:
-            cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
-        if len(clicked_points) == 4:
-            cv2.line(img2, clicked_points[2], clicked_points[3],(255,0,0),5)
-            width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
-            height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
-            
-            rwidth = 64
-            if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
-                rheight = rwidth/width_pxdistance*height_pxdistance
-                rheight = round(rheight,2)
-                opencv_helpers.text_with_background(img2, f"Ref: {rwidth}cm", (10,30))
-                opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
+        img2 = picture.copy()
                 
-            else:
-                 print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
+        #print(f"Mouse Position: ({mouse_x},{mouse_y})")
+        point_colours = [
+            (0, 255, 0),
+            (0, 255, 0),
+            (255, 0, 0),
+            (255, 0, 0),
+        ]
         
+        for i, point in enumerate(clicked_points):
+            cv2.circle(img2, point, 10, point_colours[i], -1)
+
+        if args.follow_mouse == True:
+            overlay = img2.copy()
+
+            if len(clicked_points) == 1: 
+                cv2.line(overlay, clicked_points[0], (mouse_x, mouse_y), point_colours[0], 5,)
+            elif len(clicked_points) == 2 and args.disable_vertical_pole == False:
+                cv2.line(overlay, clicked_points[1], (mouse_x, mouse_y), point_colours[1], 5,)
+            elif len(clicked_points) == 3: 
+                cv2.line(overlay, clicked_points[2], (mouse_x, mouse_y), point_colours[2], 5,)
+            
+            alpha = 0.4
+            img2 = cv2.addWeighted(overlay, alpha, img2, 1 - alpha, 0)
+
+        if args.disable_vertical_pole == False:
+            if len(clicked_points) >= 2: # Known 15 cm pole: point 1 to point 2
+                cv2.line(img2, clicked_points[0], clicked_points[1], (0, 255, 0), 5,)
+
+            if len(clicked_points) >= 3: # Top 60 cm pipe: point 2 to point 3
+                cv2.line(img2, clicked_points[1], clicked_points[2], (0, 0, 255), 5,)
+
+            if len(clicked_points) >= 4: # Unknown variable pole: point 3 to point 4
+                cv2.line(img2, clicked_points[2], clicked_points[3], (255, 0, 0), 5,)
+            
+                known_pole_px = line_distance(clicked_points[0], clicked_points[1])
+                top_pipe_px = line_distance(clicked_points[1], clicked_points[2])
+                unknown_pole_px = line_distance(clicked_points[2], clicked_points[3])
+
+                if known_pole_px != 0 and top_pipe_px != 0 and unknown_pole_px != 0:
+                    vertical_cm_per_px = KNOWN_VERTICAL_REF_CM / known_pole_px
+                    horizontal_cm_per_px = TOP_PIPE_REF_CM / top_pipe_px
+
+                    unknown_from_vertical_ref_cm = unknown_pole_px * vertical_cm_per_px
+
+                    rheight = round(unknown_from_vertical_ref_cm, 2)
+
+                    opencv_helpers.text_with_background(img2, f"Top Ref: {TOP_PIPE_REF_CM}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Pole Ref: {KNOWN_VERTICAL_REF_CM}cm", (10,70))
+                    opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,110))
+
+                else:
+                    print("Invalid points:", known_pole_px, top_pipe_px, unknown_pole_px,)
+                    clicked_points = []
+
+
+        else:
+            if len(clicked_points) >= 2:
+                cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
+            if len(clicked_points) == 4:
+                cv2.line(img2, clicked_points[2], clicked_points[3],(255,0,0),5)
+                width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
+                height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
+                
+                rwidth = 64
+                if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
+                    rheight = rwidth/width_pxdistance*height_pxdistance
+                    rheight = round(rheight,2)
+                    opencv_helpers.text_with_background(img2, f"Ref: {rwidth}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
+                    
+                else:
+                    print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
+                    clicked_points = []
+
         if mouse_x != -1:
             opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
             
@@ -180,6 +249,8 @@ def draw_mode(picture,heights, clicked_points):
             if rheight not in heights and rheight != 0:
                 heights.append(rheight)
                 print("New Height: ", rheight)
+
+        return clicked_points
 
 def main():
     global mouse_x,mouse_y
