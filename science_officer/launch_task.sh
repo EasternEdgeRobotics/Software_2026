@@ -200,13 +200,13 @@ start_coral() {
   require_file "$CORAL_SCRIPT"
   require_configured "CORAL_ONSHAPE_URL" "$CORAL_ONSHAPE_URL"
 
-  launch_terminal \
-    "Coral Garden Measurement" \
-    "$(build_python_command "$CORAL_SCRIPT" "${CORAL_ARGS[@]}")"
-
   open_default "$CORAL_ONSHAPE_URL"
   sleep 1
   open_default "$CORAL_LOCALHOST_URL"
+
+  launch_terminal \
+    "Coral Garden Measurement" \
+    "$(build_python_command "$CORAL_SCRIPT" "${CORAL_ARGS[@]}")"
 
   if [ $(uname -s) == "Darwin" ]; then
     if open -a "CloudCompare" >/dev/null 2>&1; then
@@ -219,17 +219,19 @@ start_iceberg() {
   require_file "$ICEBERG_SCRIPT"
   require_file "$ICEBERG_SPREADSHEET"
 
+  open_calc "$ICEBERG_SPREADSHEET"
+  open_default "$ICEBERG_EXAMPLE_DOC"
+
   launch_terminal \
     "Iceberg Measurement" \
     "$(build_python_command "$ICEBERG_SCRIPT" "${ICEBERG_ARGS[@]}")"
-
-  open_calc "$ICEBERG_SPREADSHEET"
-  open_default "$ICEBERG_EXAMPLE_DOC"
 }
 
 start_crab() {
   require_file "$CRAB_SCRIPT"
   require_configured "CRAB_REPORTING_FORM_URL" "$CRAB_REPORTING_FORM_URL"
+
+  open_default "$CRAB_REPORTING_FORM_URL"
 
   case "$(uname -s)" in
     Darwin)
@@ -242,8 +244,6 @@ start_crab() {
     ;;
 
     esac
-
-  open_default "$CRAB_REPORTING_FORM_URL"
 }
 
 usage() {
