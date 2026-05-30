@@ -23,7 +23,7 @@ CORAL_ONSHAPE_URL="https://cad.onshape.com/documents"
 
 ICEBERG_SCRIPT="$PROJECT_DIR/Iceberg/Iceberg_Max_Depth.py"
 ICEBERG_ARGS=(
-  "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--fisheye-correction"
+  "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--fisheye-correction" "--disable-vertical-pole"
 )
 
 ICEBERG_SPREADSHEET="$PROJECT_DIR/Iceberg/Iceberg_threat_calc.xlsx"
@@ -31,7 +31,7 @@ ICEBERG_EXAMPLE_DOC="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693
 
 CRAB_SCRIPT="$PROJECT_DIR/invasive_craba/yolo_detect.py"
 CRAB_MODEL="yolo11n_dark"
-CRAB_DEFAULT_THRESH="0.65"
+CRAB_DEFAULT_THRESH="0.75"
 
 CRAB_ARGS=(
   "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--min-thresh" "$CRAB_DEFAULT_THRESH" "--model-path" "$PROJECT_DIR/invasive_craba/$CRAB_MODEL/$CRAB_MODEL.pt" "--device" "cpu"
