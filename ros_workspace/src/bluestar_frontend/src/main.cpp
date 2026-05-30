@@ -74,26 +74,26 @@ int camScreenshotSection = 0;
 bool cam1ScreenshotCropEnabled = false;
 float cam1ScreenshotCropLeft = 0.15f;
 float cam1ScreenshotCropRight = 0.15f;
-float cam1ScreenshotCropTop = 0.0f;
-float cam1ScreenshotCropBottom = 0.0f;
+float cam1ScreenshotCropTop = 0.08f;
+float cam1ScreenshotCropBottom = 0.08f;
 
 bool cam2ScreenshotCropEnabled = false;
 float cam2ScreenshotCropLeft = 0.15f;
 float cam2ScreenshotCropRight = 0.15f;
-float cam2ScreenshotCropTop = 0.0f;
-float cam2ScreenshotCropBottom = 0.0f;
+float cam2ScreenshotCropTop = 0.08f;
+float cam2ScreenshotCropBottom = 0.08f;
 
 bool cam3ScreenshotCropEnabled = false;
 float cam3ScreenshotCropLeft = 0.15f;
 float cam3ScreenshotCropRight = 0.15f;
-float cam3ScreenshotCropTop = 0.0f;
-float cam3ScreenshotCropBottom = 0.0f;
+float cam3ScreenshotCropTop = 0.08f;
+float cam3ScreenshotCropBottom = 0.08f;
 
 bool cam4ScreenshotCropEnabled = false;
 float cam4ScreenshotCropLeft = 0.15f;
 float cam4ScreenshotCropRight = 0.15f;
-float cam4ScreenshotCropTop = 0.0f;
-float cam4ScreenshotCropBottom = 0.0f;
+float cam4ScreenshotCropTop = 0.08f;
+float cam4ScreenshotCropBottom = 0.08f;
 
 bool servo_1_cw_latch = false;
 bool servo_2_cw_latch = false;
