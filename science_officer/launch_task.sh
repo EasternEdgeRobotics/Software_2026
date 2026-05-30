@@ -10,9 +10,8 @@ DEFAULT_RESOLUTION="1280x720"
 CAM1="rtsp://192.168.137.200:8554/cam"
 CAM2="rtsp://192.168.137.200:8554/cam2"
 
-CAM1="rtsp://localhost:8554/mystream"
-CAM2="rtsp://localhost:8554/mystream"
-
+#CAM1="rtsp://localhost:8554/mystream"
+#CAM2="rtsp://localhost:8554/mystream"
 
 CORAL_SCRIPT="$PROJECT_DIR/coral_garden/garden_scale.py"
 CORAL_ARGS=(
