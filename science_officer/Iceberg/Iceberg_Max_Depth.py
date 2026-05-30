@@ -23,7 +23,7 @@ from shared import common_args
 FISHEYE_INVALID = False
 PINHOLE_INVALID = False
 
-TOP_PIPE_REF_CM = 60.0
+TOP_PIPE_REF_CM = 64.0
 KNOWN_VERTICAL_REF_CM = 15.0
 
 def parse_args():
@@ -201,7 +201,9 @@ def draw_mode(picture,heights, clicked_points):
                     vertical_cm_per_px = KNOWN_VERTICAL_REF_CM / known_pole_px
                     horizontal_cm_per_px = TOP_PIPE_REF_CM / top_pipe_px
 
-                    unknown_from_vertical_ref_cm = unknown_pole_px * vertical_cm_per_px
+                    avg_known_cm_per_px = sum((vertical_cm_per_px, horizontal_cm_per_px)) / len((vertical_cm_per_px, horizontal_cm_per_px))
+
+                    unknown_from_vertical_ref_cm = unknown_pole_px * avg_known_cm_per_px
 
                     rheight = round(unknown_from_vertical_ref_cm, 2)
 
