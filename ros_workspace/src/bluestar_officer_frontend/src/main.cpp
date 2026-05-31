@@ -315,7 +315,7 @@ std::string defaultWebodmUploadScript() {
         return "webodm_upload.py";
     }
 
-    return (fs::path(home) / "Software_2026" / "science_officer" / "coral_garden" / "webodm_upload.py" ).string();
+    return (fs::path(home) / "Developer" / "Eastern Edge" / "Software_2026" / "science_officer" / "coral_garden" / "webodm_upload.py" ).string();
 }
 
 int main() {

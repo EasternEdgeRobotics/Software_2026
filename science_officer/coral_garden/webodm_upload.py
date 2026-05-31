@@ -28,7 +28,7 @@ def parse_args():
 
 args = parse_args()
 
-WEBODM_URL = os.getenv("WEBODM_URL", "http://172.16.223.1:8000").rstrip("/")
+WEBODM_URL = os.getenv("WEBODM_URL", "http://127.0.0.1:8000").rstrip("/")
 USERNAME = os.getenv("WEBODM_USERNAME", "peyton")
 PASSWORD = os.getenv("WEBODM_PASSWORD", "easternedge")
 

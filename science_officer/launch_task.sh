@@ -43,6 +43,9 @@ CRAB_ARGS_MACOS=(
 
 CRAB_REPORTING_FORM_URL="https://cbjfq.share.hsforms.com/2rHEWllQ5QO6D7Z4CwVM7IQ"
 
+SCIENCE_OFFICER_GUI_PATH="$ROOT_DIR/ros_workspace/src/bluestar_officer_frontend/build/bluestar_officer_frontend"
+echo $SCIENCE_OFFICER_GUI_PATH
+
 # How long to wait before opening localhost:8000 after starting Coral.
 CORAL_BROWSER_DELAY_SECONDS=2
 
@@ -105,6 +108,19 @@ build_python_command() {
 source $(quote "$VENV_DIR/bin/activate") && \
 python $(quote "$script")$args;"
 }
+
+build_binary_command() {
+  local binary="$1"
+  shift
+
+  local args
+  args="$(join_quoted "$@")"
+
+  echo "cd $(quote "$PROJECT_DIR") && \
+source $(quote "$VENV_DIR/bin/activate") && \
+$(quote "$binary")$args;"
+}
+
 
 launch_terminal() {
   local title="$1"
@@ -198,6 +214,7 @@ open_calc() {
 
 start_coral() {
   require_file "$CORAL_SCRIPT"
+  require_file "$SCIENCE_OFFICER_GUI_PATH"
   require_configured "CORAL_ONSHAPE_URL" "$CORAL_ONSHAPE_URL"
 
   open_default "$CORAL_ONSHAPE_URL"
@@ -205,8 +222,13 @@ start_coral() {
   open_default "$CORAL_LOCALHOST_URL"
 
   launch_terminal \
+    "BlueStar Officer Frontend" \
+    "$(build_binary_command "$SCIENCE_OFFICER_GUI_PATH")"
+
+  launch_terminal \
     "Coral Garden Measurement" \
     "$(build_python_command "$CORAL_SCRIPT" "${CORAL_ARGS[@]}")"
+
 
   if [ $(uname -s) == "Darwin" ]; then
     if open -a "CloudCompare" >/dev/null 2>&1; then
