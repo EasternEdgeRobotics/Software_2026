@@ -335,10 +335,19 @@ int main() {
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "easternedge_bluestar_officer_frontend");
     #endif 
 
+    #if defined(__APPLE__)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    #endif
+
     glfwWindowHint(GLFW_MAXIMIZED, true);
+
     GLFWwindow* window = glfwCreateWindow(800, 800, "Eastern Edge BlueStar Science Officer GUI", NULL, NULL);
     if (!window) {
         glfwTerminate();
@@ -358,19 +367,26 @@ int main() {
     const GLubyte* version = glGetString(GL_VERSION);
     const GLubyte* renderer = glGetString(GL_RENDERER);
 
-    std::cerr << "GL_VERSION: "
-            << (version ? reinterpret_cast<const char*>(version) : "null")
-            << std::endl;
-    std::cerr << "GL_RENDERER: "
-            << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
-            << std::endl;
+    // std::cerr << "GL_VERSION: "
+    //         << (version ? reinterpret_cast<const char*>(version) : "null")
+    //         << std::endl;
+    // std::cerr << "GL_RENDERER: "
+    //         << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
+    //         << std::endl;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+
+    #if defined(__APPLE__)
+    const char* glslVersion = "#version 410";
+    #else
+    const char* glslVersion = "#version 330";
+    #endif
+
+    ImGui_ImplOpenGL3_Init(glslVersion);
 
     const fs::path configPath = defaultConfigPath();
 
