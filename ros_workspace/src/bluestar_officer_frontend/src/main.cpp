@@ -9,7 +9,6 @@
 #include <nlohmann/json.hpp>
 
 #include "Config.hpp"
-#include "ROS.hpp"
 #include "Camera.hpp"
 
 #include <iostream>
@@ -31,6 +30,8 @@
 #include <sstream>
 #include <cstdlib>
 #include <future>
+#include <cstdio>
+#include <fstream>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
@@ -40,8 +41,7 @@ BlueStarConfig bluestar_config;
 bool showConfigWindow = false;
 bool showCameraWindow = true;
 
-vector<string> names;
-vector<string> configs;
+
 
 bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
@@ -151,6 +151,138 @@ fs::path defaultCaptureRoot() {
     return fs::path(home) / "Pictures" / "bluestar_captures";
 }
 
+fs::path defaultConfigPath() {
+    const char* configPath = std::getenv("BLUESTAR_CONFIG_PATH");
+
+    if (configPath && configPath[0] != '\0') {
+        return fs::path(configPath);
+    }
+
+    const char* home = std::getenv("HOME");
+
+    if (!home || home[0] == '\0') {
+        return fs::path("bluestar_config.json");
+    }
+
+#if defined(__APPLE__)
+    return fs::path(home) / "Library" / "Application Support" / "BlueStar" /
+           "bluestar_config.json";
+#else
+    return fs::path(home) / ".config" / "bluestar" / "bluestar_config.json";
+#endif
+}
+
+template <size_t N>
+void copyJsonString(const json& data, const char* key, char (&dest)[N]) {
+    if (!data.contains(key) || data[key].is_null()) {
+        return;
+    }
+
+    if (!data[key].is_string()) {
+        std::cerr << "Config key is not a string: " << key << std::endl;
+        return;
+    }
+
+    std::snprintf(dest, N, "%s", data[key].get<std::string>().c_str());
+}
+
+json bluestarConfigToJson(const BlueStarConfig& config) {
+    return json{
+        {"cam1ip", config.cam1ip},
+        {"cam2ip", config.cam2ip},
+        {"cam3ip", config.cam3ip},
+        {"cam4ip", config.cam4ip},
+
+        {"cam1_video_caps", config.cam1_video_caps},
+        {"cam1_audio_caps", config.cam1_audio_caps},
+
+        {"cam2_video_caps", config.cam2_video_caps},
+        {"cam2_audio_caps", config.cam2_audio_caps},
+
+        {"cam3_video_caps", config.cam3_video_caps},
+        {"cam3_audio_caps", config.cam3_audio_caps},
+
+        {"cam4_video_caps", config.cam4_video_caps},
+        {"cam4_audio_caps", config.cam4_audio_caps},
+    };
+}
+
+bool saveBluestarConfigToFile(
+    const fs::path& path,
+    const BlueStarConfig& config)
+{
+    std::error_code ec;
+
+    if (path.has_parent_path()) {
+        fs::create_directories(path.parent_path(), ec);
+
+        if (ec) {
+            std::cerr << "Failed to create config directory: "
+                      << path.parent_path() << std::endl;
+            return false;
+        }
+    }
+
+    std::ofstream output(path);
+
+    if (!output) {
+        std::cerr << "Failed to open config file for writing: " << path
+                  << std::endl;
+        return false;
+    }
+
+    output << bluestarConfigToJson(config).dump(4) << std::endl;
+    return true;
+}
+
+bool loadBluestarConfigFromFile(
+    const fs::path& path,
+    BlueStarConfig& config)
+{
+    if (!fs::exists(path)) {
+        std::cerr << "Config file does not exist. Creating default config: "
+                  << path << std::endl;
+
+        saveBluestarConfigToFile(path, config);
+        return false;
+    }
+
+    std::ifstream input(path);
+
+    if (!input) {
+        std::cerr << "Failed to open config file: " << path << std::endl;
+        return false;
+    }
+
+    try {
+        json data;
+        input >> data;
+
+        copyJsonString(data, "cam1ip", config.cam1ip);
+        copyJsonString(data, "cam2ip", config.cam2ip);
+        copyJsonString(data, "cam3ip", config.cam3ip);
+        copyJsonString(data, "cam4ip", config.cam4ip);
+
+        copyJsonString(data, "cam1_video_caps", config.cam1_video_caps);
+        copyJsonString(data, "cam1_audio_caps", config.cam1_audio_caps);
+
+        copyJsonString(data, "cam2_video_caps", config.cam2_video_caps);
+        copyJsonString(data, "cam2_audio_caps", config.cam2_audio_caps);
+
+        copyJsonString(data, "cam3_video_caps", config.cam3_video_caps);
+        copyJsonString(data, "cam3_audio_caps", config.cam3_audio_caps);
+
+        copyJsonString(data, "cam4_video_caps", config.cam4_video_caps);
+        copyJsonString(data, "cam4_audio_caps", config.cam4_audio_caps);
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to parse config file " << path << ": "
+                  << e.what() << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 std::string makeSectionName(int section) {
     return "section_" + std::to_string(section);
 }
@@ -186,8 +318,8 @@ std::string defaultWebodmUploadScript() {
     return (fs::path(home) / "Software_2026" / "science_officer" / "coral_garden" / "webodm_upload.py" ).string();
 }
 
-int main(int argc, char **argv) {
-    //initialize glfw, imgui, and rclcpp (ros)    
+int main() {
+    //initialize glfw and imgui  
     if (!glfwInit()) return -1;
 
     // Gnome wont respect the icon or name of apps without an app id
@@ -215,25 +347,23 @@ int main(int argc, char **argv) {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    #ifndef __APPLE__
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
     }
-    #endif
 
     // OpenGL info
     const GLubyte* version = glGetString(GL_VERSION);
     const GLubyte* renderer = glGetString(GL_RENDERER);
 
-    // std::cerr << "GL_VERSION: "
-    //         << (version ? reinterpret_cast<const char*>(version) : "null")
-    //         << std::endl;
-    // std::cerr << "GL_RENDERER: "
-    //         << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
-    //         << std::endl;
+    std::cerr << "GL_VERSION: "
+            << (version ? reinterpret_cast<const char*>(version) : "null")
+            << std::endl;
+    std::cerr << "GL_RENDERER: "
+            << (renderer ? reinterpret_cast<const char*>(renderer) : "null")
+            << std::endl;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -241,40 +371,22 @@ int main(int argc, char **argv) {
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-    rclcpp::init(argc, argv);
+
+    const fs::path configPath = defaultConfigPath();
+
+    std::string configStatus;
+
+    if (loadBluestarConfigFromFile(configPath, bluestar_config)) {
+        configStatus = "Config loaded";
+        std::cout << "Loaded config file: " << configPath << std::endl;
+    } else {
+        configStatus = "Using default config";
+        std::cout << "Using default config. Config path: " << configPath
+                  << std::endl;
+    }
     
     //create images
     unsigned int noSignal = loadEmbeddedTexture(nosignal_jpg, nosignal_jpg_len);
-
-    //get configs from ros, then set the names and configs
-    std::array<std::vector<std::string>, 2> configRes = getConfigs();
-    names = configRes[0];
-    configs = configRes[1];
-
-    // Load the bluestar config
-    for (size_t i = 0; i < names.size(); i++) {
-        if (names[i] == "bluestar_config")
-        {
-            json configData = json::parse(configs[i]);
-            if (!configData["cam1ip"].is_null()) std::snprintf(bluestar_config.cam1ip, sizeof(bluestar_config.cam1ip), "%s",configData["cam1ip"].get<std::string>().c_str());
-            if (!configData["cam2ip"].is_null()) std::snprintf(bluestar_config.cam2ip, sizeof(bluestar_config.cam2ip), "%s",configData["cam2ip"].get<std::string>().c_str());
-            if (!configData["cam3ip"].is_null()) std::snprintf(bluestar_config.cam3ip, sizeof(bluestar_config.cam3ip), "%s",configData["cam3ip"].get<std::string>().c_str());
-            if (!configData["cam4ip"].is_null()) std::snprintf(bluestar_config.cam4ip, sizeof(bluestar_config.cam4ip), "%s",configData["cam4ip"].get<std::string>().c_str());
-
-            if (!configData["cam1_video_caps"].is_null()) std::snprintf(bluestar_config.cam1_video_caps, sizeof(bluestar_config.cam1_video_caps), "%s",configData["cam1_video_caps"].get<std::string>().c_str());
-            if (!configData["cam1_audio_caps"].is_null()) std::snprintf(bluestar_config.cam1_audio_caps, sizeof(bluestar_config.cam1_audio_caps), "%s",configData["cam1_audio_caps"].get<std::string>().c_str());
-
-            if (!configData["cam2_video_caps"].is_null()) std::snprintf(bluestar_config.cam2_video_caps, sizeof(bluestar_config.cam2_video_caps), "%s",configData["cam2_video_caps"].get<std::string>().c_str());
-            if (!configData["cam2_audio_caps"].is_null()) std::snprintf(bluestar_config.cam2_audio_caps, sizeof(bluestar_config.cam2_audio_caps), "%s",configData["cam2_audio_caps"].get<std::string>().c_str());
-
-            if (!configData["cam3_video_caps"].is_null()) std::snprintf(bluestar_config.cam3_video_caps, sizeof(bluestar_config.cam3_video_caps), "%s",configData["cam3_video_caps"].get<std::string>().c_str());
-            if (!configData["cam3_audio_caps"].is_null()) std::snprintf(bluestar_config.cam3_audio_caps, sizeof(bluestar_config.cam3_audio_caps), "%s",configData["cam3_audio_caps"].get<std::string>().c_str());
-
-            if (!configData["cam4_video_caps"].is_null()) std::snprintf(bluestar_config.cam4_video_caps, sizeof(bluestar_config.cam4_video_caps), "%s",configData["cam4_video_caps"].get<std::string>().c_str());
-            if (!configData["cam4_audio_caps"].is_null()) std::snprintf(bluestar_config.cam4_audio_caps, sizeof(bluestar_config.cam4_audio_caps), "%s",configData["cam4_audio_caps"].get<std::string>().c_str());
-            break;
-        }
-    }
 
     Camera cam1(bluestar_config.cam1ip, bluestar_config.cam1_video_caps, bluestar_config.cam1_audio_caps, noSignal, 1);
     Camera cam2(bluestar_config.cam2ip, bluestar_config.cam2_video_caps, bluestar_config.cam2_audio_caps, noSignal, 2);
@@ -602,7 +714,7 @@ int main(int argc, char **argv) {
         if (cam1ScreenshotButtonPressed) {
             if (!cam1ScreenshotButtonPressedLatch) {
                 if (!cam1.screenshot()) {
-                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam1");
+                    std::cerr << "Failed to take screenshot for Cam1" << std::endl;
                 } else {
                     ++camSectionTotalPhotos;
                 }
@@ -615,7 +727,7 @@ int main(int argc, char **argv) {
         if (cam2ScreenshotButtonPressed) {
             if (!cam2ScreenshotButtonPressedLatch) {
                 if (!cam2.screenshot()) {
-                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam2");
+                    std::cerr << "Failed to take screenshot for Cam2" << std::endl;
                 } else {
                     ++camSectionTotalPhotos;
                 }
@@ -628,7 +740,7 @@ int main(int argc, char **argv) {
         if (cam3ScreenshotButtonPressed) {
             if (!cam3ScreenshotButtonPressedLatch) {
                 if (!cam3.screenshot()) {
-                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam3");
+                    std::cerr << "Failed to take screenshot for Cam3" << std::endl;
                 } else {
                     ++camSectionTotalPhotos;
                 }
@@ -641,7 +753,7 @@ int main(int argc, char **argv) {
         if (cam4ScreenshotButtonPressed) {
             if (!cam4ScreenshotButtonPressedLatch) {
                 if (!cam4.screenshot()) {
-                    RCLCPP_ERROR(rclcpp::get_logger("main"),"Failed to take screenshot for Cam4");
+                    std::cerr << "Failed to take screenshot for Cam4" << std::endl;
                 } else {
                     ++camSectionTotalPhotos;
                 }
@@ -721,6 +833,7 @@ int main(int argc, char **argv) {
             if (ImGui::BeginTabBar("Config Tabs")) {
                 if (ImGui::BeginTabItem("Cameras")) {
 
+
                     #if defined(BLUESTAR_CAMERA_BACKEND_WEBRTCBIN)
                         constexpr int cameraColumnCount = 4;
                     #else
@@ -732,6 +845,26 @@ int main(int argc, char **argv) {
                     #if defined(BLUESTAR_CAMERA_BACKEND_WEBRTCBIN)
                         ImGui::Text("Video and audio caps can be left blank if they match defaults. (H264 w/ no audio)");
                     #endif
+                    
+                    ImGui::TextWrapped(
+                        "Config file: %s",
+                        configPath.string().c_str());
+
+                    if (ImGui::Button("Save Camera Config")) {
+                        if (saveBluestarConfigToFile(
+                                configPath,
+                                bluestar_config)) {
+                            configStatus = "Config saved";
+                        } else {
+                            configStatus = "Failed to save config";
+                        }
+                    }
+
+                    ImGui::SameLine();
+                    ImGui::TextUnformatted(configStatus.c_str());
+
+                    ImGui::Separator();
+
                     if (ImGui::BeginTable("Camera Table", cameraColumnCount, ImGuiTableFlags_Borders |
                                 ImGuiTableFlags_RowBg |
                                 ImGuiTableFlags_SizingStretchSame |
@@ -957,6 +1090,5 @@ int main(int argc, char **argv) {
 
     glfwTerminate();
 
-    rclcpp::shutdown();
     return 0;
 }
