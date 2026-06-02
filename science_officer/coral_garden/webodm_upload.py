@@ -88,6 +88,10 @@ options = [
         "value": "ultra",
     },
     {
+        "name": "bg-removal",
+        "value": True,
+    },
+    {
         "name": "use-3dmesh",
         "value": True,
     },
