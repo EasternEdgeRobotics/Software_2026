@@ -26,7 +26,7 @@ ICEBERG_ARGS=(
   "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--fisheye-correction" "--disable-vertical-pole"
 )
 
-ICEBERG_SPREADSHEET="$PROJECT_DIR/Iceberg/Iceberg_threat_calc.xlsx"
+ICEBERG_SPREADSHEET="$PROJECT_DIR/Iceberg/Iceberg_threat_calc_with_clear.xlsm"
 ICEBERG_EXAMPLE_DOC="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Supporting%20Documents/Iceberg%20Information%20Examples%20EX%20PN%20RN%20Updated%202_16.pdf"
 
 CRAB_SCRIPT="$PROJECT_DIR/invasive_craba/yolo_detect.py"
