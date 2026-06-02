@@ -117,7 +117,8 @@ build_binary_command() {
   args="$(join_quoted "$@")"
 
   echo "cd $(quote "$PROJECT_DIR") && \
-source $(quote "$VENV_DIR/bin/activate") && \
+source $(quote "$VENV_DIR/bin/activate") && \ 
+ulimit -n 4096 && \
 $(quote "$binary")$args;"
 }
 
