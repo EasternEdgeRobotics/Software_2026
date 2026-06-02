@@ -101,11 +101,11 @@ options = [
     },
     {
         "name": "mesh-octree-depth",
-        "value": 14,
+        "value": 12,
     },
     {
         "name": "matcher-order",
-        "value": 75,
+        "value": 150,
     },
     {
         "name": "matcher-type",
