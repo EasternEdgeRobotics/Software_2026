@@ -22,7 +22,6 @@ This project uses ROS2 Jazzy.
 |-------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
 | [**bluestar_backend**](./ros_workspace/src/bluestar_backend/)           | Backend code for interfacing with the ROV named BlueStar.                                  |
 | [**bluestar_frotnend**](./ros_workspace/src/bluestar_frontend/)         | A C++ GUI for BlueStar made with ImGui, meant for driving the ROV named BlueStar.          |
-| [**bluestar_officer_frotnend**](./ros_workspace/src/bluestar_frontend/) | A C++ GUI for BlueStar made with ImGui, meant for the science officer.                     |
 | [**common_backend**](./ros_workspace/src/common_backend/)               | Common backend ROS nodes for all ROVs.                                                     |
 | [**eer_interfaces**](./ros_workspace/src/eer_interfaces/)               | Custom ROS2 interfaces used by all packages.                                               |
 
