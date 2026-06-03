@@ -14,9 +14,20 @@ from ultralytics import YOLO
 
 import subprocess
 import threading
+import datetime
+
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from shared import frame_capture
+from shared import common_args
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Scan for invasive crabs with BlueStar")
+
+    common_args.video_args(parser)
 
     parser.add_argument(
         "--model-path",
@@ -25,28 +36,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--source-type",
-        default="video",
-        help="video or usb"
-    )
-
-    parser.add_argument(
-        "--source",
-        default="rtsp://192.168.137.200:8554/cam",
-        help="Video source (ie usb0, rtsp://192.168.137.200:8554/cam)"
-    )
-
-    parser.add_argument(
         "--min-thresh",
         default=0.65,
         help="Minimum threshhold for marking as detected",
         type=float
-    )
-
-    parser.add_argument(
-        "--resolution",
-        default="1280x720",
-        help="Source resolution (required for FFmpeg backend)"
     )
 
     parser.add_argument(
@@ -62,163 +55,7 @@ def parse_args():
         help="YOLO inference image size"
     )
 
-    parser.add_argument(
-        "--capture-backend",
-        default="opencv",
-        choices=["opencv", "ffmpeg"],
-        help="Frame capture backend. Use ffmpeg for RTSP",
-    )
-
-    parser.add_argument(
-        "--ffmpeg-loglevel",
-        default="error",
-        help="FFmpeg loglevel: quiet, error, warning, info, debug",
-    )
-
     return parser.parse_args()
-
-class OpenCVFrameSource:
-    def __init__(self, source, source_type, width=None, height=None):
-        if source_type == "usb":
-            cap_arg = int(source[3:])
-        else:
-            cap_arg = source
-
-        self.cap = cv2.VideoCapture(cap_arg)
-
-        if width is not None and height is not None:
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
-    def read(self):
-        return self.cap.read()
-
-    def release(self):
-        self.cap.release()
-
-
-class FFmpegLatestFrameSource:
-    def __init__(
-        self,
-        url,
-        width,
-        height,
-        rtsp_transport="tcp",
-        loglevel="error",
-        use_videotoolbox=True,
-    ):
-        self.url = url
-        self.width = width
-        self.height = height
-        self.frame_size = width * height * 3
-        self.rtsp_transport = rtsp_transport
-        self.loglevel = loglevel
-        self.use_videotoolbox = use_videotoolbox
-
-        self.proc = None
-        self.thread = None
-        self.running = False
-        self.lock = threading.Lock()
-        self.frame = None
-
-    def start(self):
-        cmd = [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            self.loglevel,
-        ]
-
-        if self.url.lower().startswith("rtsp://"):
-            cmd += [
-                "-rtsp_transport",
-                self.rtsp_transport,
-                "-fflags",
-                "nobuffer",
-                "-flags",
-                "low_delay",
-            ]
-
-        if self.use_videotoolbox:
-            cmd += [
-                "-hwaccel",
-                "videotoolbox",
-            ]
-
-        cmd += [
-            "-i",
-            self.url,
-            "-an",
-            "-vf",
-            f"scale={self.width}:{self.height}",
-            "-pix_fmt",
-            "bgr24",
-            "-f",
-            "rawvideo",
-            "pipe:1",
-        ]
-
-        self.proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            bufsize=self.frame_size * 4,
-        )
-
-        self.running = True
-        self.thread = threading.Thread(target=self._reader_loop, daemon=True)
-        self.thread.start()
-
-    def _read_exact(self, size):
-        chunks = []
-        remaining = size
-
-        while remaining > 0 and self.running:
-            chunk = self.proc.stdout.read(remaining)
-
-            if not chunk:
-                return None
-
-            chunks.append(chunk)
-            remaining -= len(chunk)
-
-        return b"".join(chunks)
-
-    def _reader_loop(self):
-        while self.running:
-            raw = self._read_exact(self.frame_size)
-
-            if raw is None:
-                self.running = False
-                break
-
-            frame = np.frombuffer(raw, dtype=np.uint8)
-            frame = frame.reshape((self.height, self.width, 3))
-
-            with self.lock:
-                self.frame = frame.copy()
-
-    def read(self):
-        while self.running:
-            with self.lock:
-                if self.frame is not None:
-                    return True, self.frame.copy()
-
-            time.sleep(0.005)
-
-        return False, None
-
-    def release(self):
-        self.running = False
-
-        if self.proc is not None:
-            self.proc.terminate()
-
-            try:
-                self.proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.proc.kill()
-                self.proc.wait()
 
 args = parse_args()
 
@@ -235,38 +72,16 @@ labels = model.names
 resize = False
 if args.resolution:
     resize = True
-    resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
+    resW, resH = frame_capture.parse_resolution(args.resolution)
 
 # Load or initialize image source
-frame_source = None
-
-if args.source_type in ["video", "usb"]:
-    if args.capture_backend == "ffmpeg":
-        if args.source_type == "usb":
-            print("ERROR: FFmpeg backend is intended for video/RTSP sources")
-            print("Use --capture-backend opencv for USB cameras.")
-            sys.exit(1)
-
-        if not args.resolution:
-            print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
-            sys.exit(1)
-
-        frame_source = FFmpegLatestFrameSource(
-            url=args.source,
-            width=resW,
-            height=resH,
-            loglevel=args.ffmpeg_loglevel,
-            use_videotoolbox=platform.system() == "Darwin",
-        )
-        frame_source.start()
-
-    else:
-        frame_source = OpenCVFrameSource(
-            source=args.source,
-            source_type=args.source_type,
-            width=resW if args.resolution else None,
-            height=resH if args.resolution else None,
-        )
+try:
+    config = frame_capture.FrameSourceConfig.from_args(args)
+    frame_source = frame_capture.create_frame_source(config)
+    frame_source.start()
+except ValueError as exc:
+    print(f"ERROR: {exc}")
+    sys.exit(1)
 
 # Set bounding box colors (using the Tableu 10 color scheme)
 bbox_colors = [(164,120,87), (68,148,228), (93,97,209), (178,182,133), (88,159,106), 
@@ -350,7 +165,9 @@ while True:
         cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     
     # Display detection results
-    cv2.putText(frame, f'Number of objects: {object_count}', (10,40), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw total number of detected objects
+    cv2.putText(frame, f'Number of objects: {object_count}', (10,45), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw total number of detected objects
+
+    cv2.putText(frame, f'Threshold: {args.min_thresh:.2f}', (10,70), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw current detection threshold
     cv2.imshow('YOLO detection results',frame) # Display image
 
     # Wait 5ms before moving to next frame.
@@ -359,10 +176,17 @@ while True:
     
     if key == ord('q') or key == ord('Q'): # Press 'q' to quit
         break
-    elif key == ord('s') or key == ord('S'): # Press 's' to pause inference
+    elif key == ord('1'): # Press '1' to pause inference
         cv2.waitKey()
-    elif key == ord('p') or key == ord('P'): # Press 'p' to save a picture of results on this frame
-        cv2.imwrite('capture.png',frame)
+    elif key == ord('-') or key == ord('_'): # Press '-/_' to lower the detection threshold
+        if args.min_thresh > 0.1:
+            args.min_thresh -= 0.05
+    elif key == ord('=') or key == ord('+'): # Press '=/+' to increase the detection threshold
+        if args.min_thresh < 0.90:
+            args.min_thresh += 0.05
+    elif key == ord('2'): # Press '2' to save a picture of results on this frame
+        Path("crab-captures").mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(f'crab-captures/{datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H:%M:%S")}.png',frame)
     
     # Calculate FPS for this frame
     t_stop = time.perf_counter()

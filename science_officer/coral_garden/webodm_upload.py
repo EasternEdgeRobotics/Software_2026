@@ -28,7 +28,7 @@ def parse_args():
 
 args = parse_args()
 
-WEBODM_URL = os.getenv("WEBODM_URL", "http://192.168.2.48:8000").rstrip("/")
+WEBODM_URL = os.getenv("WEBODM_URL", "http://127.0.0.1:8000").rstrip("/")
 USERNAME = os.getenv("WEBODM_USERNAME", "peyton")
 PASSWORD = os.getenv("WEBODM_PASSWORD", "easternedge")
 
@@ -88,6 +88,10 @@ options = [
         "value": "ultra",
     },
     {
+        "name": "bg-removal",
+        "value": True,
+    },
+    {
         "name": "use-3dmesh",
         "value": True,
     },
@@ -98,6 +102,18 @@ options = [
     {
         "name": "mesh-octree-depth",
         "value": 12,
+    },
+    {
+        "name": "matcher-order",
+        "value": 120,
+    },
+    {
+        "name": "matcher-type",
+        "value": "bruteforce",
+    },
+    {
+        "name": "min-num-features",
+        "value": 20000,
     },
 ]
 

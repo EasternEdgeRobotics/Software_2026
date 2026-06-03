@@ -1,23 +1,39 @@
 #include "Image.hpp"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+
 #include <nlohmann/json.hpp>
+
 #include "Config.hpp"
 #include "ROS.hpp"
 #include "Camera.hpp"
+
 #include <iostream>
 #include <cstdint>
 #include <memory>
+
 #include "images/logo.h"
 #include "images/nosignal.h"
+
 #include "streaming/CameraStreamFactory.hpp"
+
 #include <optional>
 #include <stdexcept>
+#include <algorithm>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <cstdlib>
+#include <future>
 
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 UserConfig user_config;
 BlueStarConfig bluestar_config;
@@ -53,6 +69,32 @@ bool cam2ScreenshotButtonPressedLatch = false;
 bool cam3ScreenshotButtonPressedLatch = false;
 bool cam4ScreenshotButtonPressedLatch = false;
 
+int camScreenshotSection = 0;
+
+bool cam1ScreenshotCropEnabled = false;
+float cam1ScreenshotCropLeft = 0.15f;
+float cam1ScreenshotCropRight = 0.15f;
+float cam1ScreenshotCropTop = 0.08f;
+float cam1ScreenshotCropBottom = 0.08f;
+
+bool cam2ScreenshotCropEnabled = false;
+float cam2ScreenshotCropLeft = 0.15f;
+float cam2ScreenshotCropRight = 0.15f;
+float cam2ScreenshotCropTop = 0.08f;
+float cam2ScreenshotCropBottom = 0.08f;
+
+bool cam3ScreenshotCropEnabled = false;
+float cam3ScreenshotCropLeft = 0.15f;
+float cam3ScreenshotCropRight = 0.15f;
+float cam3ScreenshotCropTop = 0.08f;
+float cam3ScreenshotCropBottom = 0.08f;
+
+bool cam4ScreenshotCropEnabled = false;
+float cam4ScreenshotCropLeft = 0.15f;
+float cam4ScreenshotCropRight = 0.15f;
+float cam4ScreenshotCropTop = 0.08f;
+float cam4ScreenshotCropBottom = 0.08f;
+
 bool servo_1_cw_latch = false;
 bool servo_2_cw_latch = false;
 bool servo_3_cw_latch = false;
@@ -77,6 +119,80 @@ const char* app_id = "EasternEdge.BlueStar.Frontend";
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const BlueStarConfig& bluestar_config);
 
+std::string currentScreenshotSectionName;
+fs::path currentScreenshotSectionDir;
+
+void normalizeScreenshotCrop(
+    float& left,
+    float& right,
+    float& top,
+    float& bottom)
+{
+    left = std::clamp(left, 0.0f, 0.95f);
+    right = std::clamp(right, 0.0f, 0.95f);
+    top = std::clamp(top, 0.0f, 0.95f);
+    bottom = std::clamp(bottom, 0.0f, 0.95f);
+
+    const float horizontalCrop = left + right;
+    const float verticalCrop = top + bottom;
+
+    if (horizontalCrop > 0.95f) {
+        const float scale = 0.95f / horizontalCrop;
+        left *= scale;
+        right *= scale;
+    }
+
+    if (verticalCrop > 0.95f) {
+        const float scale = 0.95f / verticalCrop;
+        top *= scale;
+        bottom *= scale;
+    }
+}
+
+std::string makeLocalTimestampForPath() {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
+
+    std::tm localTime {};
+#if defined(_WIN32)
+    localtime_s(&localTime, &nowTime);
+#else
+    localtime_r(&nowTime, &localTime);
+#endif
+
+    std::ostringstream stream;
+    stream << std::put_time(&localTime, "%Y-%m-%d_%H-%M-%S");
+    return stream.str();
+}
+
+fs::path defaultCaptureRoot() {
+    const char* home = std::getenv("HOME");
+
+    if (!home) {
+        return fs::path("bluestar_captures");
+    }
+
+    return fs::path(home) / "Pictures" / "bluestar_captures";
+}
+
+std::string makeSectionName(int section) {
+    return "section_" + std::to_string(section);
+}
+
+std::string shellQuote(const std::string& value) {
+    std::string quoted = "'";
+
+    for (char c : value) {
+        if (c == '\'') {
+            quoted += "'\\''";
+        } else {
+            quoted += c;
+        }
+    }
+
+    quoted += "'";
+    return quoted;
+}
 
 struct CliOptions {
     std::optional<std::string> userConfigName;
@@ -134,6 +250,16 @@ bool loadUserConfigFromJson(
 
         showPilotWindow = output.show_co_pilot_window;
         showCameraWindow = output.show_camera_window;
+
+        output.cam1_enable_crop = configData.value("cam1_enable_crop", false);
+        output.cam2_enable_crop = configData.value("cam2_enable_crop", false);
+        output.cam3_enable_crop = configData.value("cam3_enable_crop", false);
+        output.cam4_enable_crop = configData.value("cam4_enable_crop", false);
+
+        cam1ScreenshotCropEnabled = output.cam1_enable_crop;
+        cam2ScreenshotCropEnabled = output.cam2_enable_crop;
+        cam3ScreenshotCropEnabled = output.cam3_enable_crop;
+        cam4ScreenshotCropEnabled = output.cam4_enable_crop;
 
         output.buttonActions.clear();
         output.axisActions.clear();
@@ -380,6 +506,7 @@ int main(int argc, char **argv) {
 
             if (!configData["cam4_video_caps"].is_null()) std::snprintf(bluestar_config.cam4_video_caps, sizeof(bluestar_config.cam4_video_caps), "%s",configData["cam4_video_caps"].get<std::string>().c_str());
             if (!configData["cam4_audio_caps"].is_null()) std::snprintf(bluestar_config.cam4_audio_caps, sizeof(bluestar_config.cam4_audio_caps), "%s",configData["cam4_audio_caps"].get<std::string>().c_str());
+
             break;
         }
     }
@@ -388,6 +515,85 @@ int main(int argc, char **argv) {
     Camera cam2(bluestar_config.cam2ip, bluestar_config.cam2_video_caps, bluestar_config.cam2_audio_caps, noSignal, 2);
     Camera cam3(bluestar_config.cam3ip, bluestar_config.cam3_video_caps, bluestar_config.cam3_audio_caps, noSignal, 3);
     Camera cam4(bluestar_config.cam4ip, bluestar_config.cam4_video_caps, bluestar_config.cam4_audio_caps, noSignal, 4);
+
+    const std::string captureSessionId = makeLocalTimestampForPath();
+
+    const fs::path captureRoot = defaultCaptureRoot();
+    const fs::path captureSessionDir = captureRoot / captureSessionId;
+
+    std::error_code captureDirError;
+    fs::create_directories(captureSessionDir, captureDirError);
+
+    if (captureDirError) {
+        std::cerr << "Failed to create capture session directory: "
+                << captureSessionDir << std::endl;
+    } else {
+        std::cout << "Capture session directory: " << captureSessionDir
+                << std::endl;
+    }
+
+    auto updateScreenshotSection = [&]() {
+        const std::string sectionName = makeSectionName(camScreenshotSection);
+        const fs::path sectionDir = captureSessionDir / sectionName;
+
+        currentScreenshotSectionName = sectionName;
+        currentScreenshotSectionDir = sectionDir;
+
+        std::error_code sectionDirError;
+        fs::create_directories(sectionDir, sectionDirError);
+
+        if (sectionDirError) {
+            std::cerr << "Failed to create section directory: " << sectionDir
+                    << std::endl;
+        }
+
+        cam1.setScreenshotSuffix(sectionName);
+        cam2.setScreenshotSuffix(sectionName);
+        cam3.setScreenshotSuffix(sectionName);
+        cam4.setScreenshotSuffix(sectionName);
+
+        cam1.setScreenshotDirectory(sectionDir.string());
+        cam2.setScreenshotDirectory(sectionDir.string());
+        cam3.setScreenshotDirectory(sectionDir.string());
+        cam4.setScreenshotDirectory(sectionDir.string());
+
+        std::cout << "Screenshot section set to: " << sectionName << std::endl;
+        std::cout << "Screenshot directory set to: " << sectionDir << std::endl;
+    };
+
+    updateScreenshotSection();
+
+    auto updateScreenshotCrop = [&]() {
+        cam1.setScreenshotCrop(
+            cam1ScreenshotCropEnabled,
+            cam1ScreenshotCropLeft,
+            cam1ScreenshotCropRight,
+            cam1ScreenshotCropTop,
+            cam1ScreenshotCropBottom);
+
+        cam2.setScreenshotCrop(
+            cam2ScreenshotCropEnabled,
+            cam2ScreenshotCropLeft,
+            cam2ScreenshotCropRight,
+            cam2ScreenshotCropTop,
+            cam2ScreenshotCropBottom);
+
+        cam3.setScreenshotCrop(
+            cam3ScreenshotCropEnabled,
+            cam3ScreenshotCropLeft,
+            cam3ScreenshotCropRight,
+            cam3ScreenshotCropTop,
+            cam3ScreenshotCropBottom);
+
+        cam4.setScreenshotCrop(
+            cam4ScreenshotCropEnabled,
+            cam4ScreenshotCropLeft,
+            cam4ScreenshotCropRight,
+            cam4ScreenshotCropTop,
+            cam4ScreenshotCropBottom);
+    };
+
+    updateScreenshotCrop();
 
     cam1.start();
     cam2.start();
@@ -468,6 +674,7 @@ int main(int argc, char **argv) {
                         }
                         if (ImGui::MenuItem(names[i].c_str())) {
                             loadUserConfigFromJson(user_config, names[i], configs[i]);
+                            updateScreenshotCrop();
                         }
                     }
                     ImGui::EndMenu();
@@ -1025,9 +1232,57 @@ int main(int argc, char **argv) {
 
                         ImGui::EndTable();
                     }
+                    ImGui::SeparatorText("VET (Virtual Electrical Tape) Settings");
+                    if (ImGui::BeginTable("Camera Crop", 6, ImGuiTableFlags_Borders |
+                                     ImGuiTableFlags_RowBg |
+                                     ImGuiTableFlags_SizingStretchSame |
+                                     ImGuiTableFlags_Borders |
+                                     ImGuiTableFlags_Resizable)) {
+                    
+                        ImGui::TableSetupColumn("Camera", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                        ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                        ImGui::TableSetupColumn("Crop Left", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Crop Right", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Crop Top", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Crop Bottom", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableHeadersRow();
+                        
+                        bool* CropEnabled[] = {&cam1ScreenshotCropEnabled, &cam2ScreenshotCropEnabled, &cam3ScreenshotCropEnabled, &cam4ScreenshotCropEnabled,};
+                        float* CropLeft[] = {&cam1ScreenshotCropLeft, &cam2ScreenshotCropLeft, &cam3ScreenshotCropLeft, &cam4ScreenshotCropLeft,};
+                        float* CropRight[] = {&cam1ScreenshotCropRight, &cam2ScreenshotCropRight, &cam3ScreenshotCropRight, &cam4ScreenshotCropRight,};
+                        float* CropTop[] = {&cam1ScreenshotCropTop, &cam2ScreenshotCropTop, &cam3ScreenshotCropTop, &cam4ScreenshotCropTop,};
+                        float* CropBottom[] = {&cam1ScreenshotCropBottom, &cam2ScreenshotCropBottom, &cam3ScreenshotCropBottom, &cam4ScreenshotCropBottom,};
+                        bool cropChanged[4] = {};
 
+                        for (size_t cam = 0; cam < 4; ++cam) {
+                            ImGui::TableNextRow();
+
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::Text("Camera %zu", cam + 1);
+
+                            ImGui::TableSetColumnIndex(1);
+                            cropChanged[cam] |= ImGui::Checkbox((std::string("##camera_crop_enabled_") + std::to_string(cam)).c_str(), CropEnabled[cam]);
+                            ImGui::TableSetColumnIndex(2);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_left_") + std::to_string(cam)).c_str(), CropLeft[cam], 0.0f, 0.95f,"%.2f");
+                            ImGui::TableSetColumnIndex(3);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_right_") + std::to_string(cam)).c_str(), CropRight[cam], 0.0f, 0.95f,"%.2f");
+                            ImGui::TableSetColumnIndex(4);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_top_") + std::to_string(cam)).c_str(), CropTop[cam], 0.0f, 0.95f,"%.2f");
+                            ImGui::TableSetColumnIndex(5);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            cropChanged[cam] |= ImGui::SliderFloat((std::string("##camera_crop_bottom_") + std::to_string(cam)).c_str(), CropBottom[cam], 0.0f, 0.95f,"%.2f");
+
+                            if (cropChanged[cam]) {
+                                normalizeScreenshotCrop(*CropLeft[cam], *CropRight[cam], *CropTop[cam], *CropBottom[cam]);
+                                updateScreenshotCrop();
+                            }
+                        }
+                        ImGui::EndTable();
+                    }
                     ImGui::EndTabItem();
-
                 }
                 if (ImGui::BeginTabItem("BlueStar Config")){
                     if (!(keyboard_mode || glfwJoystickPresent(GLFW_JOYSTICK_1)))
@@ -1323,6 +1578,11 @@ int main(int argc, char **argv) {
                         for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                             configJson["mappings"]["0"]["axes"][i] = axisActionCodes[static_cast<int>(user_config.axisActions[i])];
                         }
+                        
+                        configJson["cam1_enable_crop"] = cam1ScreenshotCropEnabled;
+                        configJson["cam2_enable_crop"] = cam2ScreenshotCropEnabled;
+                        configJson["cam3_enable_crop"] = cam3ScreenshotCropEnabled;
+                        configJson["cam4_enable_crop"] = cam4ScreenshotCropEnabled;
 
                         saveConfigNode->saveConfig(string(user_config.name), configJson.dump());
                     }

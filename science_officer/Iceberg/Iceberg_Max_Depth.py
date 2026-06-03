@@ -8,240 +8,66 @@ import numpy as np
 import time
 import platform
 import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
 
+from shared import frame_capture
+from shared import opencv_helpers
+from shared import fisheye_list
+from shared import common_args
+
+FISHEYE_INVALID = False
+PINHOLE_INVALID = False
+
+TOP_PIPE_REF_CM = 64.0
+KNOWN_VERTICAL_REF_CM = 15.0
+
 def parse_args():
-    parser = argparse.ArgumentParser(description="Measure iceburgs with BlueStar")
+    parser = argparse.ArgumentParser(description="Measure icebergs with BlueStar")
+
+    common_args.video_args(parser)
+    common_args.fisheye_args(parser)
+    common_args.measurement_args(parser)
 
     parser.add_argument(
-        "--source-type",
-        default="video",
-        help="video or usb"
-    )
-
-    parser.add_argument(
-        "--source",
-        default="rtsp://192.168.137.200:8889/cam2",
-        help="Video source (ie usb0, rtsp://192.168.137.200:8889/cam2)"
-    )
-
-    parser.add_argument(
-        "--resolution",
-        default="1260x720",
-        help="Source resolution"
-    )
-
-    parser.add_argument(
-        "--capture-backend",
-        default="opencv",
-        choices=["opencv", "ffmpeg"],
-        help="Frame capture backend. Use ffmpeg for RTSP",
-    )
-
-    parser.add_argument(
-        "--ffmpeg-loglevel",
-        default="error",
-        help="FFmpeg loglevel: quiet, error, warning, info, debug",
+        "--disable-vertical-pole",
+        default=False,
+        action="store_true",
+        help="Disable using the vertical pole for measurement refrence",
     )
 
     return parser.parse_args()
 
-class OpenCVFrameSource:
-    def __init__(self, source, source_type, width=None, height=None):
-        if source_type == "usb":
-            cap_arg = int(source[3:])
-        else:
-            cap_arg = source
-
-        self.cap = cv2.VideoCapture(cap_arg)
-
-        if width is not None and height is not None:
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
-    def read(self):
-        return self.cap.read()
-
-    def release(self):
-        self.cap.release()
-
-class FFmpegLatestFrameSource:
-    def __init__(
-        self,
-        url,
-        width,
-        height,
-        rtsp_transport="tcp",
-        loglevel="error",
-        use_videotoolbox=True,
-    ):
-        self.url = url
-        self.width = width
-        self.height = height
-        self.frame_size = width * height * 3
-        self.rtsp_transport = rtsp_transport
-        self.loglevel = loglevel
-        self.use_videotoolbox = use_videotoolbox
-
-        self.proc = None
-        self.thread = None
-        self.running = False
-        self.lock = threading.Lock()
-        self.frame = None
-
-    def start(self):
-        cmd = [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            self.loglevel,
-        ]
-
-        if self.url.lower().startswith("rtsp://"):
-            cmd += [
-                "-rtsp_transport",
-                self.rtsp_transport,
-                "-fflags",
-                "nobuffer",
-                "-flags",
-                "low_delay",
-            ]
-
-        if self.use_videotoolbox:
-            cmd += [
-                "-hwaccel",
-                "videotoolbox",
-            ]
-
-        cmd += [
-            "-i",
-            self.url,
-            "-an",
-            "-vf",
-            f"scale={self.width}:{self.height}",
-            "-pix_fmt",
-            "bgr24",
-            "-f",
-            "rawvideo",
-            "pipe:1",
-        ]
-
-        self.proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            bufsize=self.frame_size * 4,
-        )
-
-        self.running = True
-        self.thread = threading.Thread(target=self._reader_loop, daemon=True)
-        self.thread.start()
-
-    def _read_exact(self, size):
-        chunks = []
-        remaining = size
-
-        while remaining > 0 and self.running:
-            chunk = self.proc.stdout.read(remaining)
-
-            if not chunk:
-                return None
-
-            chunks.append(chunk)
-            remaining -= len(chunk)
-
-        return b"".join(chunks)
-
-    def _reader_loop(self):
-        while self.running:
-            raw = self._read_exact(self.frame_size)
-
-            if raw is None:
-                self.running = False
-                break
-
-            frame = np.frombuffer(raw, dtype=np.uint8)
-            frame = frame.reshape((self.height, self.width, 3))
-
-            with self.lock:
-                self.frame = frame.copy()
-
-    def read(self):
-        while self.running:
-            with self.lock:
-                if self.frame is not None:
-                    return True, self.frame.copy()
-
-            time.sleep(0.005)
-
-        return False, None
-
-    def release(self):
-        self.running = False
-
-        if self.proc is not None:
-            self.proc.terminate()
-
-            try:
-                self.proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.proc.kill()
-                self.proc.wait()
-
 args = parse_args()
 
+# Initialize image source
+try:
+    config = frame_capture.FrameSourceConfig.from_args(args)
+    frame_source = frame_capture.create_frame_source(config)
+    frame_source.start()
+except ValueError as exc:
+    print(f"ERROR: {exc}")
+    sys.exit(1)
+
 # Parse user-specified display resolution
-resize = False
 if args.resolution:
-    resize = True
-    resW, resH = int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])
+    resW, resH = frame_capture.parse_resolution(args.resolution)
 
-# Load or initialize image source
-frame_source = None
+# Load certain fisheye correction profiles based off the source
+K_FISHEYE, D_FISHEYE, K_PINHOLE, D_PINHOLE = fisheye_list.get_correction(args.source, resW, resH)
 
-if args.source_type in ["video", "usb"]:
-    if args.capture_backend == "ffmpeg":
-        if args.source_type == "usb":
-            print("ERROR: FFmpeg backend is intended for video/RTSP sources")
-            print("Use --capture-backend opencv for USB cameras.")
-            sys.exit(1)
+if K_PINHOLE is None and D_PINHOLE is None:
+    PINHOLE_INVALID = True
+    print(f"No pinhole correction maps availble for: {args.source}")
+if K_FISHEYE is None and D_FISHEYE is None:
+    FISHEYE_INVALID = True
+    print(f"No fisheye correction maps availble for: {args.source}")
 
-        if not args.resolution:
-            print("ERROR: FFmpeg backend requires --resolution WIDTHxHEIGHT.")
-            sys.exit(1)
-
-        frame_source = FFmpegLatestFrameSource(
-            url=args.source,
-            width=resW,
-            height=resH,
-            loglevel=args.ffmpeg_loglevel,
-            use_videotoolbox=platform.system() == "Darwin",
-        )
-        frame_source.start()
-
-    else:
-        frame_source = OpenCVFrameSource(
-            source=args.source,
-            source_type=args.source_type,
-            width=resW if args.resolution else None,
-            height=resH if args.resolution else None,
-        )
-
-def text_with_background(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1, text_color=(255, 255, 255), bg_color=(0, 0, 0), thickness=2, padding=5,):
-    x, y = position
-
-    text_size, baseline = cv2.getTextSize(text, font, font_scale, thickness)
-    text_width, text_height = text_size
-
-    top_left = (x - padding, y - text_height - padding)
-    bottom_right = (x + text_width + padding, y + baseline + padding)
-
-    cv2.rectangle(img, top_left, bottom_right, bg_color, cv2.FILLED)
-
-    cv2.putText(img, text, position, font, font_scale, text_color, thickness, cv2.LINE_AA,)
-
-def points(event,x,y,flags,param):
+def points(event, x, y, flags, param):
         clicked_points = param
         global mouse_x, mouse_y
         if event == cv2.EVENT_MOUSEMOVE:
@@ -266,7 +92,14 @@ def line_distance(p1,p2):
 def cam_mode():
         heights = []
         clicked_points = []
-        auto = True
+        freeze = False
+
+        if args.fisheye_type == "pinhole" and PINHOLE_INVALID == False:
+            map1, map2 = opencv_helpers.prepare_pinhole(K_PINHOLE, D_PINHOLE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])))
+        elif args.fisheye_type == "fisheye" and FISHEYE_INVALID == False:
+            balance = 0.3
+            map1, map2 = opencv_helpers.prepare_fisheye(K_FISHEYE, D_FISHEYE, (int(args.resolution.split('x')[0]), int(args.resolution.split('x')[1])), balance)
+
         while True:
             # Capture frame-by-frame
             ret, frame = frame_source.read()
@@ -275,10 +108,17 @@ def cam_mode():
             if not ret:
                 print("Error: Failed to capture frame.")
                 break
-            
+
             #Renaming variable
             global img1
             img1 = frame[:]
+
+            if args.fisheye_correction == True:
+                if args.fisheye_type == "pinhole" and PINHOLE_INVALID == False: # I dont think this is actually needed, but i cant test it so im not risking it. -PC
+                    img1 = cv2.remap(img1, map1, map2, interpolation=cv2.INTER_LINEAR)
+                elif args.fisheye_type == "fisheye" and FISHEYE_INVALID == False:
+                    img1 = cv2.remap(img1, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+
             #Honestly forget what this does
             #i think it checks for the last two bytes to indicate letter "q" so press q
             #if in loop it would probably be useful for screenshotting if wanted
@@ -287,63 +127,126 @@ def cam_mode():
         
             key = cv2.waitKey(1)
             if key & 0xFF == ord('2'):
-                
-                auto = False
-                print("auto is false")
-                photo = img1.copy()
+                freeze = not freeze
+                if freeze:
+                    print("Frozen")
+                    photo = img1.copy()
             
-            if key & 0xFF == ord('3'):
+            if key == ord('q') or key == ord('Q'):
                 mode = 3
                 break
 
-            if auto:
+            if key == ord('3'): # Reset points
+                clicked_points = []
             
-                draw_mode(img1,heights,clicked_points)
-            
+            if key == ord('4'): # Toggle Fisheye correction
+                args.fisheye_correction = not args.fisheye_correction
+
+            if key == ord('5'): # Toggle vertical pole reference 
+                args.disable_vertical_pole = not args.disable_vertical_pole
+                clicked_points = []
+
+            if not freeze:
+                clicked_points = draw_mode(img1,heights,clicked_points)
             else: 
-                
-                draw_mode(photo,heights,clicked_points)
+                clicked_points = draw_mode(photo,heights,clicked_points)
             
         return heights
-    
-def draw_mode(picture,heights, clicked_points):
 
-        imgconst = picture.copy()
+def draw_mode(picture,heights, clicked_points):
         global rheight
         rheight = 0
-        
-        img2 = imgconst.copy()
-        
-        #print(f"Mouse Position: ({mouse_x},{mouse_y})")
-    
-        if mouse_x != -1:
-            cv2.circle(img2,(mouse_x,mouse_y),10,(50,50,255),-1)
-        for point in clicked_points:
-            cv2.circle(img2,point,10,(50,0,255),-1)
-        if len(clicked_points) > 1:
-            cv2.line(img2, clicked_points[0], clicked_points[1],(255,0,0),5)
-        if len(clicked_points) == 4:
-            cv2.line(img2, clicked_points[2], clicked_points[3],(0,0,255),5)
-            width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
-            height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
-            
-            rwidth = 60
-            if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
-                rheight = rwidth/width_pxdistance*height_pxdistance
-                rheight = round(rheight,2)
-                text_with_background(img2, f"{rwidth}cm", clicked_points[0])
-                text_with_background(img2, f"{rheight}cm", clicked_points[3])
+
+        img2 = picture.copy()
                 
-            else:
-                 print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
+        #print(f"Mouse Position: ({mouse_x},{mouse_y})")
+        point_colours = [
+            (0, 255, 0),
+            (0, 255, 0),
+            (255, 0, 0),
+            (255, 0, 0),
+        ]
+        
+        for i, point in enumerate(clicked_points):
+            cv2.circle(img2, point, 10, point_colours[i], -1)
+
+        if args.follow_mouse == True:
+            overlay = img2.copy()
+
+            if len(clicked_points) == 1: 
+                cv2.line(overlay, clicked_points[0], (mouse_x, mouse_y), point_colours[0], 5,)
+            elif len(clicked_points) == 2 and args.disable_vertical_pole == False:
+                cv2.line(overlay, clicked_points[1], (mouse_x, mouse_y), point_colours[1], 5,)
+            elif len(clicked_points) == 3: 
+                cv2.line(overlay, clicked_points[2], (mouse_x, mouse_y), point_colours[2], 5,)
             
-        cv2.imshow("Iceburg Measurement", img2 )
-        cv2.setMouseCallback('Iceburg Measurement', points, param = clicked_points)
+            alpha = 0.4
+            img2 = cv2.addWeighted(overlay, alpha, img2, 1 - alpha, 0)
+
+        if args.disable_vertical_pole == False:
+            if len(clicked_points) >= 2: # Known 15 cm pole: point 1 to point 2
+                cv2.line(img2, clicked_points[0], clicked_points[1], (0, 255, 0), 5,)
+
+            if len(clicked_points) >= 3: # Top 60 cm pipe: point 2 to point 3
+                cv2.line(img2, clicked_points[1], clicked_points[2], (0, 0, 255), 5,)
+
+            if len(clicked_points) >= 4: # Unknown variable pole: point 3 to point 4
+                cv2.line(img2, clicked_points[2], clicked_points[3], (255, 0, 0), 5,)
+            
+                known_pole_px = line_distance(clicked_points[0], clicked_points[1])
+                top_pipe_px = line_distance(clicked_points[1], clicked_points[2])
+                unknown_pole_px = line_distance(clicked_points[2], clicked_points[3])
+
+                if known_pole_px != 0 and top_pipe_px != 0 and unknown_pole_px != 0:
+                    vertical_cm_per_px = KNOWN_VERTICAL_REF_CM / known_pole_px
+                    horizontal_cm_per_px = TOP_PIPE_REF_CM / top_pipe_px
+
+                    avg_known_cm_per_px = sum((vertical_cm_per_px, horizontal_cm_per_px)) / len((vertical_cm_per_px, horizontal_cm_per_px))
+
+                    unknown_from_vertical_ref_cm = unknown_pole_px * avg_known_cm_per_px
+
+                    rheight = round(unknown_from_vertical_ref_cm, 2)
+
+                    opencv_helpers.text_with_background(img2, f"Top Ref: {TOP_PIPE_REF_CM}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Pole Ref: {KNOWN_VERTICAL_REF_CM}cm", (10,70))
+                    opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,110))
+
+                else:
+                    print("Invalid points:", known_pole_px, top_pipe_px, unknown_pole_px,)
+                    clicked_points = []
+
+
+        else:
+            if len(clicked_points) >= 2:
+                cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
+            if len(clicked_points) == 4:
+                cv2.line(img2, clicked_points[2], clicked_points[3],(255,0,0),5)
+                width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
+                height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
+                
+                rwidth = 64
+                if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
+                    rheight = rwidth/width_pxdistance*height_pxdistance
+                    rheight = round(rheight,2)
+                    opencv_helpers.text_with_background(img2, f"Ref: {rwidth}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
+                    
+                else:
+                    print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
+                    clicked_points = []
+
+        if mouse_x != -1:
+            opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
+            
+        cv2.imshow("Iceberg Measurement", img2 )
+        cv2.setMouseCallback('Iceberg Measurement', points, param = clicked_points)
 
         if key & 0xFF == ord('1'):
             if rheight not in heights and rheight != 0:
                 heights.append(rheight)
                 print("New Height: ", rheight)
+
+        return clicked_points
 
 def main():
     global mouse_x,mouse_y
@@ -359,13 +262,16 @@ def main():
             if frame_source is not None:
                 frame_source.release()
             cv2.destroyAllWindows()
-            N = len(heights)
-            avg = sum(heights)/N
-            avg = round(avg,2)
-            print(f"Average Depth {avg}")
+
+            if len(heights) != 0:
+                avg = sum(heights)/len(heights)
+                avg = round(avg,2)
+                print(f"Average Depth {avg}")
+
             break
         elif mode == 1:
             heights = cam_mode()
-            print(heights)
+            if len(heights) != 0:
+                print(heights)
 
 main()

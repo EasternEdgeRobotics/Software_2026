@@ -61,6 +61,11 @@ class UserConfig {
 
         bool show_co_pilot_window = false;
         bool show_camera_window = false;
+
+        bool cam1_enable_crop = false;
+        bool cam2_enable_crop = false;
+        bool cam3_enable_crop = false;
+        bool cam4_enable_crop = false;
 };
 
 class BlueStarConfig {

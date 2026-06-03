@@ -9,6 +9,8 @@
 #include <string>
 #include <future>
 #include <vector>
+#include <deque>
+#include <cstdint>
 
 class CameraStream;
 
@@ -29,6 +31,15 @@ public:
     void flip_vertically();
     void flip_horizontally();
     bool screenshot();
+    void waitForScreenshotWrites();
+    void setScreenshotSuffix(const std::string& suffix);
+    void setScreenshotDirectory(const std::string& directory);
+    void setScreenshotCrop(
+        bool enabled,
+        float left,
+        float right,
+        float top,
+        float bottom);
 
 private:
     void syncStream();
@@ -37,11 +48,13 @@ private:
     void destroyGlResources();
     bool saveScreenshot();
     void drainScreenshotWrites(bool wait);
+    void drawScreenshotCropOverlay(const ImVec2& imageMin, const ImVec2& imageMax) const;
 
     char (&urlPtr)[512];
     char (&videoCapsPtr)[1024];
     char (&audioCapsPtr)[1024];
     unsigned int fallback;
+    int cameraNumber = 0;
     std::string label;
 
     std::unique_ptr<CameraStream> stream;
@@ -53,6 +66,9 @@ private:
     bool flip_frame_vertically = false;
     bool flip_frame_horizontally = false;
     bool take_screenshot = false;
+
+    std::string screenshotSuffix = "section_0";
+    std::string screenshotDirectory;
     
     GLuint texY = 0;
     GLuint texUV = 0;
@@ -64,10 +80,16 @@ private:
     int fboWidth = 0;
     int fboHeight = 0;
 
+    bool screenshotCropEnabled = false;
+    float screenshotCropLeft = 0.0f;
+    float screenshotCropRight = 0.0f;
+    float screenshotCropTop = 0.0f;
+    float screenshotCropBottom = 0.0f;
+
     bool hasReceivedFrame = false;
     std::chrono::steady_clock::time_point lastFrameTime;
     std::chrono::steady_clock::time_point streamStartTime;
-    std::chrono::steady_clock::time_point lastReconnectAttempt; 
+    std::chrono::steady_clock::time_point lastReconnectAttempt;
     std::vector<std::future<bool>> screenshotWrites;
 };
 
