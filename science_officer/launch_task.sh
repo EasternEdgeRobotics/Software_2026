@@ -243,11 +243,15 @@ start_iceberg() {
   require_file "$ICEBERG_SPREADSHEET"
 
   open_calc "$ICEBERG_SPREADSHEET"
+  sleep 1
   open_default "$ICEBERG_EXAMPLE_DOC"
+  sleep 1
 
   launch_terminal \
     "Iceberg Measurement" \
     "$(build_python_command "$ICEBERG_SCRIPT" "${ICEBERG_ARGS[@]}")"
+  
+  sleep 1
 }
 
 start_crab() {
