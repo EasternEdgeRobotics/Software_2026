@@ -43,7 +43,7 @@ CRAB_ARGS_MACOS=(
 
 CRAB_REPORTING_FORM_URL="https://cbjfq.share.hsforms.com/2rHEWllQ5QO6D7Z4CwVM7IQ"
 
-SCIENCE_OFFICER_GUI_PATH="$ROOT_DIR/ros_workspace/src/bluestar_officer_frontend/build/bluestar_officer_frontend"
+SCIENCE_OFFICER_GUI_PATH="$PROJECT_DIR/bluestar_officer_frontend/build/bluestar_officer_frontend"
 echo $SCIENCE_OFFICER_GUI_PATH
 
 # How long to wait before opening localhost:8000 after starting Coral.
@@ -243,11 +243,15 @@ start_iceberg() {
   require_file "$ICEBERG_SPREADSHEET"
 
   open_calc "$ICEBERG_SPREADSHEET"
+  sleep 1
   open_default "$ICEBERG_EXAMPLE_DOC"
+  sleep 1
 
   launch_terminal \
     "Iceberg Measurement" \
     "$(build_python_command "$ICEBERG_SCRIPT" "${ICEBERG_ARGS[@]}")"
+  
+  sleep 1
 }
 
 start_crab() {

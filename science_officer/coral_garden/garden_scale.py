@@ -23,7 +23,7 @@ from shared import common_args
 FISHEYE_INVALID = False
 PINHOLE_INVALID = False
 
-HORI_REF = 48.5
+HORI_REF = 49
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Measure the coral garden scale with BlueStar")
