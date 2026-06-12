@@ -3,7 +3,7 @@ import os, sys
 from pathlib import Path
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Upload images from BlueStar to WebODM")
+    parser = argparse.ArgumentParser(description="Upload images from BlueStar to RealityKit")
 
     parser.add_argument(
         "--image-dir",
@@ -28,7 +28,9 @@ def main():
     session_name = session_dir.name
     section_name = image_dir.name
 
-    realitykit_scale_location = f"{Path.home()}/Developer/Eastern Edge/Software_2026/science_officer/coral_garden/realitykit_scale/.build/release/realitykit_scale"
+    script_dir = Path(__file__).resolve().parent
+
+    realitykit_scale_location = (script_dir / ".build" / "release" / "realitykit_scale").resolve()
     output_path = f"{Path.home()}/Pictures/bluestar_scans/{session_name}/{section_name}/"
     print(realitykit_scale_location)
 
