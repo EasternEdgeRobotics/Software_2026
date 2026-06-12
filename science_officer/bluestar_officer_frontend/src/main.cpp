@@ -312,10 +312,10 @@ std::string defaultWebodmUploadScript() {
     const char* home = std::getenv("HOME");
 
     if (!home || home[0] == '\0') {
-        return "webodm_upload.py";
+        return "compat_layer.py";
     }
 
-    return (fs::path(home) / "Developer" / "Eastern Edge" / "Software_2026" / "science_officer" / "coral_garden" / "webodm_upload.py" ).string();
+    return (fs::path(home) / "Developer" / "Eastern Edge" / "Software_2026" / "science_officer" / "coral_garden" / "realitykit_scale" / "compat_layer.py" ).string();
 }
 
 int main() {
@@ -489,7 +489,7 @@ int main() {
     updateScreenshotCrop();
 
     std::future<int> webodmUploadFuture;
-    std::string webodmUploadStatus = "WebODM: idle";
+    std::string webodmUploadStatus = "Photogramatry: idle";
 
     auto pollWebodmUpload = [&]() {
         if (!webodmUploadFuture.valid()) {
@@ -507,17 +507,17 @@ int main() {
             const int exitCode = webodmUploadFuture.get();
 
             if (exitCode == 0) {
-                webodmUploadStatus = "WebODM: upload complete";
+                webodmUploadStatus = "Photogrammetry: upload / processing complete";
             } else {
                 webodmUploadStatus =
-                    "WebODM: upload failed, exit code " +
+                    "Photogrammetry: failed, exit code " +
                     std::to_string(exitCode);
             }
         } catch (const std::exception& e) {
             webodmUploadStatus =
-                std::string("WebODM: upload failed: ") + e.what();
+                std::string("Photogrammetry: upload / processing failed: ") + e.what();
         } catch (...) {
-            webodmUploadStatus = "WebODM: upload failed with unknown error";
+            webodmUploadStatus = "Photogrammetry: failed with unknown error";
         }
 
         return false;
@@ -528,13 +528,13 @@ int main() {
         if (webodmUploadFuture.valid() &&
             webodmUploadFuture.wait_for(std::chrono::milliseconds(0)) !=
                 std::future_status::ready) {
-            webodmUploadStatus = "WebODM: upload already running";
+            webodmUploadStatus = "Photogrammetry: already running";
             return;
         }
 
         if (!fs::exists(sectionDir)) {
             webodmUploadStatus =
-                "WebODM: section directory does not exist: " +
+                "Photogrammetry: section directory does not exist: " +
                 sectionDir.string();
             return;
         }
@@ -546,9 +546,9 @@ int main() {
             " --section " + shellQuote(sectionName) +
             " --image-dir " + shellQuote(sectionDir.string());
 
-        std::cout << "Launching WebODM upload: " << command << std::endl;
+        std::cout << "Launching Photogrammetry: " << command << std::endl;
 
-        webodmUploadStatus = "WebODM: uploading " + sectionName;
+        webodmUploadStatus = "Photogrammetry: processing " + sectionName;
 
         webodmUploadFuture = std::async(
             std::launch::async,
@@ -955,7 +955,7 @@ int main() {
                         ImGui::EndTable();
                     }
 
-                    ImGui::SeparatorText("Screenshot Crop");
+                    ImGui::SeparatorText("VET (Virtual Electrical Tape) Settings");
                     if (ImGui::BeginTable("Camera Crop", 6, ImGuiTableFlags_Borders |
                                      ImGuiTableFlags_RowBg |
                                      ImGuiTableFlags_SizingStretchSame |
@@ -1032,7 +1032,7 @@ int main() {
                     ImGui::Text("4 - Crop Camera 4");
                     ImGui::SeparatorText("Other");
                     ImGui::Text("T - Increment Section");
-                    ImGui::Text("U - Upload to WebODM");
+                    ImGui::Text("U - Start Photogramatry");
                     
                     ImGui::EndTabItem();
                 }
