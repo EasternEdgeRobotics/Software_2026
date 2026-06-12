@@ -1,5 +1,5 @@
 import argparse
-import os, sys
+import os, sys, platform
 from pathlib import Path
 
 def parse_args():
@@ -53,4 +53,7 @@ def main():
     return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if platform.system() == "Darwin":
+        sys.exit(main())
+    else:
+        sys.exit(f"Unsupported Host: {platform.system()}")
