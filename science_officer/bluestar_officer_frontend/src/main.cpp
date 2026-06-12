@@ -204,6 +204,8 @@ json bluestarConfigToJson(const BlueStarConfig& config) {
 
         {"cam4_video_caps", config.cam4_video_caps},
         {"cam4_audio_caps", config.cam4_audio_caps},
+
+        {"photogrammetry_script", config.photogrammetry_script},
     };
 }
 
@@ -274,6 +276,8 @@ bool loadBluestarConfigFromFile(
 
         copyJsonString(data, "cam4_video_caps", config.cam4_video_caps);
         copyJsonString(data, "cam4_audio_caps", config.cam4_audio_caps);
+
+        copyJsonString(data, "photogrammetry_script", config.photogrammetry_script);
     } catch (const std::exception& e) {
         std::cerr << "Failed to parse config file " << path << ": "
                   << e.what() << std::endl;
@@ -302,20 +306,18 @@ std::string shellQuote(const std::string& value) {
     return quoted;
 }
 
-std::string defaultWebodmUploadScript() {
+std::string photogrammetryScript(const BlueStarConfig& config) {
     const char* script = std::getenv("BLUESTAR_WEBODM_SCRIPT");
 
     if (script && script[0] != '\0') {
         return script;
     }
 
-    const char* home = std::getenv("HOME");
-
-    if (!home || home[0] == '\0') {
-        return "compat_layer.py";
+    if (config.photogrammetry_script[0] != '\0') {
+        return config.photogrammetry_script;
     }
 
-    return (fs::path(home) / "Developer" / "Eastern Edge" / "Software_2026" / "science_officer" / "coral_garden" / "realitykit_scale" / "compat_layer.py" ).string();
+    return "";
 }
 
 int main() {
@@ -539,7 +541,13 @@ int main() {
             return;
         }
 
-        const std::string scriptPath = defaultWebodmUploadScript();
+        const std::string scriptPath = photogrammetryScript(bluestar_config);
+
+        if (scriptPath.empty()) {
+            webodmUploadStatus =
+                "Photogrammetry: no script configured. Set it in Config Editor.";
+            return;
+        }
 
         const std::string command =
             "python3 " + shellQuote(scriptPath) +
@@ -866,7 +874,7 @@ int main() {
                         "Config file: %s",
                         configPath.string().c_str());
 
-                    if (ImGui::Button("Save Camera Config")) {
+                    if (ImGui::Button("Save Config")) {
                         if (saveBluestarConfigToFile(
                                 configPath,
                                 bluestar_config)) {
@@ -878,6 +886,11 @@ int main() {
 
                     ImGui::SameLine();
                     ImGui::TextUnformatted(configStatus.c_str());
+
+                    ImGui::Separator();
+                    ImGui::Text("Photogrammetry Script:");
+                    ImGui::SameLine();
+                    ImGui::InputText("##photo_script", bluestar_config.photogrammetry_script, 1024);
 
                     ImGui::Separator();
 

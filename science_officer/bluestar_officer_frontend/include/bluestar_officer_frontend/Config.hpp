@@ -19,6 +19,8 @@ public:
 
     char cam4_video_caps[1024] = "";
     char cam4_audio_caps[1024] = "";
+
+    char photogrammetry_script[1024] = "/Users/peyton/Developer/Eastern Edge/Software_2026/science_officer/coral_garden/realitykit_scale/compat_layer.py";
 };
 
 #endif
