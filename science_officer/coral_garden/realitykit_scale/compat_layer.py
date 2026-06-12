@@ -1,6 +1,5 @@
 import argparse
-import datetime
-import os
+import os, sys
 from pathlib import Path
 
 def parse_args():
@@ -50,5 +49,6 @@ def main():
     os.execv(str(realitykit_scale_location), command)
 
     return 1
-    
-main()
+
+if __name__ == "__main__":
+    sys.exit(main())
