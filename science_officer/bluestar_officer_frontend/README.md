@@ -1,6 +1,12 @@
 # BlueStar Science Officer GUI
 The BlueStar Science Officer GUI is a minimal version of the main BlueStar GUI. removing all dependancy on ROS to allow for macOS support.
 
+## Dependancies:
+macOS (brew):
+```
+brew install gstreamer libnice libnice-gstreamer libtiff
+```
+
 ## Building
 To build on a macOS systems run the following:
 ```
