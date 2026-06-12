@@ -1,7 +1,7 @@
 # RealityKit Scale
 A CLI photogramatry tool that models the coral garden using Apple's RealityKit.
 
-Requires macOS 26 Tahoe or later
+Requires macOS 15 Sequoia or later
 
 ## Build
 Requires Xcode command line tools
