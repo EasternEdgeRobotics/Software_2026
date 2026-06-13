@@ -354,14 +354,14 @@ struct PhotoModelCLI {
     private static func printUsage() {
         print(
             """
-            photomodel - RealityKit Object Capture CLI
+            realitykit_scale - RealityKit Object Capture CLI
 
             Usage:
-              photomodel --input /path/to/tiffs --output /path/to/model.usdz [options]
+              realitykit_scale --input /path/to/tiffs --output /path/to/model.usdz [options]
 
             Required:
               -i, --input PATH          Folder containing .tif or .tiff photos
-              -o, --output PATH         Output .usdz path
+              -o, --output PATH         Output .usdz path or a folder for a textured obj
 
             Options:
               -d, --detail LEVEL        preview, reduced, medium, full, raw
@@ -383,13 +383,13 @@ struct PhotoModelCLI {
               -h, --help                Show this help message
 
             Examples:
-              photomodel \\
+              realitykit_scale \\
                 --input ./photos \\
                 --output ./model.usdz \\
                 --detail full \\
                 --checkpoint ./checkpoints
 
-              photomodel \\
+              realitykit_scale \\
                 -i /Users/peyton/object-tiffs \\
                 -o /Users/peyton/Desktop/object.usdz \\
                 -d medium \\
@@ -432,7 +432,7 @@ struct PhotoModelCLI {
 
         let stagingDirectory = options.stagingDirectory
             ?? fileManager.temporaryDirectory.appendingPathComponent(
-                "photomodel-staging-\(UUID().uuidString)",
+                "realitykit_scale-staging-\(UUID().uuidString)",
                 isDirectory: true
             )
 
