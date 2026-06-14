@@ -777,7 +777,6 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) invert_controls_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
                     Servo1Angle = bluestar_config.servo_1_preset_angles[0]; 
@@ -973,6 +972,72 @@ int main(int argc, char **argv) {
                     }
                 }
             }
+        }
+
+        //co-pilot controls window
+        if (showPilotWindow) {
+            ImGui::Begin("Co-Pilot Window", &showPilotWindow);
+            
+            ImGui::SliderInt("Power", &power.power, 0, 100);
+            ImGui::SliderInt("Surge", &power.surge, 0, 100);
+            ImGui::SliderInt("Sway", &power.sway, 0, 100);
+            ImGui::SliderInt("Heave", &power.heave, 0, 100);
+            ImGui::SliderInt("Roll", &power.roll, 0, 100);
+            ImGui::SliderInt("Yaw", &power.yaw, 0, 100);
+
+            ImGui::SeparatorText("Keybinds");
+            ImGui::Text("1 - Set all to 0%%");
+            ImGui::Text("2 - Set all to 50%%");
+            ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
+            ImGui::Text("4 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
+            ImGui::Text("V (Toggle) - Fast mode");
+            ImGui::Text("Escape - Reset ESCs");
+
+            if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+                power.power = 0;
+                power.surge = 0;
+                power.sway = 0;
+                power.heave = 0;
+                power.roll = 0;
+                power.yaw = 0;
+            }
+            if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+                power.power = 50;
+                power.surge = 50;
+                power.sway = 50;
+                power.heave = 50;
+                power.roll = 50;
+                power.yaw = 50;
+            }
+            if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+                power.power = 100;
+                power.surge = 0;
+                power.sway = 0;
+                power.heave = 100;
+                power.roll = 0;
+                power.yaw = 0;
+            }
+            if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+                power.power = 50;
+                power.surge = 50;
+                power.sway = 50;
+                power.heave = 75;
+                power.roll = 50;
+                power.yaw = 30;
+            }
+
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) power.power = 0;
+            if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
+
+            ImGui::SeparatorText("Fast Mode Adjustment");
+            ImGui::SliderInt("Fast Mode Power", &fast_mode_settings.power, 0, 100);
+            ImGui::SliderInt("Fast Mode Surge", &fast_mode_settings.surge, 0, 100);
+            ImGui::SliderInt("Fast Mode Sway", &fast_mode_settings.sway, 0, 100);
+            ImGui::SliderInt("Fast Mode Heave", &fast_mode_settings.heave, 0, 100);
+            ImGui::SliderInt("Fast Mode Roll", &fast_mode_settings.roll, 0, 100);
+            ImGui::SliderInt("Fast Mode Yaw", &fast_mode_settings.yaw, 0, 100);
+
+            ImGui::End();
         }
                 
         // We only want this input to be registered once per button hit 
@@ -1454,7 +1519,6 @@ int main(int argc, char **argv) {
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
-                        ImGui::Text("V - Fast Mode");
                         ImGui::SeparatorText("LEDs");
                         ImGui::Text("Z - Brighten LED 1");
                         ImGui::Text("X - Dim LED 1");
@@ -1629,71 +1693,6 @@ int main(int argc, char **argv) {
             cam3.render(ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
             ImGui::SetCursorPos(ImVec2((availPos.x-24)/2+16, (availPos.y-24)/2+35));
             cam4.render(ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
-
-            ImGui::End();
-        }
-
-        //co-pilot controls window
-        if (showPilotWindow) {
-            ImGui::Begin("Co-Pilot Window", &showPilotWindow);
-            
-            ImGui::SliderInt("Power", &power.power, 0, 100);
-            ImGui::SliderInt("Surge", &power.surge, 0, 100);
-            ImGui::SliderInt("Sway", &power.sway, 0, 100);
-            ImGui::SliderInt("Heave", &power.heave, 0, 100);
-            ImGui::SliderInt("Roll", &power.roll, 0, 100);
-            ImGui::SliderInt("Yaw", &power.yaw, 0, 100);
-
-            ImGui::SeparatorText("Keybinds");
-            ImGui::Text("1 - Set all to 0%%");
-            ImGui::Text("2 - Set all to 50%%");
-            ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
-            ImGui::Text("4 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
-            ImGui::Text("V (Toggle) - Fast mode");
-            if (ImGui::IsKeyPressed(ImGuiKey_1)) {
-                power.power = 0;
-                power.surge = 0;
-                power.sway = 0;
-                power.heave = 0;
-                power.roll = 0;
-                power.yaw = 0;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_2)) {
-                power.power = 50;
-                power.surge = 50;
-                power.sway = 50;
-                power.heave = 50;
-                power.roll = 50;
-                power.yaw = 50;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_3)) {
-                power.power = 100;
-                power.surge = 0;
-                power.sway = 0;
-                power.heave = 100;
-                power.roll = 0;
-                power.yaw = 0;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_4)) {
-                power.power = 50;
-                power.surge = 50;
-                power.sway = 50;
-                power.heave = 75;
-                power.roll = 50;
-                power.yaw = 30;
-            }
-
-            if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-                power.power = 0;
-            }
-
-            ImGui::SeparatorText("Fast Mode Adjustment");
-            ImGui::SliderInt("Fast Mode Power", &fast_mode_settings.power, 0, 100);
-            ImGui::SliderInt("Fast Mode Surge", &fast_mode_settings.surge, 0, 100);
-            ImGui::SliderInt("Fast Mode Sway", &fast_mode_settings.sway, 0, 100);
-            ImGui::SliderInt("Fast Mode Heave", &fast_mode_settings.heave, 0, 100);
-            ImGui::SliderInt("Fast Mode Roll", &fast_mode_settings.roll, 0, 100);
-            ImGui::SliderInt("Fast Mode Yaw", &fast_mode_settings.yaw, 0, 100);
 
             ImGui::End();
         }
