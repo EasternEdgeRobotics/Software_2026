@@ -1134,12 +1134,6 @@ int main(int argc, char **argv) {
             surge = -surge;
             yaw = -yaw;
         }
-        
-        // THIS MUST MATCH THE ORDER IN ROS.hpp -PC
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
-            dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
-            Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
-            configuration_mode, configuration_mode_thruster_number);
 
         //user_config window
         if (showConfigWindow) {
@@ -1689,6 +1683,10 @@ int main(int argc, char **argv) {
                 power.yaw = 30;
             }
 
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                power.power = 0;
+            }
+
             ImGui::SeparatorText("Fast Mode Adjustment");
             ImGui::SliderInt("Fast Mode Power", &fast_mode_settings.power, 0, 100);
             ImGui::SliderInt("Fast Mode Surge", &fast_mode_settings.surge, 0, 100);
@@ -1699,6 +1697,12 @@ int main(int argc, char **argv) {
 
             ImGui::End();
         }
+
+        // THIS MUST MATCH THE ORDER IN ROS.hpp -PC
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
+            dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
+            Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
+            configuration_mode, configuration_mode_thruster_number);
 
         glClear(GL_COLOR_BUFFER_BIT);
 
