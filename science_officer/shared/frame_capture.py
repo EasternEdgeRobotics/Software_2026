@@ -18,6 +18,7 @@ class FrameSourceConfig:
     width: Optional[int] = None
     height: Optional[int] = None
     ffmpeg_loglevel: str = "warning"
+    no_signal_image_path: Optional[str] = None
 
     @classmethod
     def from_args(cls, args):
@@ -34,6 +35,7 @@ class FrameSourceConfig:
             width=width,
             height=height,
             ffmpeg_loglevel=getattr(args, "ffmpeg_loglevel", "warning"),
+            no_signal_image_path=getattr(args, "no_signal_image_path", None),
         )
 
 
@@ -82,6 +84,7 @@ def _create_ffmpeg_frame_source(config: FrameSourceConfig):
         width=config.width,
         height=config.height,
         loglevel=config.ffmpeg_loglevel,
+        no_signal_image_path=config.no_signal_image_path,
     )
 
 
@@ -100,7 +103,9 @@ class FFmpegFrameSource:
         width,
         height,
         rtsp_transport="tcp",
-        loglevel="error"
+        loglevel="error",
+        no_signal_image_path=None,
+        retry_delay=3.0,
     ):
         self.url = url
         self.width = width
@@ -108,15 +113,28 @@ class FFmpegFrameSource:
         self.frame_size = width * height * 3
         self.rtsp_transport = rtsp_transport
         self.loglevel = loglevel
+        self.retry_delay = retry_delay
         self.use_videotoolbox = platform.system() == "Darwin"
 
         self.proc = None
         self.thread = None
         self.running = False
         self.lock = threading.Lock()
-        self.frame = None
+
+        self.no_signal_frame = cv2.imread(no_signal_image_path)
+        self.no_signal_frame = cv2.resize(
+            self.no_signal_frame,
+            (self.width, self.height),
+        )
+
+        self.frame = self.no_signal_frame.copy()
 
     def start(self):
+        self.running = True
+        self.thread = threading.Thread(target=self._connection_loop, daemon=True)
+        self.thread.start()
+
+    def _build_cmd(self):
         cmd = [
             "ffmpeg",
             "-hide_banner",
@@ -153,16 +171,39 @@ class FFmpegFrameSource:
             "pipe:1",
         ]
 
-        self.proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            bufsize=self.frame_size * 4,
-        )
+        return cmd
 
-        self.running = True
-        self.thread = threading.Thread(target=self._reader_loop, daemon=True)
-        self.thread.start()
+    def _connection_loop(self):
+        while self.running:
+            with self.lock:
+                self.frame = self.no_signal_frame.copy()
+
+            cmd = self._build_cmd()
+
+            self.proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                bufsize=self.frame_size * 4,
+            )
+
+            while self.running:
+                raw = self._read_exact(self.frame_size)
+
+                if raw is None:
+                    break
+
+                frame = np.frombuffer(raw, dtype=np.uint8)
+                frame = frame.reshape((self.height, self.width, 3))
+
+                with self.lock:
+                    self.frame = frame.copy()
+
+            self._stop_ffmpeg()
+
+            if self.running:
+                print(f"FFmpeg stream disconnected. Retrying in {self.retry_delay} seconds...")
+                time.sleep(self.retry_delay)
 
     def _read_exact(self, size):
         chunks = []
@@ -179,41 +220,30 @@ class FFmpegFrameSource:
 
         return b"".join(chunks)
 
-    def _reader_loop(self):
-        while self.running:
-            raw = self._read_exact(self.frame_size)
-
-            if raw is None:
-                self.running = False
-                break
-
-            frame = np.frombuffer(raw, dtype=np.uint8)
-            frame = frame.reshape((self.height, self.width, 3))
-
-            with self.lock:
-                self.frame = frame.copy()
-
     def read(self):
-        while self.running:
-            with self.lock:
-                if self.frame is not None:
-                    return True, self.frame.copy()
+        if not self.running:
+            return False, None
 
-            time.sleep(0.005)
+        with self.lock:
+            return True, self.frame.copy()
 
-        return False, None
+    def _stop_ffmpeg(self):
+        if self.proc is None:
+            return
+
+        self.proc.terminate()
+
+        try:
+            self.proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.proc.kill()
+            self.proc.wait()
+
+        self.proc = None
 
     def release(self):
         self.running = False
-
-        if self.proc is not None:
-            self.proc.terminate()
-
-            try:
-                self.proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.proc.kill()
-                self.proc.wait()
+        self._stop_ffmpeg()
 
 class OpenCVFrameSource:
     def __init__(self, source, source_type, width=None, height=None):

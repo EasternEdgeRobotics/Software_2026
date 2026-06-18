@@ -9,9 +9,11 @@ import time
 import platform
 import sys
 from pathlib import Path
+from dataclasses import replace
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+OFFICER_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(OFFICER_ROOT))
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|max_delay;0"
 
@@ -47,6 +49,10 @@ args = parse_args()
 # Initialize image source
 try:
     config = frame_capture.FrameSourceConfig.from_args(args)
+    config = replace(
+        config,
+        no_signal_image_path=str(PROJECT_ROOT / "Assets" / "nosignal_dark.jpg"),
+    )
     frame_source = frame_capture.create_frame_source(config)
     frame_source.start()
 except ValueError as exc:
