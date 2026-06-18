@@ -7,6 +7,7 @@
 | 3   | Reset Points                   |
 | 4   | Toggle Fisheye Correction      |
 | 5   | Toggle Vertical Pole refrence  |
+| 6   | Enable Grid                    |
 
 ## Examples:
 RTSP w/ ffmpeg backend

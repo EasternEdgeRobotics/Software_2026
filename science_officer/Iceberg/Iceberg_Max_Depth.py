@@ -42,6 +42,13 @@ def parse_args():
         help="Disable using the vertical pole for measurement refrence",
     )
 
+    parser.add_argument(
+        "--enable-grid",
+        default=False,
+        action="store_true",
+        help="Enable grid for measurement",
+    )
+
     return parser.parse_args()
 
 args = parse_args()
@@ -152,6 +159,9 @@ def cam_mode():
                 args.disable_vertical_pole = not args.disable_vertical_pole
                 clicked_points = []
 
+            if key == ord('6'):
+                args.enable_grid = not args.enable_grid
+
             if not freeze:
                 clicked_points = draw_mode(img1,heights,clicked_points)
             else: 
@@ -160,7 +170,7 @@ def cam_mode():
         return heights
 
 def draw_mode(picture,heights, clicked_points):
-        global rheight
+        global rheight, TOP_PIPE_REF_CM
         rheight = 0
 
         img2 = picture.copy()
@@ -175,6 +185,17 @@ def draw_mode(picture,heights, clicked_points):
         
         for i, point in enumerate(clicked_points):
             cv2.circle(img2, point, 10, point_colours[i], -1)
+
+        if args.enable_grid == True:
+            # Thirds
+            resW_intv = int(round(resW / 3, 0))
+            resH_intv = int(round(resH / 3, 0))
+
+            cv2.line(img2, (resW_intv, 0), (resW_intv * 1, int(resW)), (0, 0, 255), 2,)
+            cv2.line(img2, (resW_intv * 2, 0), (resW_intv * 2, int(resW)), (0, 0, 255), 2,)
+
+            cv2.line(img2, (0, resH_intv * 1), (int(resW), resH_intv * 1), (0, 0, 255), 2,)
+            cv2.line(img2, (0, resH_intv * 2), (int(resW), resH_intv * 2), (0, 0, 255), 2,)
 
         if args.follow_mouse == True:
             overlay = img2.copy()
@@ -230,7 +251,7 @@ def draw_mode(picture,heights, clicked_points):
                 width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
                 height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
                 
-                rwidth = 64
+                rwidth = TOP_PIPE_REF_CM
                 if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                     rheight = rwidth/width_pxdistance*height_pxdistance
                     rheight = round(rheight,2)

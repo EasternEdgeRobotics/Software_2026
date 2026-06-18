@@ -23,7 +23,7 @@ CORAL_ONSHAPE_URL="https://cad.onshape.com/documents"
 
 ICEBERG_SCRIPT="$PROJECT_DIR/Iceberg/Iceberg_Max_Depth.py"
 ICEBERG_ARGS=(
-  "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--fisheye-correction" "--disable-vertical-pole"
+  "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--fisheye-correction" "--disable-vertical-pole --enable-grid"
 )
 
 ICEBERG_SPREADSHEET="$PROJECT_DIR/Iceberg/Iceberg_threat_calc_with_clear.xlsm"
