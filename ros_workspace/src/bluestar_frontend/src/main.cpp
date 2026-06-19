@@ -111,6 +111,11 @@ bool dim_led_latch_2 = false;
 bool fast_mode_latch = false;
 bool invert_controls_latch = false;
 
+bool thruster_macro_latch_1 = false;
+bool thruster_macro_latch_2 = false;
+bool thruster_macro_latch_3 = false;
+bool thruster_macro_latch_4 = false;
+
 int LED_BRIGHTNESS_INCREMENT = 51; // 5 levels
 int SERVO_FREQ_INCREMENT = 17; // 15 levels
 
@@ -653,6 +658,10 @@ int main(int argc, char **argv) {
         bool Servo_4_CCW_Pressed = false;
         bool fast_mode_toggle = false;
         bool invert_controls_toggle = false;
+        bool thrusterMacro1_Pressed = false;
+        bool thrusterMacro2_Pressed = false;
+        bool thrusterMacro3_Pressed = false;
+        bool thrusterMacro4_Pressed = false;
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
@@ -767,8 +776,8 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) Servo_2_CCW_Pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) Servo_3_CW_Pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) Servo_3_CCW_Pressed = true;
-                if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) Servo_4_CW_Pressed = true;
-                if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) Servo_4_CCW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_HOME) == GLFW_PRESS) Servo_4_CW_Pressed = true;
+                if (glfwGetKey(window, GLFW_KEY_END) == GLFW_PRESS) Servo_4_CCW_Pressed = true;
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
@@ -777,7 +786,6 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) invert_controls_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
                     Servo1Angle = bluestar_config.servo_1_preset_angles[0]; 
@@ -791,10 +799,10 @@ int main(int argc, char **argv) {
                     Servo1Angle = bluestar_config.servo_1_preset_angles[2]; 
                     Servo2Angle = bluestar_config.servo_2_preset_angles[2];
                 }
-                if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS) dc_motor_1 = 127;
-                if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS) dc_motor_1 = 255;
-                if (glfwGetKey(window, GLFW_KEY_KP_4) == GLFW_PRESS) dc_motor_2 = 127;
-                if (glfwGetKey(window, GLFW_KEY_KP_5) == GLFW_PRESS) dc_motor_2 = 255;
+                if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS) dc_motor_1 = 127;
+                if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS) dc_motor_1 = 255;
+                if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) dc_motor_2 = 127;
+                if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS) dc_motor_2 = 255;
             }
             if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
@@ -974,6 +982,49 @@ int main(int argc, char **argv) {
                 }
             }
         }
+
+        //co-pilot controls window
+        if (showPilotWindow) {
+            ImGui::Begin("Co-Pilot Window", &showPilotWindow);
+            
+            ImGui::SliderInt("Power", &power.power, 0, 100);
+            ImGui::SliderInt("Surge", &power.surge, 0, 100);
+            ImGui::SliderInt("Sway", &power.sway, 0, 100);
+            ImGui::SliderInt("Heave", &power.heave, 0, 100);
+            ImGui::SliderInt("Roll", &power.roll, 0, 100);
+            ImGui::SliderInt("Yaw", &power.yaw, 0, 100);
+
+            ImGui::SeparatorText("Keybinds");
+            ImGui::Text("1 / KP 1 - Set all to 0%%");
+            ImGui::Text("2 / KP 2 - Set all to 50%%");
+            ImGui::Text("3 / KP 3 - Set all to 0%%, set Heave and Power to 100%%");
+            ImGui::Text("4 ? KP 0 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
+            ImGui::Text("V (Toggle) - Fast mode");
+            ImGui::Text("Escape - Reset ESCs");
+
+            if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) thrusterMacro1_Pressed = true;
+            if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) thrusterMacro2_Pressed = true;
+            if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) thrusterMacro3_Pressed = true;
+            if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) thrusterMacro4_Pressed = true;
+
+            if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS) thrusterMacro1_Pressed = true;
+            if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS) thrusterMacro2_Pressed = true;
+            if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS) thrusterMacro3_Pressed = true;
+            if (glfwGetKey(window, GLFW_KEY_KP_0) == GLFW_PRESS) thrusterMacro4_Pressed = true;
+
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) power.power = 0;
+            if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
+
+            ImGui::SeparatorText("Fast Mode Adjustment");
+            ImGui::SliderInt("Fast Mode Power", &fast_mode_settings.power, 0, 100);
+            ImGui::SliderInt("Fast Mode Surge", &fast_mode_settings.surge, 0, 100);
+            ImGui::SliderInt("Fast Mode Sway", &fast_mode_settings.sway, 0, 100);
+            ImGui::SliderInt("Fast Mode Heave", &fast_mode_settings.heave, 0, 100);
+            ImGui::SliderInt("Fast Mode Roll", &fast_mode_settings.roll, 0, 100);
+            ImGui::SliderInt("Fast Mode Yaw", &fast_mode_settings.yaw, 0, 100);
+
+            ImGui::End();
+        }
                 
         // We only want this input to be registered once per button hit 
         // rather than toggling every frame as long as button is pressed
@@ -1052,6 +1103,62 @@ int main(int argc, char **argv) {
             cam4ScreenshotButtonPressedLatch = true;
         } else {
             cam4ScreenshotButtonPressedLatch = false;
+        }
+
+        if (thrusterMacro1_Pressed) {
+            if (!thruster_macro_latch_1) {
+                thruster_macro_latch_1 = true;
+                power.power = 0;
+                power.surge = 0;
+                power.sway = 0;
+                power.heave = 0;
+                power.roll = 0;
+                power.yaw = 0;
+            }
+        } else {
+            thruster_macro_latch_1 = false;
+        }
+
+        if (thrusterMacro2_Pressed) {
+            if (!thruster_macro_latch_2) {
+                thruster_macro_latch_2 = true;
+                power.power = 50;
+                power.surge = 50;
+                power.sway = 50;
+                power.heave = 50;
+                power.roll = 50;
+                power.yaw = 50;
+            }
+        } else {
+            thruster_macro_latch_2 = false;
+        }
+
+        if (thrusterMacro3_Pressed) {
+            if (!thruster_macro_latch_3) {
+                thruster_macro_latch_3 = true;
+                power.power = 100;
+                power.surge = 0;
+                power.sway = 0;
+                power.heave = 100;
+                power.roll = 0;
+                power.yaw = 0;
+            }
+        } else {
+            thruster_macro_latch_3 = false;
+        }
+
+        if (thrusterMacro4_Pressed) {
+            if (!thruster_macro_latch_4) {
+                thruster_macro_latch_4 = true;
+                power.power = 50;
+                power.surge = 50;
+                power.sway = 50;
+                power.heave = 75;
+                power.roll = 50;
+                power.yaw = 30;
+            }
+        } else {
+            thruster_macro_latch_4 = false;
         }
 
         // These have to be pointers, for anyone looking at this in the future, i spent so many commits trying to figure out why i couldnt change the values, it looked like a 2010s minecraft letsplay series. -PC
@@ -1134,12 +1241,6 @@ int main(int argc, char **argv) {
             surge = -surge;
             yaw = -yaw;
         }
-        
-        // THIS MUST MATCH THE ORDER IN ROS.hpp -PC
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
-            dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
-            Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
-            configuration_mode, configuration_mode_thruster_number);
 
         //user_config window
         if (showConfigWindow) {
@@ -1460,17 +1561,16 @@ int main(int argc, char **argv) {
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
-                        ImGui::Text("V - Fast Mode");
                         ImGui::SeparatorText("LEDs");
                         ImGui::Text("Z - Brighten LED 1");
                         ImGui::Text("X - Dim LED 1");
                         ImGui::Text("J - Brighten LED 2");
                         ImGui::Text("K - Dim LED 2");
                         ImGui::SeparatorText("DC Motors");
-                        ImGui::Text("Numpad 1 - DC Motor 1 CW");
-                        ImGui::Text("Numpad 2 - DC Motor 1 CCW");
-                        ImGui::Text("Numpad 4 - DC Motor 2 CW");
-                        ImGui::Text("Numpad 5 - DC Motor 2 CCW");
+                        ImGui::Text("F1 - DC Motor 1 CW");
+                        ImGui::Text("F2 - DC Motor 1 CCW");
+                        ImGui::Text("F3 - DC Motor 2 CW");
+                        ImGui::Text("F4 - DC Motor 2 CCW");
                         ImGui::SeparatorText("Servos");
                         ImGui::Text("Right Arrow - Turn Servo 1 Clockwise");
                         ImGui::Text("Left Arrow - Turn Servo 1 Counter-Clockwise");
@@ -1478,8 +1578,8 @@ int main(int argc, char **argv) {
                         ImGui::Text("Page Down - Turn Servo 2 Counter-Clockwise");
                         ImGui::Text("Up Arrow - Turn Servo 3 Clockwise");
                         ImGui::Text("Down Arrow - Turn Servo 3 Counter-Clockwise");
-                        ImGui::Text("Numpad 3 - Turn Servo 4 Clockwise");
-                        ImGui::Text("Numpad 6 - Turn Servo 4 Counter-Clockwise");
+                        ImGui::Text("Home - Turn Servo 4 Clockwise");
+                        ImGui::Text("End - Turn Servo 4 Counter-Clockwise");
                         ImGui::Text("5 - Use Servo Preset Angle 1");
                         ImGui::Text("6 - Use Servo Preset Angle 2");
                         ImGui::Text("7 - Use Servo Preset Angle 3");
@@ -1639,66 +1739,11 @@ int main(int argc, char **argv) {
             ImGui::End();
         }
 
-        //co-pilot controls window
-        if (showPilotWindow) {
-            ImGui::Begin("Co-Pilot Window", &showPilotWindow);
-            
-            ImGui::SliderInt("Power", &power.power, 0, 100);
-            ImGui::SliderInt("Surge", &power.surge, 0, 100);
-            ImGui::SliderInt("Sway", &power.sway, 0, 100);
-            ImGui::SliderInt("Heave", &power.heave, 0, 100);
-            ImGui::SliderInt("Roll", &power.roll, 0, 100);
-            ImGui::SliderInt("Yaw", &power.yaw, 0, 100);
-
-            ImGui::SeparatorText("Keybinds");
-            ImGui::Text("1 - Set all to 0%%");
-            ImGui::Text("2 - Set all to 50%%");
-            ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
-            ImGui::Text("4 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
-            ImGui::Text("V (Toggle) - Fast mode");
-            if (ImGui::IsKeyPressed(ImGuiKey_1)) {
-                power.power = 0;
-                power.surge = 0;
-                power.sway = 0;
-                power.heave = 0;
-                power.roll = 0;
-                power.yaw = 0;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_2)) {
-                power.power = 50;
-                power.surge = 50;
-                power.sway = 50;
-                power.heave = 50;
-                power.roll = 50;
-                power.yaw = 50;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_3)) {
-                power.power = 100;
-                power.surge = 0;
-                power.sway = 0;
-                power.heave = 100;
-                power.roll = 0;
-                power.yaw = 0;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_4)) {
-                power.power = 50;
-                power.surge = 50;
-                power.sway = 50;
-                power.heave = 75;
-                power.roll = 50;
-                power.yaw = 30;
-            }
-
-            ImGui::SeparatorText("Fast Mode Adjustment");
-            ImGui::SliderInt("Fast Mode Power", &fast_mode_settings.power, 0, 100);
-            ImGui::SliderInt("Fast Mode Surge", &fast_mode_settings.surge, 0, 100);
-            ImGui::SliderInt("Fast Mode Sway", &fast_mode_settings.sway, 0, 100);
-            ImGui::SliderInt("Fast Mode Heave", &fast_mode_settings.heave, 0, 100);
-            ImGui::SliderInt("Fast Mode Roll", &fast_mode_settings.roll, 0, 100);
-            ImGui::SliderInt("Fast Mode Yaw", &fast_mode_settings.yaw, 0, 100);
-
-            ImGui::End();
-        }
+        // THIS MUST MATCH THE ORDER IN ROS.hpp -PC
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, 
+            dc_motor_1, dc_motor_2, LED1Brightness, LED2Brightness, 
+            Servo1Angle, Servo2Angle, Servo3Angle, Servo4Angle,
+            configuration_mode, configuration_mode_thruster_number);
 
         glClear(GL_COLOR_BUFFER_BIT);
 
