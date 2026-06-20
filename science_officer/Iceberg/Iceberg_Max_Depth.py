@@ -208,7 +208,6 @@ def draw_mode(picture,heights, clicked_points):
         rheight = 0
 
         img2 = picture.copy()
-        img2_clean = picture.copy()
                 
         #print(f"Mouse Position: ({mouse_x},{mouse_y})")
         point_colours = [
@@ -310,7 +309,7 @@ def draw_mode(picture,heights, clicked_points):
                     clicked_points = []
 
         if mouse_x != -1:
-            opencv_helpers.draw_zoom_cursor(img2, img2_clean, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
+            opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
             
         cv2.imshow("Iceberg Measurement", img2 )
         cv2.setMouseCallback('Iceberg Measurement', points, param = clicked_points)
