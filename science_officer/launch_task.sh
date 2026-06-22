@@ -244,8 +244,6 @@ start_iceberg() {
 
   open_calc "$ICEBERG_SPREADSHEET"
   sleep 1
-  open_default "$ICEBERG_EXAMPLE_DOC"
-  sleep 1
 
   launch_terminal \
     "Iceberg Measurement" \
