@@ -664,14 +664,6 @@ int main() {
         }
 
         // Keyboard input handling
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) flipCam4VerticallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) flipCam1HorizontallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
-        if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam1ScreenshotButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam2ScreenshotButtonPressed = true;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam3ScreenshotButtonPressed = true;
@@ -1023,16 +1015,6 @@ int main() {
                 }
 
                 if (ImGui::BeginTabItem("Controls")) {
-                    ImGui::SeparatorText("Flip Cameras Vertically");
-                    ImGui::Text("Q - Flip Camera 1 Vertically");
-                    ImGui::Text("W - Flip Camera 2 Vertically");
-                    ImGui::Text("E - Flip Camera 3 Vertically");
-                    ImGui::Text("R - Flip Camera 4 Vertically");
-                    ImGui::SeparatorText("Flip Cameras Horizontally");
-                    ImGui::Text("Z - Flip Camera 1 Horizontally");
-                    ImGui::Text("X - Flip Camera 2 Horizontally");
-                    ImGui::Text("C - Flip Camera 3 Horizontally");
-                    ImGui::Text("V - Flip Camera 4 Horizontally");
                     ImGui::SeparatorText("Screenshot Cameras");
                     ImGui::Text("A - Screenshot Camera 1");
                     ImGui::Text("S - Screenshot Camera 2");
