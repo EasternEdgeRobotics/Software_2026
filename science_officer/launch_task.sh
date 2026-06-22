@@ -220,7 +220,6 @@ start_coral() {
 
   open_default "$CORAL_ONSHAPE_URL"
   sleep 1
-  open_default "$CORAL_LOCALHOST_URL"
 
   launch_terminal \
     "BlueStar Officer Frontend" \
