@@ -175,26 +175,25 @@ def cam_mode():
             if key == ord('6'):
                 args.enable_grid = not args.enable_grid
 
-            if args.debug == True:
-                if key == ord('t')  or key == ord('T'):
-                    TOP_PIPE_REF_CM -= 0.2
-                if key == ord('y')  or key == ord('Y'):
-                    TOP_PIPE_REF_CM += 0.2
+            if key == ord('t')  or key == ord('T'):
+                TOP_PIPE_REF_CM -= 0.2
+            if key == ord('y')  or key == ord('Y'):
+                TOP_PIPE_REF_CM += 0.2
 
-                if key == ord('g')  or key == ord('G'):
-                    ICEBERG_GRID_WIDTH -= 10
-                if key == ord('h')  or key == ord('H'):
-                    ICEBERG_GRID_WIDTH += 10
+            if key == ord('g')  or key == ord('G'):
+                ICEBERG_GRID_WIDTH -= 10
+            if key == ord('h')  or key == ord('H'):
+                ICEBERG_GRID_WIDTH += 10
 
-                if key == ord('u')  or key == ord('U'):
-                    ICEBERG_GRID_VERT_OFFSET -= 10
-                if key == ord('i')  or key == ord('I'):
-                    ICEBERG_GRID_VERT_OFFSET += 10
+            if key == ord('u')  or key == ord('U'):
+                ICEBERG_GRID_VERT_OFFSET -= 10
+            if key == ord('i')  or key == ord('I'):
+                ICEBERG_GRID_VERT_OFFSET += 10
 
-                if key == ord('j')  or key == ord('J'):
-                    ICEBERG_GRID_RIGHTHAND_OFFSET -= 10
-                if key == ord('k')  or key == ord('K'):
-                    ICEBERG_GRID_RIGHTHAND_OFFSET += 10
+            if key == ord('j')  or key == ord('J'):
+                ICEBERG_GRID_RIGHTHAND_OFFSET -= 10
+            if key == ord('k')  or key == ord('K'):
+                ICEBERG_GRID_RIGHTHAND_OFFSET += 10
                     
             if not freeze:
                 clicked_points = draw_mode(img1,heights,clicked_points)
