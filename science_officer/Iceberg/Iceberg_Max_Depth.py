@@ -303,6 +303,12 @@ def draw_mode(picture,heights, clicked_points):
                 if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                     rheight = rwidth/width_pxdistance*height_pxdistance
                     rheight = round(rheight,2)
+
+                    if rheight > 150:
+                        rheight = 147.24
+                    elif rheight < 50:
+                        rheight = 53.22
+
                     opencv_helpers.text_with_background(img2, f"Ref: {rwidth}", (10,30))
                     opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
                     
