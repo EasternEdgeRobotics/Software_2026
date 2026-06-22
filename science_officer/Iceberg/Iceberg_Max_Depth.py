@@ -217,8 +217,8 @@ def draw_mode(picture,heights, clicked_points):
             (255, 0, 0),
         ]
         
-        for i, point in enumerate(clicked_points):
-            cv2.circle(img2, point, 10, point_colours[i], -1)
+        # for i, point in enumerate(clicked_points):
+        #     cv2.circle(img2, point, 10, point_colours[i], -1)
 
         if args.enable_grid == True:
             resW_intv = int(round(resW / 3, 0))
@@ -290,10 +290,12 @@ def draw_mode(picture,heights, clicked_points):
 
 
         else:
+            overlay = img2.copy()
+
             if len(clicked_points) >= 2:
-                cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
+                cv2.line(overlay, clicked_points[0], clicked_points[1],(0,0,255),5)
             if len(clicked_points) == 4:
-                cv2.line(img2, clicked_points[2], clicked_points[3],(255,0,0),5)
+                cv2.line(overlay, clicked_points[2], clicked_points[3],(255,0,0),5)
                 width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
                 height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
                 
@@ -301,12 +303,15 @@ def draw_mode(picture,heights, clicked_points):
                 if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                     rheight = rwidth/width_pxdistance*height_pxdistance
                     rheight = round(rheight,2)
-                    opencv_helpers.text_with_background(img2, f"Ref: {rwidth}cm", (10,30))
+                    opencv_helpers.text_with_background(img2, f"Ref: {rwidth}", (10,30))
                     opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
                     
                 else:
                     print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
                     clicked_points = []
+            
+            alpha = 0.4
+            img2 = cv2.addWeighted(overlay, alpha, img2, 1 - alpha, 0)
 
         if mouse_x != -1:
             opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)
