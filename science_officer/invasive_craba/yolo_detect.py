@@ -148,7 +148,7 @@ while True:
 
         # Get bounding box class ID and name
         classidx = int(detections[i].cls.item())
-        classname = labels[classidx]
+        classname = "Invasive Crab"
 
         # Get bounding box confidence
         conf = detections[i].conf.item()
