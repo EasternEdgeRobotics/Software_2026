@@ -71,8 +71,8 @@ def draw_zoom_cursor(display_img, source_img, center, zoom=2.5, lens_radius=90, 
     np.copyto(roi, zoom_crop, where=mask_crop[:, :, None].astype(bool))
 
     cv2.circle(display_img, (x, y), lens_radius, border_color, 3, cv2.LINE_AA)
-    cv2.line(display_img, (x - 12, y), (x + 12, y), crosshair_color, 2, cv2.LINE_AA)
-    cv2.line(display_img, (x, y - 12), (x, y + 12), crosshair_color, 2, cv2.LINE_AA)
+    cv2.line(display_img, (x - 40, y), (x + 40, y), crosshair_color, 2, cv2.LINE_AA)
+    cv2.line(display_img, (x, y - 40), (x, y + 40), crosshair_color, 2, cv2.LINE_AA)
 
 def prepare_fisheye(K, D, resolution, balance):
     new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(

@@ -26,6 +26,7 @@ sys.path.insert(0, str(OFFICER_ROOT))
 
 from shared import frame_capture
 from shared import common_args
+from shared import opencv_helpers
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Scan for invasive crabs with BlueStar")
@@ -169,12 +170,12 @@ while True:
 
     # Calculate and draw framerate (if using video, USB, or Picamera source)
     if args.source_type == 'video' or args.source_type == 'usb':
-        cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
+        cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,690), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     
     # Display detection results
-    cv2.putText(frame, f'Number of objects: {object_count}', (10,45), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw total number of detected objects
+    opencv_helpers.text_with_background(frame, f'Invasive Crabs: {object_count}', (10,30), font_scale=1.2)
 
-    cv2.putText(frame, f'Threshold: {args.min_thresh:.2f}', (10,70), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw current detection threshold
+    cv2.putText(frame, f'Threshold: {args.min_thresh:.2f}', (10,710), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw current detection threshold
     cv2.imshow('YOLO detection results',frame) # Display image
 
     # Wait 5ms before moving to next frame.

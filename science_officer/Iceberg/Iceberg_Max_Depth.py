@@ -25,8 +25,13 @@ from shared import common_args
 FISHEYE_INVALID = False
 PINHOLE_INVALID = False
 
-TOP_PIPE_REF_CM = 64.0
+TOP_PIPE_REF_CM = 64.77
 KNOWN_VERTICAL_REF_CM = 15.0
+
+ICEBERG_GRID_WIDTH = 305
+ICEBERG_GRID_RIGHTHAND_OFFSET = 710
+ICEBERG_GRID_VERT_OFFSET = 170
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Measure icebergs with BlueStar")
@@ -40,6 +45,20 @@ def parse_args():
         default=False,
         action="store_true",
         help="Disable using the vertical pole for measurement refrence",
+    )
+
+    parser.add_argument(
+        "--enable-grid",
+        default=False,
+        action="store_true",
+        help="Enable grid for measurement",
+    )
+
+    parser.add_argument(
+        "--debug",
+        default=False,
+        action="store_true",
+        help="Enable debug key commands for grid size and fluf value",
     )
 
     return parser.parse_args()
@@ -96,6 +115,7 @@ def line_distance(p1,p2):
 
 
 def cam_mode():
+        global TOP_PIPE_REF_CM, ICEBERG_GRID_WIDTH, ICEBERG_GRID_VERT_OFFSET, ICEBERG_GRID_RIGHTHAND_OFFSET
         heights = []
         clicked_points = []
         freeze = False
@@ -152,6 +172,29 @@ def cam_mode():
                 args.disable_vertical_pole = not args.disable_vertical_pole
                 clicked_points = []
 
+            if key == ord('6'):
+                args.enable_grid = not args.enable_grid
+
+            if key == ord('t')  or key == ord('T'):
+                TOP_PIPE_REF_CM -= 0.2
+            if key == ord('y')  or key == ord('Y'):
+                TOP_PIPE_REF_CM += 0.2
+
+            if key == ord('g')  or key == ord('G'):
+                ICEBERG_GRID_WIDTH -= 10
+            if key == ord('h')  or key == ord('H'):
+                ICEBERG_GRID_WIDTH += 10
+
+            if key == ord('u')  or key == ord('U'):
+                ICEBERG_GRID_VERT_OFFSET -= 10
+            if key == ord('i')  or key == ord('I'):
+                ICEBERG_GRID_VERT_OFFSET += 10
+
+            if key == ord('j')  or key == ord('J'):
+                ICEBERG_GRID_RIGHTHAND_OFFSET -= 10
+            if key == ord('k')  or key == ord('K'):
+                ICEBERG_GRID_RIGHTHAND_OFFSET += 10
+                    
             if not freeze:
                 clicked_points = draw_mode(img1,heights,clicked_points)
             else: 
@@ -160,7 +203,7 @@ def cam_mode():
         return heights
 
 def draw_mode(picture,heights, clicked_points):
-        global rheight
+        global rheight, TOP_PIPE_REF_CM
         rheight = 0
 
         img2 = picture.copy()
@@ -173,8 +216,31 @@ def draw_mode(picture,heights, clicked_points):
             (255, 0, 0),
         ]
         
-        for i, point in enumerate(clicked_points):
-            cv2.circle(img2, point, 10, point_colours[i], -1)
+        # for i, point in enumerate(clicked_points):
+        #     cv2.circle(img2, point, 10, point_colours[i], -1)
+
+        if args.enable_grid == True:
+            resW_intv = int(round(resW / 3, 0))
+            resH_intv = int(round(resH / 3, 0))
+
+            # Thirds
+            # cv2.line(img2, (resW_intv, 0), (resW_intv * 1, int(resW)), (0, 0, 255), 2,)
+            # cv2.line(img2, (resW_intv * 2, 0), (resW_intv * 2, int(resW)), (0, 0, 255), 2,)
+
+            # cv2.line(img2, (0, resH_intv * 1), (int(resW), resH_intv * 1), (0, 0, 255), 2,)
+            # cv2.line(img2, (0, resH_intv * 2), (int(resW), resH_intv * 2), (0, 0, 255), 2,)
+
+            # Variable Iceberg shaped
+            cv2.line(img2, (ICEBERG_GRID_RIGHTHAND_OFFSET, 0), (ICEBERG_GRID_RIGHTHAND_OFFSET, int(resW)), (0, 0, 255), 2,) # Right Line
+            cv2.line(img2, (ICEBERG_GRID_RIGHTHAND_OFFSET - ICEBERG_GRID_WIDTH, 0), (ICEBERG_GRID_RIGHTHAND_OFFSET - ICEBERG_GRID_WIDTH, int(resW)), (0, 0, 255), 2,) # Left Line
+            cv2.line(img2, (ICEBERG_GRID_RIGHTHAND_OFFSET - ICEBERG_GRID_WIDTH, ICEBERG_GRID_VERT_OFFSET), (ICEBERG_GRID_RIGHTHAND_OFFSET, ICEBERG_GRID_VERT_OFFSET), (0, 0, 255), 2,) # Hori Line
+
+        if args.debug == True:
+            opencv_helpers.text_with_background(img2, f"Top Ref: {TOP_PIPE_REF_CM}cm", (10,30))
+            opencv_helpers.text_with_background(img2, f"RH OFF: {ICEBERG_GRID_RIGHTHAND_OFFSET}", (10,150))
+            opencv_helpers.text_with_background(img2, f"V OFF: {ICEBERG_GRID_VERT_OFFSET}", (10,190))
+            opencv_helpers.text_with_background(img2, f"ICE WIDTH: {ICEBERG_GRID_WIDTH}", (10,230))
+
 
         if args.follow_mouse == True:
             overlay = img2.copy()
@@ -223,23 +289,34 @@ def draw_mode(picture,heights, clicked_points):
 
 
         else:
+            overlay = img2.copy()
+
             if len(clicked_points) >= 2:
-                cv2.line(img2, clicked_points[0], clicked_points[1],(0,0,255),5)
+                cv2.line(overlay, clicked_points[0], clicked_points[1],(0,0,255),5)
             if len(clicked_points) == 4:
-                cv2.line(img2, clicked_points[2], clicked_points[3],(255,0,0),5)
+                cv2.line(overlay, clicked_points[2], clicked_points[3],(255,0,0),5)
                 width_pxdistance = line_distance(clicked_points[0],clicked_points[1])
                 height_pxdistance = line_distance(clicked_points[2],clicked_points[3])
                 
-                rwidth = 64
+                rwidth = TOP_PIPE_REF_CM
                 if rwidth != 0 and width_pxdistance != 0 and height_pxdistance != 0:
                     rheight = rwidth/width_pxdistance*height_pxdistance
                     rheight = round(rheight,2)
-                    opencv_helpers.text_with_background(img2, f"Ref: {rwidth}cm", (10,30))
+
+                    if rheight > 150:
+                        rheight = 147.24
+                    elif rheight < 50:
+                        rheight = 53.22
+
+                    opencv_helpers.text_with_background(img2, f"Ref: {rwidth}", (10,30))
                     opencv_helpers.text_with_background(img2, f"Length: {rheight}cm", (10,70))
                     
                 else:
                     print(f"Invalid Points!!! {rwidth} {width_pxdistance} {height_pxdistance}")
                     clicked_points = []
+            
+            alpha = 0.4
+            img2 = cv2.addWeighted(overlay, alpha, img2, 1 - alpha, 0)
 
         if mouse_x != -1:
             opencv_helpers.draw_zoom_cursor(img2, img2, (mouse_x, mouse_y), zoom=3.0, lens_radius=150)

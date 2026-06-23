@@ -7,6 +7,7 @@
 | 3   | Reset Points                   |
 | 4   | Toggle Fisheye Correction      |
 | 5   | Toggle Vertical Pole refrence  |
+| 6   | Enable Grid                    |
 
 ## Examples:
 RTSP w/ ffmpeg backend
@@ -19,7 +20,7 @@ python3 Iceberg_Max_Depth.py --source-type usb --capture-backend opencv --resolu
 ```
 RTSP w/ ffmpeg backend and fisheye correction
 ```
-python3 Iceberg_Max_Depth.py --source-type video --capture-backend ffmpeg --resolution 1280x720 --source rtsp://192.168.137.200:8554/cam --fisheye-correction
+python3 Iceberg_Max_Depth.py --source-type video --capture-backend ffmpeg --resolution 1280x720 --source rtsp://192.168.137.200:8554/cam --fisheye-correction --disable-vertical-pole --enable-grid
 ```
 USB w/ OpenCV backend and fisheye correction
 ```
