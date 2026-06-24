@@ -1,5 +1,13 @@
-# Iceberg Measurement
-## Keys:
+# Iceberg Mapping
+## Iceberg Mapper
+Requires the following python packages:
+```
+pip install matplotlib tk
+```
+
+
+## Iceberg Depth
+### Keys:
 | Key | Action                         |
 |-----|--------------------------------|
 | Q   | Quit                           |
@@ -9,7 +17,7 @@
 | 5   | Toggle Vertical Pole refrence  |
 | 6   | Enable Grid                    |
 
-## Examples:
+### Examples:
 RTSP w/ ffmpeg backend
 ```
 python3 Iceberg_Max_Depth.py --source-type video --capture-backend ffmpeg --resolution 1280x720 --source rtsp://192.168.137.200:8554/cam
