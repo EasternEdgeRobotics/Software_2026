@@ -22,9 +22,13 @@ CORAL_LOCALHOST_URL="http://localhost:8000"
 CORAL_ONSHAPE_URL="https://cad.onshape.com/documents"
 
 ICEBERG_SCRIPT="$PROJECT_DIR/Iceberg/Iceberg_Max_Depth.py"
+ICEBERG_SCRIPT_2="$PROJECT_DIR/Iceberg/iceberg_mapper.py"
+
 ICEBERG_ARGS=(
   "--source-type" "video" "--capture-backend" "ffmpeg" "--resolution" "$DEFAULT_RESOLUTION" "--source" "$CAM1" "--fisheye-correction" "--disable-vertical-pole" "--enable-grid"
 )
+
+ICEBERG_ARGS_2=("")
 
 ICEBERG_SPREADSHEET="$PROJECT_DIR/Iceberg/Iceberg_threat_calc_with_clear.xlsm"
 ICEBERG_EXAMPLE_DOC="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Supporting%20Documents/Iceberg%20Information%20Examples%20EX%20PN%20RN%20Updated%202_16.pdf"
@@ -240,6 +244,7 @@ start_coral() {
 start_iceberg() {
   require_file "$ICEBERG_SCRIPT"
   require_file "$ICEBERG_SPREADSHEET"
+  require_file "$ICEBERG_SCRIPT_2"
 
   open_calc "$ICEBERG_SPREADSHEET"
   sleep 1
@@ -247,6 +252,10 @@ start_iceberg() {
   launch_terminal \
     "Iceberg Measurement" \
     "$(build_python_command "$ICEBERG_SCRIPT" "${ICEBERG_ARGS[@]}")"
+
+  launch_terminal \
+    "Iceberg Mapping" \
+    "$(build_python_command "$ICEBERG_SCRIPT_2" "${ICEBERG_ARGS_2[@]}")"
   
   sleep 1
 }
