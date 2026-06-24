@@ -324,16 +324,16 @@ class IcebergThreatApp:
         )
 
         ttk.Label(parent, text="Keel Depth, meters").grid(
-            row=6,
-            column=0,
+            row=4,
+            column=3,
             columnspan=4,
             sticky="w",
             pady=(15, 2),
         )
 
         ttk.Entry(parent, textvariable=self.keel_depth, width=12).grid(
-            row=7,
-            column=0,
+            row=5,
+            column=3,
             columnspan=3,
             sticky="w",
             padx=2,
@@ -349,39 +349,6 @@ class IcebergThreatApp:
             column=0,
             columnspan=7,
             sticky="ew",
-            pady=(20, 5),
-        )
-
-        sample_button = ttk.Button(
-            parent,
-            text="Load Sample Values",
-            command=self.load_sample_values,
-        )
-        sample_button.grid(
-            row=9,
-            column=0,
-            columnspan=7,
-            sticky="ew",
-            pady=5,
-        )
-
-        help_text = (
-            "Example input:\n"
-            "47°39'00\" North\n"
-            "48°37'00\" West\n"
-            "Heading: 158°\n"
-            "Keel Depth: 99 m"
-        )
-
-        ttk.Label(
-            parent,
-            text=help_text,
-            justify=tk.LEFT,
-        ).grid(
-            row=10,
-            column=0,
-            columnspan=7,
-            sticky="w",
             pady=(20, 5),
         )
 
@@ -424,22 +391,6 @@ class IcebergThreatApp:
         self.table.column("subsea_threat", width=130, anchor=tk.CENTER)
 
         self.table.pack(fill=tk.X)
-
-    def load_sample_values(self):
-        self.lat_deg.set("47")
-        self.lat_min.set("39")
-        self.lat_sec.set("00")
-        self.lat_dir.set("North")
-
-        self.lon_deg.set("48")
-        self.lon_min.set("37")
-        self.lon_sec.set("00")
-        self.lon_dir.set("West")
-
-        self.heading.set("158")
-        self.keel_depth.set("99")
-
-        self.update_plot()
 
     def read_inputs(self):
         try:
