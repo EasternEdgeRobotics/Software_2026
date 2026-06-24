@@ -207,12 +207,12 @@ class IcebergThreatApp:
     def create_variables(self):
         self.lat_deg = tk.StringVar(value="")
         self.lat_min = tk.StringVar(value="")
-        self.lat_sec = tk.StringVar(value="")
+        self.lat_sec = tk.StringVar(value="00")
         self.lat_dir = tk.StringVar(value="North")
 
         self.lon_deg = tk.StringVar(value="")
         self.lon_min = tk.StringVar(value="")
-        self.lon_sec = tk.StringVar(value="")
+        self.lon_sec = tk.StringVar(value="00")
         self.lon_dir = tk.StringVar(value="West")
 
         self.heading = tk.StringVar(value="")
